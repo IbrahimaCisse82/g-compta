@@ -1,10 +1,14 @@
 import { useApp } from '@/stores/app-store';
-import { calc, TFT, CR, fmt, type MapLine } from '@/lib/accounting';
+import { calc, TFT, CR, fmt } from '@/lib/accounting';
 
 export default function TFTPage() {
-  const { balance, entreprise, exercice } = useApp();
+  const { balance, balanceN1, entreprise, exercice } = useApp();
   const vCR = calc(balance, CR);
   const vT = calc(balance, TFT, { RN_: vCR['RN_'] || 0 });
+
+  const hasN1 = balanceN1.length > 0;
+  const vCRN1 = hasN1 ? calc(balanceN1, CR) : {};
+  const vTN1 = hasN1 ? calc(balanceN1, TFT, { RN_: vCRN1['RN_'] || 0 }) : {};
 
   return (
     <div>
@@ -16,17 +20,23 @@ export default function TFTPage() {
           <div className="px-3 py-2 border-b border-border flex items-center justify-between">
             <span className="text-[10px] font-bold text-purple uppercase tracking-[2px] font-mono">TABLEAU DES FLUX DE TRÉSORERIE — {exercice?.annee}</span>
           </div>
-          {TFT.map((l, i) => {
+          <div className={`grid ${hasN1 ? 'grid-cols-[70px_1fr_140px_140px]' : 'grid-cols-[70px_1fr_140px]'} text-[9px] font-bold text-fg3 uppercase tracking-[0.5px] font-mono bg-bg3 px-3 py-1 border-b border-border`}>
+            <span>Réf.</span><span>Libellé</span><span className="text-right">N</span>
+            {hasN1 && <span className="text-right">N-1</span>}
+          </div>
+          {TFT.map((l) => {
             if (l.type === 'sect') return (
               <div key={l.id} className="px-3 py-1.5 bg-bg3/50 font-bold text-[9px] text-fg3 uppercase tracking-[0.5px] font-mono border-b border-border/30">{l.label}</div>
             );
             const v = vT[l.id] ?? 0;
+            const vn1 = vTN1[l.id] ?? 0;
             const isGtotal = l.type === 'gtotal';
             return (
-              <div key={l.id} className={`grid grid-cols-[70px_1fr_140px] items-center px-3 py-1.5 border-b border-border/30 text-[11px] ${isGtotal ? 'font-bold bg-[rgba(167,139,250,.05)] border-t-2 border-t-purple' : ''}`}>
+              <div key={l.id} className={`grid ${hasN1 ? 'grid-cols-[70px_1fr_140px_140px]' : 'grid-cols-[70px_1fr_140px]'} items-center px-3 py-1.5 border-b border-border/30 text-[11px] ${isGtotal ? 'font-bold bg-purple/5 border-t-2 border-t-purple' : ''}`}>
                 <span className="text-[10px] text-fg3 font-mono">{l.id}</span>
                 <span>{l.label}</span>
                 <span className={`text-right font-mono ${v >= 0 ? 'text-success' : 'text-destructive'}`}>{fmt(v)}</span>
+                {hasN1 && <span className={`text-right font-mono text-fg3 text-[10px]`}>{fmt(vn1)}</span>}
               </div>
             );
           })}
