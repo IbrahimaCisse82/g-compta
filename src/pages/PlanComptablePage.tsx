@@ -1,58 +1,125 @@
 import { useApp } from '@/stores/app-store';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Switch } from '@/components/ui/switch';
 
-const CLS_COL: Record<string, string> = { '1': '#a78bfa', '2': '#38bdf8', '3': '#34d399', '4': '#fb923c', '5': '#f59e0b', '6': '#fb7185', '7': '#6ee7b7' };
-const CLS_LBL: Record<string, string> = { '1': 'Ressources Stables', '2': 'Actif Immobilisé', '3': 'Stocks', '4': 'Tiers', '5': 'Trésorerie', '6': 'Charges', '7': 'Produits' };
+const CLS_COL: Record<string, string> = { '1': '#a78bfa', '2': '#38bdf8', '3': '#34d399', '4': '#fb923c', '5': '#f59e0b', '6': '#fb7185', '7': '#6ee7b7', '8': '#c084fc' };
+const CLS_LBL: Record<string, string> = { '1': 'Ressources Stables', '2': 'Actif Immobilisé', '3': 'Stocks', '4': 'Tiers', '5': 'Trésorerie', '6': 'Charges', '7': 'Produits', '8': 'HAO / Impôts' };
 
 export default function PlanComptablePage() {
-  const { plan, toggleCompte, deleteCompte } = useApp();
+  const { plan, toggleCompte } = useApp();
   const [filter, setFilter] = useState('');
   const [showInactif, setShowInactif] = useState(false);
-  let rows = plan.filter(r => !filter || r.numero.includes(filter) || r.intitule.toLowerCase().includes(filter.toLowerCase()));
-  if (!showInactif) rows = rows.filter(r => r.actif !== false);
+  const [classeFilter, setClasseFilter] = useState<string>('');
+  const [toggling, setToggling] = useState<Set<string>>(new Set());
+
+  const rows = useMemo(() => {
+    let r = plan;
+    if (classeFilter) r = r.filter(x => x.classe === classeFilter);
+    if (filter) r = r.filter(x => x.numero.includes(filter) || x.intitule.toLowerCase().includes(filter.toLowerCase()));
+    if (!showInactif) r = r.filter(x => x.actif !== false);
+    return r.sort((a, b) => a.numero.localeCompare(b.numero));
+  }, [plan, filter, classeFilter, showInactif]);
+
+  const classCounts = useMemo(() => {
+    const counts: Record<string, { total: number; actif: number }> = {};
+    for (const p of plan) {
+      if (!counts[p.classe]) counts[p.classe] = { total: 0, actif: 0 };
+      counts[p.classe].total++;
+      if (p.actif) counts[p.classe].actif++;
+    }
+    return counts;
+  }, [plan]);
+
+  const handleToggle = async (id: string) => {
+    const compte = plan.find(p => p.id === id);
+    if (!compte) return;
+    setToggling(prev => new Set(prev).add(id));
+    toggleCompte(id);
+    try {
+      await supabase.from('plan_comptable').update({ actif: !compte.actif }).eq('id', id);
+    } catch { /* fallback already toggled locally */ }
+    setToggling(prev => { const s = new Set(prev); s.delete(id); return s; });
+  };
+
+  const totalActif = plan.filter(p => p.actif).length;
 
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
-        <div className="font-serif text-[17px]">Plan Comptable SYSCOHADA</div>
+        <div className="font-serif text-[17px]">Plan Comptable SYSCOHADA Révisé</div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono text-accent bg-accent/10 border border-accent/20 rounded-full px-2.5 py-0.5">{totalActif} / {plan.length} comptes actifs</span>
+        </div>
       </div>
       <div className="p-5">
+        {/* Class filters */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button onClick={() => setClasseFilter('')}
+            className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${!classeFilter ? 'bg-primary/15 border-primary text-primary' : 'bg-bg2 border-border text-fg2 hover:border-primary/50'}`}>
+            Toutes ({plan.length})
+          </button>
+          {Object.entries(CLS_LBL).map(([c, label]) => {
+            const cc = classCounts[c];
+            if (!cc) return null;
+            return (
+              <button key={c} onClick={() => setClasseFilter(classeFilter === c ? '' : c)}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${classeFilter === c ? 'border-primary' : 'bg-bg2 border-border hover:border-primary/50'}`}
+                style={{ color: CLS_COL[c] }}>
+                <span className="font-mono mr-1">Cl.{c}</span> {label}
+                <span className="ml-1.5 text-fg3 text-[9px]">({cc.actif}/{cc.total})</span>
+              </button>
+            );
+          })}
+        </div>
+
         <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
           <div className="px-3.5 py-2.5 border-b border-border flex items-center justify-between gap-2">
-            <span className="text-xs font-semibold">{plan.filter(p => p.actif !== false).length} actif(s)</span>
+            <span className="text-xs font-semibold">{rows.length} compte(s) affiché(s)</span>
             <div className="flex items-center gap-3">
               <label className="flex items-center gap-1.5 text-[11px] text-fg2 cursor-pointer">
-                <input type="checkbox" checked={showInactif} onChange={e => setShowInactif(e.target.checked)} /> Afficher inactifs
+                <input type="checkbox" checked={showInactif} onChange={e => setShowInactif(e.target.checked)} className="rounded" /> Afficher inactifs
               </label>
-              <input className="bg-bg3 border border-border rounded-md px-2.5 py-1 text-[11px] text-foreground outline-none focus:border-primary w-40" placeholder="Rechercher..." value={filter} onChange={e => setFilter(e.target.value)} />
+              <input className="bg-bg3 border border-border rounded-md px-2.5 py-1 text-[11px] text-foreground outline-none focus:border-primary w-48" placeholder="Rechercher n° ou intitulé..." value={filter} onChange={e => setFilter(e.target.value)} />
             </div>
           </div>
-          <table className="w-full border-collapse">
-            <thead><tr>
-              {['N° Compte', 'Intitulé', 'Classe', 'Sens', 'Actions'].map(h => (
-                <th key={h} className="bg-bg3 px-3 py-1.5 text-left text-[9px] font-bold text-fg3 uppercase tracking-[1px] font-mono border-b border-border whitespace-nowrap">{h}</th>
-              ))}
-            </tr></thead>
-            <tbody>
-              {rows.map(r => (
-                <tr key={r.id} className={`hover:bg-[rgba(56,189,248,.02)] ${r.actif === false ? 'opacity-40' : ''}`}>
-                  <td className="px-3 py-1.5 text-[11px] font-bold font-mono border-b border-border/50" style={{ color: CLS_COL[r.classe] || 'inherit' }}>{r.numero}</td>
-                  <td className="px-3 py-1.5 text-[11px] border-b border-border/50">{r.intitule}</td>
-                  <td className="px-3 py-1.5 text-[11px] border-b border-border/50">
-                    <span className="rounded px-1.5 py-0.5 text-[9px] font-bold font-mono" style={{ background: (CLS_COL[r.classe] || '#888') + '22', color: CLS_COL[r.classe] }}>Cl.{r.classe}</span>
-                    <small className="text-fg3 ml-1">{CLS_LBL[r.classe]}</small>
-                  </td>
-                  <td className="px-3 py-1.5 text-[11px] border-b border-border/50">
-                    <span className={`rounded-lg px-1.5 py-0.5 text-[9px] font-bold font-mono ${r.sens === 'D' ? 'bg-[rgba(56,189,248,.12)] text-primary' : 'bg-[rgba(52,211,153,.12)] text-success'}`}>{r.sens}</span>
-                  </td>
-                  <td className="px-3 py-1.5 border-b border-border/50 whitespace-nowrap">
-                    <button onClick={() => toggleCompte(r.id)} className="text-[10px] px-2 py-0.5 rounded border border-border text-fg2 hover:bg-bg3 mr-1">{r.actif ? '⊘' : '✓'}</button>
-                    <button onClick={() => deleteCompte(r.id)} className="text-[10px] px-2 py-0.5 rounded bg-[rgba(251,113,133,.12)] text-destructive border border-destructive/25">🗑</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="max-h-[calc(100vh-260px)] overflow-y-auto">
+            <table className="w-full border-collapse">
+              <thead className="sticky top-0 z-10"><tr>
+                {['N° Compte', 'Intitulé', 'Classe', 'Sens', 'Type', 'Actif'].map(h => (
+                  <th key={h} className="bg-bg3 px-3 py-1.5 text-left text-[9px] font-bold text-fg3 uppercase tracking-[1px] font-mono border-b border-border whitespace-nowrap">{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {rows.map(r => {
+                  const isParent = r.numero.length <= 3;
+                  return (
+                    <tr key={r.id} className={`hover:bg-[rgba(56,189,248,.02)] transition-opacity ${r.actif === false ? 'opacity-35' : ''} ${isParent ? 'bg-bg3/30' : ''}`}>
+                      <td className="px-3 py-1.5 text-[11px] font-bold font-mono border-b border-border/50" style={{ color: CLS_COL[r.classe] || 'inherit', paddingLeft: isParent ? '0.75rem' : `${0.75 + (r.numero.length - 3) * 0.5}rem` }}>
+                        {r.numero}
+                      </td>
+                      <td className={`px-3 py-1.5 text-[11px] border-b border-border/50 ${isParent ? 'font-semibold' : ''}`}>{r.intitule}</td>
+                      <td className="px-3 py-1.5 text-[11px] border-b border-border/50">
+                        <span className="rounded px-1.5 py-0.5 text-[9px] font-bold font-mono" style={{ background: (CLS_COL[r.classe] || '#888') + '22', color: CLS_COL[r.classe] }}>Cl.{r.classe}</span>
+                      </td>
+                      <td className="px-3 py-1.5 text-[11px] border-b border-border/50">
+                        <span className={`rounded-lg px-1.5 py-0.5 text-[9px] font-bold font-mono ${r.sens === 'D' ? 'bg-[rgba(56,189,248,.12)] text-primary' : r.sens === 'C' ? 'bg-[rgba(52,211,153,.12)] text-success' : 'bg-[rgba(251,191,36,.12)] text-accent'}`}>{r.sens}</span>
+                      </td>
+                      <td className="px-3 py-1.5 text-[11px] border-b border-border/50 text-fg3">{r.type_compte}</td>
+                      <td className="px-3 py-1.5 border-b border-border/50">
+                        <Switch
+                          checked={r.actif}
+                          onCheckedChange={() => handleToggle(r.id)}
+                          disabled={toggling.has(r.id)}
+                          className="scale-75"
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
