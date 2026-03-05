@@ -29,13 +29,13 @@ export default function Landing() {
 
       <div className="bg-bg2 border border-border rounded-xl p-6 w-full max-w-[400px]">
         <div className="flex items-center gap-2 rounded-lg p-2 mb-4 text-xs text-accent" style={{ background: 'linear-gradient(90deg, rgba(245,158,11,.15), rgba(251,113,133,.1))', border: '1px solid rgba(245,158,11,.3)' }}>
-          ⚡ Mode démo — données LBH COMMODITIES 2022 préchargées
+          ⚡ Mode démo — données PME 1 (2022) préchargées
         </div>
         <div className="font-serif text-lg text-primary text-center mb-4">Accès Démo</div>
         <p className="text-xs text-fg2 text-center leading-relaxed mb-4">Accès immédiat aux données de démonstration. Aucun compte requis.</p>
         <button onClick={() => launchDemo('entreprise')}
           className="w-full py-2.5 rounded-lg font-semibold text-sm bg-accent text-accent-foreground mb-2 hover:brightness-110 transition-all">
-          🏭 Démo Entreprise (LBH)
+          🏭 Démo Entreprise (PME 1)
         </button>
         <button onClick={() => launchDemo('cabinet')}
           className="w-full py-2.5 rounded-lg font-semibold text-sm bg-purple text-purple-foreground hover:brightness-110 transition-all">

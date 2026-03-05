@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { BalanceLine, JournalLine, PlanCompte, Entreprise, Exercice } from '@/lib/accounting';
+import { supabase } from '@/integrations/supabase/client';
 import { DEMO_ENTREPRISE, DEMO_EXERCICE, DEMO_LBH_BALANCE, DEMO_LBH_JOURNAL, buildPlan } from '@/lib/demo-data';
 
 export type EnvMode = 'entreprise' | 'cabinet';
@@ -9,6 +10,7 @@ interface AppState {
   env: EnvMode;
   demo: boolean;
   launched: boolean;
+  loading: boolean;
   currentPage: PageId;
   entreprise: Entreprise | null;
   exercice: Exercice | null;
@@ -33,10 +35,14 @@ interface AppState {
 
 const AppContext = createContext<AppState | null>(null);
 
+const DEMO_ENTREPRISE_ID = 'a0000000-0000-0000-0000-000000000001';
+const DEMO_EXERCICE_ID = 'b0000000-0000-0000-0000-000000000001';
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [env, setEnv] = useState<EnvMode>('entreprise');
   const [demo, setDemo] = useState(false);
   const [launched, setLaunched] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
   const [exercice, setExercice] = useState<Exercice | null>(null);
@@ -46,9 +52,64 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [plan, setPlan] = useState<PlanCompte[]>([]);
   const [entreprises, setEntreprises] = useState<Entreprise[]>([]);
 
-  const launchDemo = useCallback((envMode: EnvMode) => {
+  const launchDemo = useCallback(async (envMode: EnvMode) => {
     setEnv(envMode);
     setDemo(true);
+    setLoading(true);
+    setCurrentPage('dashboard');
+
+    try {
+      // Try loading from Cloud
+      const [entRes, excRes, balRes, jourRes, planRes] = await Promise.all([
+        supabase.from('entreprises').select('*').eq('id', DEMO_ENTREPRISE_ID).single(),
+        supabase.from('exercices').select('*').eq('id', DEMO_EXERCICE_ID).single(),
+        supabase.from('balance').select('*').eq('exercice_id', DEMO_EXERCICE_ID),
+        supabase.from('journal').select('*').eq('exercice_id', DEMO_EXERCICE_ID).order('date_ecriture'),
+        supabase.from('plan_comptable').select('*').eq('entreprise_id', DEMO_ENTREPRISE_ID).order('numero'),
+      ]);
+
+      if (entRes.data && excRes.data && balRes.data && jourRes.data && planRes.data) {
+        const ent: Entreprise = {
+          id: entRes.data.id, nom: entRes.data.nom, sigle: entRes.data.sigle || '',
+          ninea: entRes.data.ninea || '', rccm: entRes.data.rccm || '', tel: entRes.data.tel || '',
+          adresse: entRes.data.adresse || '', forme_juridique: entRes.data.forme_juridique || '',
+          secteur: entRes.data.secteur || '', monnaie: entRes.data.monnaie || 'FCFA',
+        };
+        const exc: Exercice = {
+          id: excRes.data.id, entreprise_id: excRes.data.entreprise_id,
+          annee: excRes.data.annee, date_debut: excRes.data.date_debut,
+          date_fin: excRes.data.date_fin, statut: excRes.data.statut as 'en_cours' | 'cloture',
+        };
+        setEntreprise(ent);
+        setExercice(exc);
+        setExercices([exc]);
+        setBalance(balRes.data.map(d => ({
+          id: d.id, exercice_id: d.exercice_id, entreprise_id: d.entreprise_id,
+          compte: d.compte, intitule: d.intitule,
+          sd: Number(d.sd), sc: Number(d.sc), md: Number(d.md), mc: Number(d.mc),
+          sfd: Number(d.sfd), sfc: Number(d.sfc),
+        })));
+        setJournal(jourRes.data.map(d => ({
+          id: d.id, exercice_id: d.exercice_id, entreprise_id: d.entreprise_id,
+          date_ecriture: d.date_ecriture, piece: d.piece, journal_code: d.journal_code,
+          libelle: d.libelle, compte: d.compte, intitule: d.intitule,
+          debit: Number(d.debit), credit: Number(d.credit),
+        })));
+        setPlan(planRes.data.map(d => ({
+          id: d.id, entreprise_id: d.entreprise_id, numero: d.numero,
+          intitule: d.intitule, classe: d.classe, sens: d.sens,
+          type_compte: d.type_compte, actif: d.actif,
+        })));
+        if (envMode === 'cabinet') setEntreprises([ent]);
+        setLaunched(true);
+        setLoading(false);
+        return;
+      }
+    } catch {
+      // Fallback to local demo data
+    }
+
+    // Fallback: local demo data
     setEntreprise(DEMO_ENTREPRISE);
     setExercice(DEMO_EXERCICE);
     setExercices([DEMO_EXERCICE]);
@@ -56,8 +117,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setJournal([...DEMO_LBH_JOURNAL]);
     setPlan(buildPlan(DEMO_ENTREPRISE.id));
     if (envMode === 'cabinet') setEntreprises([DEMO_ENTREPRISE]);
-    setCurrentPage('dashboard');
     setLaunched(true);
+    setLoading(false);
   }, []);
 
   const logout = useCallback(() => {
@@ -73,7 +134,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addJournalEntry = useCallback((lines: JournalLine[]) => {
     setJournal(prev => [...prev, ...lines]);
-    // Update balance
     setBalance(prev => {
       const b = [...prev];
       for (const r of lines) {
@@ -130,7 +190,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      env, demo, launched, currentPage, entreprise, exercice, exercices,
+      env, demo, launched, loading, currentPage, entreprise, exercice, exercices,
       balance, journal, plan, entreprises,
       setPage: setCurrentPage, launchDemo, logout, addJournalEntry,
       deleteJournalEntry, addCompte, deleteCompte, toggleCompte,
