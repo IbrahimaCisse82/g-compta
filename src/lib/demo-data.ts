@@ -86,9 +86,9 @@ export const DEMO_LBH_JOURNAL: JournalLine[] = [
 ];
 
 export const DEMO_ENTREPRISE: Entreprise = {
-  id: 'ent-lbh',
-  nom: 'LBH COMMODITIES',
-  sigle: 'LBH',
+  id: 'a0000000-0000-0000-0000-000000000001',
+  nom: 'PME 1',
+  sigle: 'PME1',
   ninea: '008069389',
   rccm: 'SN-DKR-2020-B-19075',
   tel: '781285622',
@@ -99,8 +99,8 @@ export const DEMO_ENTREPRISE: Entreprise = {
 };
 
 export const DEMO_EXERCICE: Exercice = {
-  id: 'exc-lbh-2022',
-  entreprise_id: 'ent-lbh',
+  id: 'b0000000-0000-0000-0000-000000000001',
+  entreprise_id: 'a0000000-0000-0000-0000-000000000001',
   annee: 2022,
   date_debut: '2022-01-01',
   date_fin: '2022-12-31',
