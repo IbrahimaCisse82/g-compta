@@ -1,0 +1,48 @@
+import { useApp } from '@/stores/app-store';
+import { calc, CR, fmt, fmtSigned, fmtPct, type MapLine } from '@/lib/accounting';
+
+export default function ResultatPage() {
+  const { balance, entreprise, exercice } = useApp();
+  const vCR = calc(balance, CR);
+  const rn = vCR['RN_'] || 0;
+
+  return (
+    <div>
+      <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
+        <div><div className="font-serif text-[17px]">Compte de Résultat</div><div className="text-[10px] text-fg3 font-mono">{entreprise?.nom} — {exercice?.date_debut} au {exercice?.date_fin}</div></div>
+      </div>
+      <div className="p-5">
+        <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+          <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+            <span className="text-[10px] font-bold text-primary uppercase tracking-[2px] font-mono">COMPTE DE RÉSULTAT — SYSTÈME NORMAL</span>
+            <span className="text-[9px] text-fg3 font-mono">{entreprise?.nom} · {exercice?.annee}</span>
+          </div>
+          <div className="grid grid-cols-[70px_1fr_50px_140px_140px] text-[9px] font-bold text-fg3 uppercase tracking-[0.5px] font-mono bg-bg3 px-3 py-1.5 border-b border-border">
+            <span>Réf.</span><span>Libellés</span><span>Note</span><span className="text-right">Exercice N</span><span className="text-right">N-1</span>
+          </div>
+          {CR.map((l, i) => {
+            if (l.type === 'sect') return (
+              <div key={l.id} className="px-3 py-1.5 bg-bg3/50 font-bold text-[9px] text-fg3 uppercase tracking-[0.5px] font-mono border-b border-border/30 col-span-5">{l.label}</div>
+            );
+            const v = vCR[l.id] ?? 0;
+            const isGtotal = l.type === 'gtotal';
+            const isTotal = l.type === 'total';
+            const bg = isGtotal ? 'bg-[#0B1F3A]' : isTotal ? 'bg-accent/5' : i % 2 === 0 ? '' : '';
+            const fg = isGtotal ? 'text-foreground' : isTotal ? 'text-primary font-semibold' : v < 0 ? 'text-destructive' : '';
+            const last = l.id === 'RN_';
+
+            return (
+              <div key={l.id} className={`grid grid-cols-[70px_1fr_50px_140px_140px] items-center px-3 py-1.5 border-b border-border/30 text-[11px] ${bg} ${isGtotal || isTotal ? 'font-bold' : ''} ${last ? (rn >= 0 ? 'border-t-2 border-t-success bg-[rgba(52,211,153,.05)]' : 'border-t-2 border-t-destructive bg-[rgba(251,113,133,.05)]') : ''}`}>
+                <span className="text-[10px] text-fg3 font-mono">{l.id}</span>
+                <span className={`${fg} ${isGtotal ? '' : 'pl-2'}`}>{l.label}</span>
+                <span className="text-[9px] text-fg3 font-mono"></span>
+                <span className={`text-right font-mono ${isGtotal ? 'text-foreground' : fg || (v >= 0 ? 'text-success' : 'text-destructive')}`}>{fmt(v)}</span>
+                <span className="text-right font-mono text-fg3">—</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
