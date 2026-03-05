@@ -1,0 +1,104 @@
+import { useApp, type PageId } from '@/stores/app-store';
+import Dashboard from '@/pages/Dashboard';
+import JournalPage from '@/pages/JournalPage';
+import BalancePage from '@/pages/BalancePage';
+import BilanPage from '@/pages/BilanPage';
+import ResultatPage from '@/pages/ResultatPage';
+import TFTPage from '@/pages/TFTPage';
+import PlanComptablePage from '@/pages/PlanComptablePage';
+import ExercicesPage from '@/pages/ExercicesPage';
+import ParametresPage from '@/pages/ParametresPage';
+import SaisiePage from '@/pages/SaisiePage';
+
+const NAV: { section: string; items: { id: PageId; icon: string; label: string; cabinet?: boolean }[] }[] = [
+  { section: 'Synthèse', items: [
+    { id: 'dashboard', icon: '◈', label: 'Tableau de bord' },
+    { id: 'clients', icon: '👥', label: 'Mes Clients', cabinet: true },
+  ]},
+  { section: 'Comptabilité', items: [
+    { id: 'journal', icon: '📋', label: 'Journal' },
+    { id: 'balance', icon: '⚖️', label: 'Balance' },
+    { id: 'grandlivre', icon: '📖', label: 'Grand Livre' },
+  ]},
+  { section: 'États Financiers', items: [
+    { id: 'bilan', icon: '🏛️', label: 'Bilan' },
+    { id: 'resultat', icon: '📊', label: 'Compte de Résultat' },
+    { id: 'tft', icon: '💸', label: 'Flux de Trésorerie' },
+  ]},
+  { section: 'Paramètres', items: [
+    { id: 'saisie', icon: '✏️', label: "Saisie d'écritures" },
+    { id: 'plan', icon: '🗂️', label: 'Plan Comptable' },
+    { id: 'exercices', icon: '📅', label: 'Exercices' },
+    { id: 'parametres', icon: '⚙️', label: 'Paramètres' },
+  ]},
+];
+
+const PAGES: Record<string, React.ComponentType> = {
+  dashboard: Dashboard, journal: JournalPage, balance: BalancePage,
+  bilan: BilanPage, resultat: ResultatPage, tft: TFTPage,
+  plan: PlanComptablePage, exercices: ExercicesPage, parametres: ParametresPage,
+  saisie: SaisiePage,
+};
+
+export default function AppShell() {
+  const { env, currentPage, setPage, entreprise, exercice, logout } = useApp();
+  const PageComponent = PAGES[currentPage] || Dashboard;
+
+  return (
+    <div className="h-screen flex flex-col">
+      {/* TOPBAR */}
+      <div className="h-[50px] bg-bg2 border-b border-border flex items-center justify-between px-4 shrink-0">
+        <div className="flex items-center gap-3.5">
+          <span className="font-serif text-lg text-primary">G-Compta</span>
+          <div className="flex items-center bg-bg3 border border-border rounded-full overflow-hidden text-[11px]">
+            <span className={`px-2.5 py-1 font-bold border-r border-border ${env === 'cabinet' ? 'text-purple' : 'text-accent'}`}>
+              {env === 'cabinet' ? '⚖️ Cabinet' : '🏭 Entreprise'}
+            </span>
+            <span className="px-2.5 py-1 text-primary font-semibold">{entreprise?.nom || '—'}</span>
+            <span className="px-2 text-fg3 text-[10px]">›</span>
+            <span className="px-2.5 py-1 text-accent font-mono font-bold">Ex. {exercice?.annee || '—'}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-fg3 font-mono px-2 py-0.5 bg-bg3 border border-border rounded-xl">démo</span>
+          <button onClick={() => window.print()} className="px-2 py-1 rounded-md text-xs border border-border text-fg2 hover:bg-bg3">🖨</button>
+          <button onClick={logout} className="px-3 py-1 rounded-md text-xs border border-border text-fg2 hover:bg-bg3">⬅ Quitter</button>
+        </div>
+      </div>
+
+      <div className="flex flex-1 overflow-hidden">
+        {/* SIDEBAR */}
+        <aside className="w-[225px] bg-bg2 border-r border-border flex flex-col overflow-y-auto shrink-0 sidebar">
+          <nav className="py-1.5 flex-1">
+            {NAV.map(section => (
+              <div key={section.section}>
+                <div className="px-3.5 pt-2 pb-0.5 text-[9px] text-fg3 uppercase tracking-[2px] font-mono">{section.section}</div>
+                {section.items.filter(item => !item.cabinet || env === 'cabinet').map(item => (
+                  <button key={item.id} onClick={() => setPage(item.id)}
+                    className={`w-full flex items-center gap-2.5 px-3.5 py-1.5 text-xs border-l-2 transition-all ${
+                      currentPage === item.id
+                        ? 'bg-gradient-to-r from-[rgba(56,189,248,.08)] to-transparent text-primary border-l-primary font-semibold'
+                        : 'text-fg2 border-l-transparent hover:bg-bg3 hover:text-foreground hover:border-l-border-2'
+                    }`}>
+                    <span className="text-[13px] w-4 text-center">{item.icon}</span>
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </nav>
+          <div className="p-2.5 border-t border-border">
+            <div className="bg-accent text-accent-foreground px-2.5 py-1 rounded-2xl text-[10px] font-extrabold font-mono text-center">
+              Exercice {exercice?.annee || '—'}
+            </div>
+          </div>
+        </aside>
+
+        {/* MAIN */}
+        <main className="flex-1 overflow-y-auto">
+          <PageComponent />
+        </main>
+      </div>
+    </div>
+  );
+}
