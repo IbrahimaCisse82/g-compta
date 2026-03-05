@@ -14,7 +14,253 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      balance: {
+        Row: {
+          compte: string
+          created_at: string
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          intitule: string
+          mc: number
+          md: number
+          sc: number
+          sd: number
+          sfc: number
+          sfd: number
+        }
+        Insert: {
+          compte: string
+          created_at?: string
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          intitule: string
+          mc?: number
+          md?: number
+          sc?: number
+          sd?: number
+          sfc?: number
+          sfd?: number
+        }
+        Update: {
+          compte?: string
+          created_at?: string
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          intitule?: string
+          mc?: number
+          md?: number
+          sc?: number
+          sd?: number
+          sfc?: number
+          sfd?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "balance_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "balance_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entreprises: {
+        Row: {
+          adresse: string | null
+          cabinet_id: string | null
+          created_at: string
+          forme_juridique: string | null
+          id: string
+          monnaie: string | null
+          ninea: string | null
+          nom: string
+          rccm: string | null
+          secteur: string | null
+          sigle: string | null
+          tel: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          cabinet_id?: string | null
+          created_at?: string
+          forme_juridique?: string | null
+          id?: string
+          monnaie?: string | null
+          ninea?: string | null
+          nom: string
+          rccm?: string | null
+          secteur?: string | null
+          sigle?: string | null
+          tel?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          cabinet_id?: string | null
+          created_at?: string
+          forme_juridique?: string | null
+          id?: string
+          monnaie?: string | null
+          ninea?: string | null
+          nom?: string
+          rccm?: string | null
+          secteur?: string | null
+          sigle?: string | null
+          tel?: string | null
+        }
+        Relationships: []
+      }
+      exercices: {
+        Row: {
+          annee: number
+          created_at: string
+          date_debut: string
+          date_fin: string
+          entreprise_id: string
+          id: string
+          statut: string
+        }
+        Insert: {
+          annee: number
+          created_at?: string
+          date_debut: string
+          date_fin: string
+          entreprise_id: string
+          id?: string
+          statut?: string
+        }
+        Update: {
+          annee?: number
+          created_at?: string
+          date_debut?: string
+          date_fin?: string
+          entreprise_id?: string
+          id?: string
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercices_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal: {
+        Row: {
+          compte: string
+          created_at: string
+          credit: number
+          date_ecriture: string
+          debit: number
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          intitule: string
+          journal_code: string
+          libelle: string
+          piece: string
+        }
+        Insert: {
+          compte: string
+          created_at?: string
+          credit?: number
+          date_ecriture: string
+          debit?: number
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          intitule: string
+          journal_code: string
+          libelle: string
+          piece: string
+        }
+        Update: {
+          compte?: string
+          created_at?: string
+          credit?: number
+          date_ecriture?: string
+          debit?: number
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          intitule?: string
+          journal_code?: string
+          libelle?: string
+          piece?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_comptable: {
+        Row: {
+          actif: boolean
+          classe: string
+          created_at: string
+          entreprise_id: string
+          id: string
+          intitule: string
+          numero: string
+          sens: string
+          type_compte: string
+        }
+        Insert: {
+          actif?: boolean
+          classe: string
+          created_at?: string
+          entreprise_id: string
+          id?: string
+          intitule: string
+          numero: string
+          sens: string
+          type_compte: string
+        }
+        Update: {
+          actif?: boolean
+          classe?: string
+          created_at?: string
+          entreprise_id?: string
+          id?: string
+          intitule?: string
+          numero?: string
+          sens?: string
+          type_compte?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_comptable_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
