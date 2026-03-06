@@ -230,7 +230,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const net = (existing.sd || 0) + existing.md - ((existing.sc || 0) + existing.mc);
           existing.sfd = net > 0 ? net : 0;
           existing.sfc = net < 0 ? -net : 0;
-          dbOps.push(supabase.from('balance').update({ md: existing.md, mc: existing.mc, sfd: existing.sfd, sfc: existing.sfc }).eq('id', existing.id));
+          dbOps.push(supabase.from('balance').update({ md: existing.md, mc: existing.mc, sfd: existing.sfd, sfc: existing.sfc }).eq('id', existing.id).then());
         } else {
           const newBal: BalanceLine = {
             id: `temp-${Date.now()}-${compte}`,
@@ -248,7 +248,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               compte, intitule: delta.intitule,
               sd: 0, sc: 0, md: delta.debit, mc: delta.credit,
               sfd: newBal.sfd, sfc: newBal.sfc,
-            }).select().single().then(({ data }) => { if (data) newBal.id = data.id; })
+            }).select().single().then(({ data }) => { if (data) newBal.id = data.id; }) as Promise<any>
           );
         }
       }
