@@ -188,29 +188,103 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCurrentPage('dashboard');
   }, []);
 
-  const addJournalEntry = useCallback((lines: JournalLine[]) => {
-    setJournal(prev => [...prev, ...lines]);
+  const addJournalEntry = useCallback(async (lines: JournalLine[]) => {
+    if (!exercice || !entreprise) return;
+
+    // 1. Persist journal lines to DB
+    const inserts = lines.map(l => ({
+      exercice_id: exercice.id,
+      entreprise_id: entreprise.id,
+      date_ecriture: l.date_ecriture,
+      piece: l.piece,
+      journal_code: l.journal_code,
+      libelle: l.libelle,
+      compte: l.compte,
+      intitule: l.intitule,
+      debit: l.debit || 0,
+      credit: l.credit || 0,
+    }));
+    const { data: savedLines, error: journalErr } = await supabase.from('journal').insert(inserts).select();
+    if (journalErr) { toast.error('Erreur enregistrement écriture: ' + journalErr.message); return; }
+
+    const newLines = mapJournal(savedLines);
+    setJournal(prev => [...prev, ...newLines]);
+
+    // 2. Update balance in DB — upsert per account
+    const balUpdates: Record<string, { debit: number; credit: number; intitule: string }> = {};
+    for (const l of newLines) {
+      if (!balUpdates[l.compte]) balUpdates[l.compte] = { debit: 0, credit: 0, intitule: l.intitule };
+      balUpdates[l.compte].debit += l.debit || 0;
+      balUpdates[l.compte].credit += l.credit || 0;
+    }
+
     setBalance(prev => {
       const b = [...prev];
-      for (const r of lines) {
-        let existing = b.find(x => x.compte === r.compte);
-        if (!existing) {
-          existing = { compte: r.compte, intitule: r.intitule, sd: 0, sc: 0, md: 0, mc: 0, sfd: 0, sfc: 0, id: `bal-${Date.now()}-${r.compte}`, exercice_id: r.exercice_id, entreprise_id: r.entreprise_id };
-          b.push(existing);
+      const dbOps: Promise<any>[] = [];
+
+      for (const [compte, delta] of Object.entries(balUpdates)) {
+        let existing = b.find(x => x.compte === compte);
+        if (existing) {
+          existing.md += delta.debit;
+          existing.mc += delta.credit;
+          const net = (existing.sd || 0) + existing.md - ((existing.sc || 0) + existing.mc);
+          existing.sfd = net > 0 ? net : 0;
+          existing.sfc = net < 0 ? -net : 0;
+          dbOps.push(supabase.from('balance').update({ md: existing.md, mc: existing.mc, sfd: existing.sfd, sfc: existing.sfc }).eq('id', existing.id).then() as Promise<any>);
+        } else {
+          const newBal: BalanceLine = {
+            id: `temp-${Date.now()}-${compte}`,
+            exercice_id: exercice.id,
+            entreprise_id: entreprise.id,
+            compte, intitule: delta.intitule,
+            sd: 0, sc: 0, md: delta.debit, mc: delta.credit,
+            sfd: delta.debit > delta.credit ? delta.debit - delta.credit : 0,
+            sfc: delta.credit > delta.debit ? delta.credit - delta.debit : 0,
+          };
+          b.push(newBal);
+          dbOps.push(
+            supabase.from('balance').insert({
+              exercice_id: exercice.id, entreprise_id: entreprise.id,
+              compte, intitule: delta.intitule,
+              sd: 0, sc: 0, md: delta.debit, mc: delta.credit,
+              sfd: newBal.sfd, sfc: newBal.sfc,
+            }).select().single().then(({ data }) => { if (data) newBal.id = data.id; }) as Promise<any>
+          );
         }
-        existing.md += r.debit || 0;
-        existing.mc += r.credit || 0;
+      }
+      Promise.all(dbOps).catch(e => toast.error('Erreur mise à jour balance: ' + e.message));
+      return b;
+    });
+
+    toast.success(`${newLines.length} ligne(s) enregistrée(s)`);
+  }, [exercice, entreprise]);
+
+  const deleteJournalEntry = useCallback(async (id: string) => {
+    const entry = journal.find(j => j.id === id);
+    if (!entry) return;
+
+    const { error } = await supabase.from('journal').delete().eq('id', id);
+    if (error) { toast.error('Erreur suppression: ' + error.message); return; }
+
+    setJournal(prev => prev.filter(j => j.id !== id));
+
+    // Update balance: subtract this entry's amounts
+    setBalance(prev => {
+      const b = [...prev];
+      const existing = b.find(x => x.compte === entry.compte);
+      if (existing) {
+        existing.md -= entry.debit || 0;
+        existing.mc -= entry.credit || 0;
         const net = (existing.sd || 0) + existing.md - ((existing.sc || 0) + existing.mc);
         existing.sfd = net > 0 ? net : 0;
         existing.sfc = net < 0 ? -net : 0;
+        supabase.from('balance').update({ md: existing.md, mc: existing.mc, sfd: existing.sfd, sfc: existing.sfc }).eq('id', existing.id);
       }
       return b;
     });
-  }, []);
 
-  const deleteJournalEntry = useCallback((id: string) => {
-    setJournal(prev => prev.filter(j => j.id !== id));
-  }, []);
+    toast.success('Écriture supprimée');
+  }, [journal]);
 
   const addCompte = useCallback((c: PlanCompte) => {
     setPlan(prev => [...prev, c]);
