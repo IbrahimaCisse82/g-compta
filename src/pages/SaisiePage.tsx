@@ -1,18 +1,193 @@
 import { useApp } from '@/stores/app-store';
 import { fmt } from '@/lib/accounting';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+
+interface LigneEcriture {
+  compte: string;
+  intitule: string;
+  debit: number;
+  credit: number;
+}
+
+function NouvelleEcritureForm({ onSubmit, plan, loading }: { onSubmit: (data: { date: string; piece: string; journal_code: string; libelle: string; lignes: LigneEcriture[] }) => void; plan: { numero: string; intitule: string; actif: boolean }[]; loading: boolean }) {
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [piece, setPiece] = useState('');
+  const [journalCode, setJournalCode] = useState('OD');
+  const [libelle, setLibelle] = useState('');
+  const [lignes, setLignes] = useState<LigneEcriture[]>([
+    { compte: '', intitule: '', debit: 0, credit: 0 },
+    { compte: '', intitule: '', debit: 0, credit: 0 },
+  ]);
+  const [compteSearch, setCompteSearch] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const totalDebit = lignes.reduce((s, l) => s + (l.debit || 0), 0);
+  const totalCredit = lignes.reduce((s, l) => s + (l.credit || 0), 0);
+  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01 && totalDebit > 0;
+  const isValid = isBalanced && date && piece && libelle && lignes.every(l => l.compte && (l.debit > 0 || l.credit > 0));
+
+  const activePlan = useMemo(() => plan.filter(p => p.actif), [plan]);
+  const filteredComptes = useMemo(() => {
+    if (!searchTerm) return activePlan.slice(0, 20);
+    const t = searchTerm.toLowerCase();
+    return activePlan.filter(p => p.numero.includes(t) || p.intitule.toLowerCase().includes(t)).slice(0, 20);
+  }, [activePlan, searchTerm]);
+
+  const updateLigne = (i: number, field: keyof LigneEcriture, val: string | number) => {
+    setLignes(prev => prev.map((l, idx) => idx === i ? { ...l, [field]: val } : l));
+  };
+
+  const selectCompte = (i: number, numero: string, intitule: string) => {
+    setLignes(prev => prev.map((l, idx) => idx === i ? { ...l, compte: numero, intitule } : l));
+    setCompteSearch(null);
+    setSearchTerm('');
+  };
+
+  const addLigne = () => setLignes(prev => [...prev, { compte: '', intitule: '', debit: 0, credit: 0 }]);
+  const removeLigne = (i: number) => { if (lignes.length > 2) setLignes(prev => prev.filter((_, idx) => idx !== i)); };
+
+  const handleSubmit = () => {
+    if (!isValid) return;
+    onSubmit({ date, piece, journal_code: journalCode, libelle, lignes: lignes.filter(l => l.compte) });
+    setPiece('');
+    setLibelle('');
+    setLignes([
+      { compte: '', intitule: '', debit: 0, credit: 0 },
+      { compte: '', intitule: '', debit: 0, credit: 0 },
+    ]);
+  };
+
+  return (
+    <div className="bg-bg2 border border-border rounded-lg p-4 mb-4">
+      <div className="font-bold text-sm mb-3 text-primary">✏️ Nouvelle Écriture</div>
+
+      {/* Header fields */}
+      <div className="grid grid-cols-4 gap-3 mb-4">
+        <div>
+          <label className="text-[9px] text-fg3 uppercase tracking-wider font-mono block mb-1">Date</label>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-bg3 border border-border rounded px-2 py-1.5 text-[11px] text-foreground outline-none focus:border-primary" />
+        </div>
+        <div>
+          <label className="text-[9px] text-fg3 uppercase tracking-wider font-mono block mb-1">N° Pièce</label>
+          <input value={piece} onChange={e => setPiece(e.target.value)} placeholder="FA-001" className="w-full bg-bg3 border border-border rounded px-2 py-1.5 text-[11px] text-foreground outline-none focus:border-primary" />
+        </div>
+        <div>
+          <label className="text-[9px] text-fg3 uppercase tracking-wider font-mono block mb-1">Journal</label>
+          <select value={journalCode} onChange={e => setJournalCode(e.target.value)} className="w-full bg-bg3 border border-border rounded px-2 py-1.5 text-[11px] text-foreground outline-none focus:border-primary">
+            <option value="AC">AC - Achats</option>
+            <option value="VE">VE - Ventes</option>
+            <option value="BQ">BQ - Banque</option>
+            <option value="CA">CA - Caisse</option>
+            <option value="OD">OD - Opérations Diverses</option>
+            <option value="SA">SA - Salaires</option>
+            <option value="AN">AN - À-Nouveau</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-[9px] text-fg3 uppercase tracking-wider font-mono block mb-1">Libellé</label>
+          <input value={libelle} onChange={e => setLibelle(e.target.value)} placeholder="Description de l'opération" className="w-full bg-bg3 border border-border rounded px-2 py-1.5 text-[11px] text-foreground outline-none focus:border-primary" />
+        </div>
+      </div>
+
+      {/* Lines */}
+      <div className="border border-border rounded overflow-hidden mb-3">
+        <div className="grid grid-cols-[1fr_2fr_120px_120px_40px] bg-bg3 px-3 py-1.5 text-[9px] font-bold text-fg3 uppercase tracking-[0.5px] font-mono border-b border-border">
+          <span>Compte</span><span>Intitulé</span><span className="text-right">Débit</span><span className="text-right">Crédit</span><span></span>
+        </div>
+        {lignes.map((l, i) => (
+          <div key={i} className="grid grid-cols-[1fr_2fr_120px_120px_40px] items-center px-3 py-1 border-b border-border/30 relative">
+            <div className="relative">
+              <input
+                value={l.compte}
+                onChange={e => { updateLigne(i, 'compte', e.target.value); setCompteSearch(i); setSearchTerm(e.target.value); }}
+                onFocus={() => { setCompteSearch(i); setSearchTerm(l.compte); }}
+                placeholder="601100"
+                className="w-full bg-bg3 border border-border rounded px-2 py-1 text-[11px] text-primary font-mono outline-none focus:border-primary"
+              />
+              {compteSearch === i && (
+                <div className="absolute z-50 top-full left-0 w-72 max-h-48 overflow-auto bg-bg2 border border-border rounded shadow-lg mt-0.5">
+                  {filteredComptes.map(c => (
+                    <button key={c.numero} onClick={() => selectCompte(i, c.numero, c.intitule)} className="w-full text-left px-2 py-1 text-[10px] hover:bg-primary/10 flex gap-2">
+                      <span className="text-primary font-mono font-bold">{c.numero}</span>
+                      <span className="text-fg3 truncate">{c.intitule}</span>
+                    </button>
+                  ))}
+                  {filteredComptes.length === 0 && <div className="px-2 py-1 text-[10px] text-fg3">Aucun compte trouvé</div>}
+                </div>
+              )}
+            </div>
+            <span className="text-[10px] text-fg3 px-2 truncate">{l.intitule || '—'}</span>
+            <input type="number" value={l.debit || ''} onChange={e => updateLigne(i, 'debit', Number(e.target.value) || 0)} placeholder="0" className="w-full bg-bg3 border border-border rounded px-2 py-1 text-[11px] font-mono text-right text-primary outline-none focus:border-primary" />
+            <input type="number" value={l.credit || ''} onChange={e => updateLigne(i, 'credit', Number(e.target.value) || 0)} placeholder="0" className="w-full bg-bg3 border border-border rounded px-2 py-1 text-[11px] font-mono text-right text-success outline-none focus:border-primary" />
+            <button onClick={() => removeLigne(i)} className="text-destructive text-xs text-center" disabled={lignes.length <= 2}>✕</button>
+          </div>
+        ))}
+        {/* Totals */}
+        <div className="grid grid-cols-[1fr_2fr_120px_120px_40px] items-center px-3 py-1.5 bg-bg3 font-bold">
+          <span className="text-[10px] text-fg3 font-mono">TOTAUX</span>
+          <span></span>
+          <span className={`text-[11px] font-mono text-right ${isBalanced ? 'text-success' : 'text-primary'}`}>{fmt(totalDebit)}</span>
+          <span className={`text-[11px] font-mono text-right ${isBalanced ? 'text-success' : 'text-success'}`}>{fmt(totalCredit)}</span>
+          <span></span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <button onClick={addLigne} className="text-[11px] text-primary hover:underline">+ Ajouter une ligne</button>
+        <div className="flex items-center gap-3">
+          {!isBalanced && totalDebit > 0 && (
+            <span className="text-[10px] text-destructive font-mono">
+              Écart: {fmt(Math.abs(totalDebit - totalCredit))}
+            </span>
+          )}
+          <button
+            onClick={handleSubmit}
+            disabled={!isValid || loading}
+            className="px-4 py-1.5 rounded text-[11px] font-bold bg-primary text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-opacity"
+          >
+            {loading ? 'Enregistrement...' : '✓ Enregistrer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function SaisiePage() {
-  const { journal, deleteJournalEntry } = useApp();
+  const { journal, deleteJournalEntry, addJournalEntry, plan, exercice, loading } = useApp();
   const [filter, setFilter] = useState('');
+  const [showForm, setShowForm] = useState(false);
   const rows = journal.filter(r => !filter || r.libelle?.toLowerCase().includes(filter.toLowerCase()) || r.compte?.includes(filter));
+
+  const handleSubmit = async (data: { date: string; piece: string; journal_code: string; libelle: string; lignes: LigneEcriture[] }) => {
+    const lines = data.lignes.map(l => ({
+      id: '',
+      exercice_id: exercice?.id || '',
+      entreprise_id: '',
+      date_ecriture: data.date,
+      piece: data.piece,
+      journal_code: data.journal_code,
+      libelle: data.libelle,
+      compte: l.compte,
+      intitule: l.intitule,
+      debit: l.debit,
+      credit: l.credit,
+    }));
+    await addJournalEntry(lines);
+    setShowForm(false);
+  };
 
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
         <div><div className="font-serif text-[17px]">Saisie d'Écritures</div><div className="text-[10px] text-fg3 font-mono">Toutes les écritures de l'exercice courant</div></div>
+        <button onClick={() => setShowForm(!showForm)} className="px-3 py-1.5 rounded text-[11px] font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
+          {showForm ? '✕ Fermer' : '+ Nouvelle Écriture'}
+        </button>
       </div>
       <div className="p-5">
+        {showForm && <NouvelleEcritureForm onSubmit={handleSubmit} plan={plan} loading={loading} />}
+
         <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
           <div className="px-3.5 py-2.5 border-b border-border flex items-center justify-between gap-2">
             <span className="text-xs font-semibold">{rows.length} écriture(s)</span>
