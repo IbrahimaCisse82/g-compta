@@ -9,6 +9,7 @@ import PlanComptablePage from '@/pages/PlanComptablePage';
 import ExercicesPage from '@/pages/ExercicesPage';
 import ParametresPage from '@/pages/ParametresPage';
 import SaisiePage from '@/pages/SaisiePage';
+import GrandLivrePage from '@/pages/GrandLivrePage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
