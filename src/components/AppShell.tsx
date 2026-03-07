@@ -37,7 +37,7 @@ const PAGES: Record<string, React.ComponentType> = {
   dashboard: Dashboard, journal: JournalPage, balance: BalancePage,
   bilan: BilanPage, resultat: ResultatPage, tft: TFTPage,
   plan: PlanComptablePage, exercices: ExercicesPage, parametres: ParametresPage,
-  saisie: SaisiePage,
+  saisie: SaisiePage, grandlivre: GrandLivrePage,
 };
 
 export default function AppShell() {
