@@ -43,7 +43,7 @@ function DateFilter({ value, onChange, label }: { value: Date | undefined; onCha
 export default function GrandLivrePage() {
   const { journal, balance, exercice } = useApp();
   const [search, setSearch] = useState('');
-  const [journalFilter, setJournalFilter] = useState('');
+  const [journalFilter, setJournalFilter] = useState('__all__');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [openAccounts, setOpenAccounts] = useState<Set<string>>(new Set());
