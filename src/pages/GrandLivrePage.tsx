@@ -57,7 +57,7 @@ export default function GrandLivrePage() {
     return entries;
   }, [journal, journalFilter, dateFrom, dateTo]);
 
-  const hasFilters = journalFilter || dateFrom || dateTo;
+  const hasFilters = (journalFilter && journalFilter !== '__all__') || dateFrom || dateTo;
 
   // Group journal entries by account
   const accounts = useMemo(() => {
