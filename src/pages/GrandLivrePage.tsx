@@ -51,7 +51,7 @@ export default function GrandLivrePage() {
   // Filter journal entries first
   const filteredJournal = useMemo(() => {
     let entries = journal;
-    if (journalFilter) entries = entries.filter(j => j.journal_code === journalFilter);
+    if (journalFilter && journalFilter !== '__all__') entries = entries.filter(j => j.journal_code === journalFilter);
     if (dateFrom) entries = entries.filter(j => j.date_ecriture >= format(dateFrom, 'yyyy-MM-dd'));
     if (dateTo) entries = entries.filter(j => j.date_ecriture <= format(dateTo, 'yyyy-MM-dd'));
     return entries;
