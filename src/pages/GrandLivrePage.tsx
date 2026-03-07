@@ -104,7 +104,7 @@ export default function GrandLivrePage() {
 
   const expandAll = () => setOpenAccounts(new Set(accounts.map(a => a.compte)));
   const collapseAll = () => setOpenAccounts(new Set());
-  const clearFilters = () => { setJournalFilter(''); setDateFrom(undefined); setDateTo(undefined); };
+  const clearFilters = () => { setJournalFilter('__all__'); setDateFrom(undefined); setDateTo(undefined); };
 
   const computeRunning = (acc: typeof accounts[0]) => {
     const sd = acc.balLine?.sd || 0;
