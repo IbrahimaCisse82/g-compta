@@ -9,6 +9,7 @@ import PlanComptablePage from '@/pages/PlanComptablePage';
 import ExercicesPage from '@/pages/ExercicesPage';
 import ParametresPage from '@/pages/ParametresPage';
 import SaisiePage from '@/pages/SaisiePage';
+import GrandLivrePage from '@/pages/GrandLivrePage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -37,7 +38,7 @@ const PAGES: Record<string, React.ComponentType> = {
   dashboard: Dashboard, journal: JournalPage, balance: BalancePage,
   bilan: BilanPage, resultat: ResultatPage, tft: TFTPage,
   plan: PlanComptablePage, exercices: ExercicesPage, parametres: ParametresPage,
-  saisie: SaisiePage,
+  saisie: SaisiePage, grandlivre: GrandLivrePage,
 };
 
 export default function AppShell() {
