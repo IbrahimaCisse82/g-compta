@@ -1,25 +1,49 @@
 import { useApp } from '@/stores/app-store';
-import { computeIndicateurs, fmt, fmtSigned } from '@/lib/accounting';
+import { calc, CR, ACTIF, PASSIF, fmt, fmtSigned, type BalanceLine } from '@/lib/accounting';
 
+/**
+ * Dashboard with proper SYSCOHADA SIG computed from balance aggregation 
+ * (not hardcoded account numbers)
+ */
 export default function Dashboard() {
   const { entreprise, exercice, balance, balanceN1 } = useApp();
-  const I = computeIndicateurs(balance);
-  const IN1 = balanceN1.length > 0 ? computeIndicateurs(balanceN1) : null;
+  
+  // Compute SIG from CR mapping (proper range aggregation)
+  const vCR = calc(balance, CR);
+  const vCRN1 = balanceN1.length > 0 ? calc(balanceN1, CR) : null;
+  
+  // Compute balance sheet totals
+  const vA = calc(balance, ACTIF);
+  const vP = calc(balance, PASSIF);
+
+  // Treasury from balance sheet
+  const tresoActif = vA['T_TA'] || 0;
+  const tresoPassif = vP['T_TP'] || 0;
+  const tresoNette = tresoActif - tresoPassif;
+  const tresoNetteN1 = balanceN1.length > 0 ? ((calc(balanceN1, ACTIF)['T_TA'] || 0) - (calc(balanceN1, PASSIF)['T_TP'] || 0)) : null;
+
+  const ca = vCR['XB'] || 0;
+  const rn = vCR['RN_'] || 0;
+  const ebe = vCR['EBE'] || 0;
 
   const kpis = [
-    { label: "Chiffre d'Affaires (XB)", value: fmt(I.ca), color: 'primary' },
-    { label: 'Résultat Net (XI)', value: fmtSigned(I.resultat), color: I.resultat >= 0 ? 'success' : 'destructive' },
-    { label: 'EBE (XD)', value: fmtSigned(I.ebe), sub: I.ca ? Math.round(I.ebe / I.ca * 100) + '% du CA' : '—', color: 'accent' },
-    { label: 'Trésorerie Nette', value: fmtSigned(I.tresoNette), color: I.tresoNette >= 0 ? 'success' : 'destructive' },
+    { label: "Chiffre d'Affaires (XB)", value: fmt(ca), color: 'primary' },
+    { label: 'Résultat Net (XI)', value: fmtSigned(rn), color: rn >= 0 ? 'success' : 'destructive' },
+    { label: "EBE (XD)", value: fmtSigned(ebe), sub: ca ? Math.round(ebe / ca * 100) + '% du CA' : '—', color: 'accent' },
+    { label: 'Trésorerie Nette', value: fmtSigned(tresoNette), color: tresoNette >= 0 ? 'success' : 'destructive' },
   ];
 
   const sigs = [
-    { ref: 'XB', lib: "Chiffre d'Affaires", n: I.ca, n1: IN1?.ca },
-    { ref: 'XA', lib: 'Marge Commerciale', n: I.marge, n1: IN1?.marge },
-    { ref: 'XC', lib: 'Valeur Ajoutée', n: I.va, n1: IN1?.va },
-    { ref: 'XD', lib: "Excédent Brut d'Expl.", n: I.ebe, n1: IN1?.ebe },
-    { ref: 'XE', lib: "Résultat d'Exploitation", n: I.resultat, n1: IN1?.resultat },
-    { ref: 'ZH', lib: 'Trésorerie Nette', n: I.tresoNette, n1: IN1?.tresoNette },
+    { ref: 'XB', lib: "Chiffre d'Affaires", n: ca, n1: vCRN1?.['XB'] },
+    { ref: 'XA', lib: 'Marge Commerciale', n: vCR['MARGE'] || 0, n1: vCRN1?.['MARGE'] },
+    { ref: 'XC', lib: 'Valeur Ajoutée', n: vCR['VA'] || 0, n1: vCRN1?.['VA'] },
+    { ref: 'XD', lib: "Excédent Brut d'Expl.", n: ebe, n1: vCRN1?.['EBE'] },
+    { ref: 'XE', lib: "Résultat d'Exploitation", n: vCR['RE_E'] || 0, n1: vCRN1?.['RE_E'] },
+    { ref: 'XF', lib: 'Résultat Financier', n: vCR['RE_F'] || 0, n1: vCRN1?.['RE_F'] },
+    { ref: 'XG', lib: 'Résultat Activités Ord.', n: vCR['RAO'] || 0, n1: vCRN1?.['RAO'] },
+    { ref: 'XH', lib: 'Résultat HAO', n: vCR['RE_H'] || 0, n1: vCRN1?.['RE_H'] },
+    { ref: 'XI', lib: 'Résultat Net', n: rn, n1: vCRN1?.['RN_'] },
+    { ref: 'ZH', lib: 'Trésorerie Nette', n: tresoNette, n1: tresoNetteN1 },
   ];
 
   return (
@@ -49,7 +73,7 @@ export default function Dashboard() {
 
         <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
           <div className="px-3.5 py-2.5 border-b border-border">
-            <span className="text-xs font-semibold">Soldes Intermédiaires de Gestion</span>
+            <span className="text-xs font-semibold">Soldes Intermédiaires de Gestion (SIG)</span>
           </div>
           <table className="w-full border-collapse">
             <thead>

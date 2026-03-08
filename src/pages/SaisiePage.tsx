@@ -60,8 +60,6 @@ function NouvelleEcritureForm({ onSubmit, plan, loading }: { onSubmit: (data: { 
   return (
     <div className="bg-bg2 border border-border rounded-lg p-4 mb-4">
       <div className="font-bold text-sm mb-3 text-primary">✏️ Nouvelle Écriture</div>
-
-      {/* Header fields */}
       <div className="grid grid-cols-4 gap-3 mb-4">
         <div>
           <label className="text-[9px] text-fg3 uppercase tracking-wider font-mono block mb-1">Date</label>
@@ -89,7 +87,6 @@ function NouvelleEcritureForm({ onSubmit, plan, loading }: { onSubmit: (data: { 
         </div>
       </div>
 
-      {/* Lines */}
       <div className="border border-border rounded overflow-hidden mb-3">
         <div className="grid grid-cols-[1fr_2fr_120px_120px_40px] bg-bg3 px-3 py-1.5 text-[9px] font-bold text-fg3 uppercase tracking-[0.5px] font-mono border-b border-border">
           <span>Compte</span><span>Intitulé</span><span className="text-right">Débit</span><span className="text-right">Crédit</span><span></span>
@@ -122,7 +119,6 @@ function NouvelleEcritureForm({ onSubmit, plan, loading }: { onSubmit: (data: { 
             <button onClick={() => removeLigne(i)} className="text-destructive text-xs text-center" disabled={lignes.length <= 2}>✕</button>
           </div>
         ))}
-        {/* Totals */}
         <div className="grid grid-cols-[1fr_2fr_120px_120px_40px] items-center px-3 py-1.5 bg-bg3 font-bold">
           <span className="text-[10px] text-fg3 font-mono">TOTAUX</span>
           <span></span>
@@ -154,10 +150,11 @@ function NouvelleEcritureForm({ onSubmit, plan, loading }: { onSubmit: (data: { 
 }
 
 export default function SaisiePage() {
-  const { journal, deleteJournalEntry, addJournalEntry, plan, exercice, loading } = useApp();
+  const { journal, deleteJournalEntry, addJournalEntry, plan, exercice, loading, isExerciceCloture, demo } = useApp();
   const [filter, setFilter] = useState('');
   const [showForm, setShowForm] = useState(false);
   const rows = journal.filter(r => !filter || r.libelle?.toLowerCase().includes(filter.toLowerCase()) || r.compte?.includes(filter));
+  const locked = isExerciceCloture();
 
   const handleSubmit = async (data: { date: string; piece: string; journal_code: string; libelle: string; lignes: LigneEcriture[] }) => {
     const lines = data.lignes.map(l => ({
@@ -180,13 +177,21 @@ export default function SaisiePage() {
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
-        <div><div className="font-serif text-[17px]">Saisie d'Écritures</div><div className="text-[10px] text-fg3 font-mono">Toutes les écritures de l'exercice courant</div></div>
-        <button onClick={() => setShowForm(!showForm)} className="px-3 py-1.5 rounded text-[11px] font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
-          {showForm ? '✕ Fermer' : '+ Nouvelle Écriture'}
-        </button>
+        <div>
+          <div className="font-serif text-[17px]">Saisie d'Écritures</div>
+          <div className="text-[10px] text-fg3 font-mono">
+            {locked && <span className="text-destructive font-bold">🔒 Exercice clôturé — Lecture seule</span>}
+            {!locked && 'Toutes les écritures de l\'exercice courant'}
+          </div>
+        </div>
+        {!locked && !demo && (
+          <button onClick={() => setShowForm(!showForm)} className="px-3 py-1.5 rounded text-[11px] font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
+            {showForm ? '✕ Fermer' : '+ Nouvelle Écriture'}
+          </button>
+        )}
       </div>
       <div className="p-5">
-        {showForm && <NouvelleEcritureForm onSubmit={handleSubmit} plan={plan} loading={loading} />}
+        {showForm && !locked && <NouvelleEcritureForm onSubmit={handleSubmit} plan={plan} loading={loading} />}
 
         <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
           <div className="px-3.5 py-2.5 border-b border-border flex items-center justify-between gap-2">
@@ -195,7 +200,7 @@ export default function SaisiePage() {
           </div>
           <table className="w-full border-collapse">
             <thead><tr>
-              {['Date', 'Pièce', 'Journal', 'Compte', 'Libellé', 'Débit', 'Crédit', ''].map(h => (
+              {['Date', 'Pièce', 'Journal', 'Compte', 'Libellé', 'Débit', 'Crédit', ...(locked ? [] : [''])].map(h => (
                 <th key={h} className="bg-bg3 px-3 py-1.5 text-left text-[9px] font-bold text-fg3 uppercase tracking-[1px] font-mono border-b border-border whitespace-nowrap">{h}</th>
               ))}
             </tr></thead>
@@ -209,7 +214,9 @@ export default function SaisiePage() {
                   <td className="px-3 py-1.5 text-[11px] border-b border-border/50">{r.libelle}</td>
                   <td className="px-3 py-1.5 text-[11px] font-mono text-right text-primary border-b border-border/50">{r.debit ? fmt(r.debit) : ''}</td>
                   <td className="px-3 py-1.5 text-[11px] font-mono text-right text-success border-b border-border/50">{r.credit ? fmt(r.credit) : ''}</td>
-                  <td className="px-3 py-1.5 border-b border-border/50"><button onClick={() => deleteJournalEntry(r.id)} className="text-destructive text-xs">🗑</button></td>
+                  {!locked && (
+                    <td className="px-3 py-1.5 border-b border-border/50"><button onClick={() => deleteJournalEntry(r.id)} className="text-destructive text-xs">🗑</button></td>
+                  )}
                 </tr>
               ))}
             </tbody>
