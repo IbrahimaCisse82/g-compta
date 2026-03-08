@@ -232,10 +232,10 @@ export default function GrandLivrePage() {
                             <TableCell className="text-[10px] font-mono text-muted-foreground" colSpan={4}>
                               ↳ Solde d'ouverture (à-nouveaux)
                             </TableCell>
-                            <TableCell className="text-[10px] text-right font-mono">{fmt(acc.balLine?.sd || 0)}</TableCell>
-                            <TableCell className="text-[10px] text-right font-mono">{fmt(acc.balLine?.sc || 0)}</TableCell>
+                            <TableCell className="text-[10px] text-right font-mono">{fmtGL(acc.balLine?.sd || 0)}</TableCell>
+                            <TableCell className="text-[10px] text-right font-mono">{fmtGL(acc.balLine?.sc || 0)}</TableCell>
                             <TableCell className={`text-[10px] text-right font-mono font-bold ${openingSolde >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                              {fmt(Math.abs(openingSolde))} {openingSolde >= 0 ? 'D' : 'C'}
+                              {fmtGL(Math.abs(openingSolde))} {openingSolde >= 0 ? 'D' : 'C'}
                             </TableCell>
                           </TableRow>
                         ) : null}
