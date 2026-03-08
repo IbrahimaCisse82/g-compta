@@ -493,7 +493,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // ─── CLÔTURE D'EXERCICE ──────────────────────────────
   const clotureExercice = useCallback(async () => {
-
+    if (!exercice || !entreprise) { toast.error('Aucun exercice ou entreprise sélectionné.'); return; }
     setLoading(true);
     try {
       await supabase.from('exercices').update({ statut: 'cloture' }).eq('id', exercice.id);
