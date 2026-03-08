@@ -263,7 +263,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Existing user with entreprises
-      const allEnts = entData.map(mapEntreprise);
+      const allEnts = allEntData.map(mapEntreprise);
       const ent = allEnts[0];
       setEntreprise(ent);
       setEntreprises(allEnts);
