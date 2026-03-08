@@ -5,7 +5,7 @@ import { DEMO_ENTREPRISE, DEMO_EXERCICE, DEMO_LBH_BALANCE, DEMO_LBH_JOURNAL, bui
 import { toast } from 'sonner';
 
 export type EnvMode = 'entreprise' | 'cabinet';
-export type PageId = 'dashboard' | 'clients' | 'journal' | 'balance' | 'grandlivre' | 'bilan' | 'resultat' | 'tft' | 'note34' | 'liasse' | 'rapprochement' | 'saisie' | 'plan' | 'exercices' | 'parametres' | 'balance_agee' | 'audit';
+export type PageId = 'dashboard' | 'clients' | 'cabinet_mgmt' | 'journal' | 'balance' | 'grandlivre' | 'bilan' | 'resultat' | 'tft' | 'note34' | 'liasse' | 'rapprochement' | 'saisie' | 'plan' | 'exercices' | 'parametres' | 'balance_agee' | 'audit';
 
 interface AppState {
   env: EnvMode;
@@ -197,10 +197,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error('Veuillez vous connecter.'); setLoading(false); return; }
 
-      // Fetch user's entreprises
-      const { data: entData } = await supabase.from('entreprises').select('*').eq('user_id', user.id);
+      // Fetch user's entreprises (owned + shared via cabinet)
+      const { data: entData } = await supabase.rpc('get_user_entreprise_ids', { _user_id: user.id });
+      const entIds: string[] = (entData as string[]) || [];
       
-      if (!entData || entData.length === 0) {
+      let allEntData: any[] = [];
+      if (entIds.length > 0) {
+        const { data } = await supabase.from('entreprises').select('*').in('id', entIds);
+        allEntData = data || [];
+      }
+      
+      if (allEntData.length === 0) {
         // Create default entreprise for new user
         const { data: newEnt, error: entErr } = await supabase.from('entreprises').insert({
           nom: 'Mon Entreprise',
@@ -256,7 +263,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Existing user with entreprises
-      const allEnts = entData.map(mapEntreprise);
+      const allEnts = allEntData.map(mapEntreprise);
       const ent = allEnts[0];
       setEntreprise(ent);
       setEntreprises(allEnts);

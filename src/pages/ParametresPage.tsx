@@ -82,7 +82,7 @@ export default function ParametresPage() {
         </div>
 
         {user && (
-          <div className="bg-bg2 border border-border rounded-lg p-4">
+          <div className="bg-bg2 border border-border rounded-lg p-4 mb-4">
             <div className="text-xs font-bold text-primary mb-3">👤 Compte Utilisateur</div>
             <div className="text-[11px] text-fg2 mb-2">Email : <strong className="text-foreground">{user.email}</strong></div>
             <button onClick={signOut} className="px-3 py-1.5 rounded-md text-xs border border-destructive/30 text-destructive hover:bg-destructive/10">
@@ -90,6 +90,15 @@ export default function ParametresPage() {
             </button>
           </div>
         )}
+
+        <div className="bg-bg2 border border-border rounded-lg p-4">
+          <div className="text-xs font-bold text-purple mb-3">🏛️ Multi-tenant</div>
+          <div className="text-[10px] text-fg2 space-y-1">
+            <p>• <strong>Cabinet partagé</strong> — Invitez des collaborateurs via la page Gestion Cabinet</p>
+            <p>• <strong>Rôles</strong> — Admin (accès complet), Comptable (saisie + consultation), Lecteur (consultation seule)</p>
+            <p>• <strong>Isolation</strong> — Chaque utilisateur ne voit que ses entreprises et celles du cabinet</p>
+          </div>
+        </div>
       </div>
     </div>
   );

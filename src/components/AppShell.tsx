@@ -20,10 +20,13 @@ import NotesAnnexesPage from '@/pages/NotesAnnexesPage';
 import AuditTrailPage from '@/pages/AuditTrailPage';
 import LiasseFiscalePage from '@/pages/LiasseFiscalePage';
 
+import CabinetPage from '@/pages/CabinetPage';
+
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
     { id: 'dashboard', icon: '◈', label: 'Tableau de bord', shortcut: 'Alt+D' },
     { id: 'clients', icon: '👥', label: 'Mes Clients', cabinet: true },
+    { id: 'cabinet_mgmt', icon: '🏛️', label: 'Gestion Cabinet', cabinet: true },
   ]},
   { section: 'Comptabilité', items: [
     { id: 'saisie', icon: '✏️', label: "Saisie d'écritures", shortcut: 'Alt+S' },
@@ -57,6 +60,7 @@ const PAGES: Record<string, React.ComponentType> = {
   saisie: SaisiePage, grandlivre: GrandLivrePage,
   balance_agee: BalanceAgeePage, rapprochement: RapprochementPage,
   note34: NotesAnnexesPage, audit: AuditTrailPage, liasse: LiasseFiscalePage,
+  cabinet_mgmt: CabinetPage,
 };
 
 function ClientsPage() {

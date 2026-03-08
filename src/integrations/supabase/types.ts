@@ -74,6 +74,59 @@ export type Database = {
           },
         ]
       }
+      cabinet_members: {
+        Row: {
+          cabinet_id: string
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          cabinet_id: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          cabinet_id?: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cabinet_members_cabinet_id_fkey"
+            columns: ["cabinet_id"]
+            isOneToOne: false
+            referencedRelation: "cabinets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cabinets: {
+        Row: {
+          created_at: string
+          id: string
+          nom: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nom: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nom?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
       entreprises: {
         Row: {
           adresse: string | null
@@ -156,6 +209,44 @@ export type Database = {
             columns: ["entreprise_id"]
             isOneToOne: false
             referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invitations: {
+        Row: {
+          cabinet_id: string
+          created_at: string
+          email: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+        }
+        Insert: {
+          cabinet_id: string
+          created_at?: string
+          email: string
+          id?: string
+          invited_by: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+        }
+        Update: {
+          cabinet_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_cabinet_id_fkey"
+            columns: ["cabinet_id"]
+            isOneToOne: false
+            referencedRelation: "cabinets"
             referencedColumns: ["id"]
           },
         ]
@@ -386,10 +477,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_cabinet_role: {
+        Args: { _cabinet_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       get_user_entreprise_ids: { Args: { _user_id: string }; Returns: string[] }
+      is_cabinet_member: {
+        Args: { _cabinet_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "comptable" | "lecteur"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -516,6 +615,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "comptable", "lecteur"],
+    },
   },
 } as const
