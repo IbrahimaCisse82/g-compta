@@ -1,5 +1,6 @@
 import { useApp } from '@/stores/app-store';
 import { calc, CR, fmt, fmtSigned } from '@/lib/accounting';
+import { exportEtatCsv } from '@/lib/csv-export';
 
 export default function ResultatPage() {
   const { balance, balanceN1, entreprise, exercice } = useApp();
@@ -8,10 +9,18 @@ export default function ResultatPage() {
   const rn = vCR['RN_'] || 0;
   const hasN1 = balanceN1.length > 0;
 
+  const handleExport = () => {
+    const lines = CR.filter(l => l.type !== 'sect').map(l => ({
+      ref: l.id, label: l.label, valN: vCR[l.id] || 0, valN1: hasN1 ? vCRN1[l.id] || 0 : undefined,
+    }));
+    exportEtatCsv(lines, `compte_resultat_${exercice?.annee}`);
+  };
+
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
         <div><div className="font-serif text-[17px]">Compte de Résultat</div><div className="text-[10px] text-fg3 font-mono">{entreprise?.nom} — {exercice?.date_debut} au {exercice?.date_fin}</div></div>
+        <button onClick={handleExport} className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-border text-fg2 hover:bg-bg3">📥 Export CSV</button>
       </div>
       <div className="p-5">
         <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
@@ -22,7 +31,7 @@ export default function ResultatPage() {
           <div className="grid grid-cols-[70px_1fr_50px_140px_140px] text-[9px] font-bold text-fg3 uppercase tracking-[0.5px] font-mono bg-bg3 px-3 py-1.5 border-b border-border">
             <span>Réf.</span><span>Libellés</span><span>Note</span><span className="text-right">Exercice N</span><span className="text-right">N-1</span>
           </div>
-          {CR.map((l, i) => {
+          {CR.map((l) => {
             if (l.type === 'sect') return (
               <div key={l.id} className="px-3 py-1.5 bg-bg3/50 font-bold text-[9px] text-fg3 uppercase tracking-[0.5px] font-mono border-b border-border/30 col-span-5">{l.label}</div>
             );

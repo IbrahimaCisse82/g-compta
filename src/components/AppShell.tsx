@@ -1,5 +1,6 @@
 import { useApp, type PageId } from '@/stores/app-store';
 import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
 import Dashboard from '@/pages/Dashboard';
 import JournalPage from '@/pages/JournalPage';
 import BalancePage from '@/pages/BalancePage';
@@ -18,6 +19,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'clients', icon: '👥', label: 'Mes Clients', cabinet: true },
   ]},
   { section: 'Comptabilité', items: [
+    { id: 'saisie', icon: '✏️', label: "Saisie d'écritures" },
     { id: 'journal', icon: '📋', label: 'Journal' },
     { id: 'balance', icon: '⚖️', label: 'Balance' },
     { id: 'grandlivre', icon: '📖', label: 'Grand Livre' },
@@ -28,7 +30,6 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'tft', icon: '💸', label: 'Flux de Trésorerie' },
   ]},
   { section: 'Paramètres', items: [
-    { id: 'saisie', icon: '✏️', label: "Saisie d'écritures" },
     { id: 'plan', icon: '🗂️', label: 'Plan Comptable' },
     { id: 'exercices', icon: '📅', label: 'Exercices' },
     { id: 'parametres', icon: '⚙️', label: 'Paramètres' },
@@ -42,45 +43,85 @@ const PAGES: Record<string, React.ComponentType> = {
   saisie: SaisiePage, grandlivre: GrandLivrePage,
 };
 
+// Cabinet mode: client list page
+function ClientsPage() {
+  const { entreprises, entreprise, setPage } = useApp();
+  // In cabinet mode we show a list of entreprises with ability to switch
+  return (
+    <div>
+      <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
+        <div className="font-serif text-[17px]">👥 Mes Clients</div>
+      </div>
+      <div className="p-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {entreprises.map(ent => (
+            <div key={ent.id} className={`bg-bg2 border rounded-lg p-4 cursor-pointer hover:border-primary transition-all ${ent.id === entreprise?.id ? 'border-primary bg-primary/5' : 'border-border'}`}
+              onClick={() => setPage('dashboard')}>
+              <div className="font-bold text-sm text-foreground mb-1">{ent.nom}</div>
+              <div className="text-[10px] text-fg3 font-mono">{ent.sigle && `${ent.sigle} · `}{ent.ninea || '—'}</div>
+              <div className="text-[10px] text-fg3">{ent.forme_juridique} · {ent.secteur || '—'}</div>
+              {ent.id === entreprise?.id && <div className="text-[9px] text-primary font-bold mt-2">✓ Sélectionné</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AppShell() {
   const { env, currentPage, setPage, entreprise, exercice, logout, demo, isExerciceCloture } = useApp();
   const { user } = useAuth();
-  const PageComponent = PAGES[currentPage] || Dashboard;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const locked = isExerciceCloture();
+
+  const PageComponent = currentPage === 'clients' ? ClientsPage : (PAGES[currentPage] || Dashboard);
+
+  const handlePageChange = (page: PageId) => {
+    setPage(page);
+    setSidebarOpen(false); // close mobile sidebar
+  };
 
   return (
     <div className="h-screen flex flex-col">
       {/* TOPBAR */}
       <div className="h-[50px] bg-bg2 border-b border-border flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3.5">
+          {/* Mobile hamburger */}
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-fg2 text-lg">☰</button>
           <span className="font-serif text-lg text-primary">G-Compta</span>
-          <div className="flex items-center bg-bg3 border border-border rounded-full overflow-hidden text-[11px]">
+          <div className="hidden sm:flex items-center bg-bg3 border border-border rounded-full overflow-hidden text-[11px]">
             <span className={`px-2.5 py-1 font-bold border-r border-border ${env === 'cabinet' ? 'text-purple' : 'text-accent'}`}>
               {env === 'cabinet' ? '⚖️ Cabinet' : '🏭 Entreprise'}
             </span>
-            <span className="px-2.5 py-1 text-primary font-semibold">{entreprise?.nom || '—'}</span>
+            <span className="px-2.5 py-1 text-primary font-semibold truncate max-w-[150px]">{entreprise?.nom || '—'}</span>
             <span className="px-2 text-fg3 text-[10px]">›</span>
             <span className="px-2.5 py-1 text-accent font-mono font-bold">Ex. {exercice?.annee || '—'}</span>
             {locked && <span className="px-2 py-0.5 text-[9px] text-destructive font-bold">🔒</span>}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {demo && <span className="text-[10px] text-fg3 font-mono px-2 py-0.5 bg-bg3 border border-border rounded-xl">démo</span>}
-          {user && !demo && <span className="text-[10px] text-fg3 font-mono px-2 py-0.5 bg-bg3 border border-border rounded-xl">{user.email}</span>}
-          <button onClick={() => window.print()} className="px-2 py-1 rounded-md text-xs border border-border text-fg2 hover:bg-bg3">🖨</button>
+          {demo && <span className="hidden sm:inline text-[10px] text-fg3 font-mono px-2 py-0.5 bg-bg3 border border-border rounded-xl">démo</span>}
+          {user && !demo && <span className="hidden sm:inline text-[10px] text-fg3 font-mono px-2 py-0.5 bg-bg3 border border-border rounded-xl truncate max-w-[150px]">{user.email}</span>}
+          <button onClick={() => window.print()} className="hidden sm:inline px-2 py-1 rounded-md text-xs border border-border text-fg2 hover:bg-bg3">🖨</button>
           <button onClick={logout} className="px-3 py-1 rounded-md text-xs border border-border text-fg2 hover:bg-bg3">⬅ Quitter</button>
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        )}
+        
         {/* SIDEBAR */}
-        <aside className="w-[225px] bg-bg2 border-r border-border flex flex-col overflow-y-auto shrink-0 sidebar">
+        <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:relative z-50 lg:z-auto w-[225px] h-full bg-bg2 border-r border-border flex flex-col overflow-y-auto shrink-0 sidebar transition-transform duration-200`}>
           <nav className="py-1.5 flex-1">
             {NAV.map(section => (
               <div key={section.section}>
                 <div className="px-3.5 pt-2 pb-0.5 text-[9px] text-fg3 uppercase tracking-[2px] font-mono">{section.section}</div>
                 {section.items.filter(item => !item.cabinet || env === 'cabinet').map(item => (
-                  <button key={item.id} onClick={() => setPage(item.id)}
+                  <button key={item.id} onClick={() => handlePageChange(item.id)}
                     className={`w-full flex items-center gap-2.5 px-3.5 py-1.5 text-xs border-l-2 transition-all ${
                       currentPage === item.id
                         ? 'bg-gradient-to-r from-[rgba(56,189,248,.08)] to-transparent text-primary border-l-primary font-semibold'

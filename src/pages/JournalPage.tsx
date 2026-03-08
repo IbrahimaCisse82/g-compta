@@ -1,5 +1,6 @@
 import { useApp } from '@/stores/app-store';
 import { fmt } from '@/lib/accounting';
+import { exportJournalCsv } from '@/lib/csv-export';
 import { useState } from 'react';
 
 export default function JournalPage() {
@@ -14,6 +15,9 @@ export default function JournalPage() {
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
         <div><div className="font-serif text-[17px]">Journal des Opérations</div><div className="text-[10px] text-fg3 font-mono">Partie double — Débit = Crédit</div></div>
+        <button onClick={() => exportJournalCsv(rows, `journal_${new Date().getFullYear()}`)} className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-border text-fg2 hover:bg-bg3">
+          📥 Export CSV
+        </button>
       </div>
       <div className="p-5">
         <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
@@ -23,7 +27,7 @@ export default function JournalPage() {
           </div>
           <table className="w-full border-collapse">
             <thead><tr>
-              {['Date', 'Pièce', 'Journal', 'Compte', 'Libellé', 'Débit', 'Crédit', ''].map(h => (
+              {['Date', 'Pièce', 'Journal', 'Compte', 'Libellé', 'Débit', 'Crédit', ...(locked ? [] : [''])].map(h => (
                 <th key={h} className="bg-bg3 px-3 py-1.5 text-left text-[9px] font-bold text-fg3 uppercase tracking-[1px] font-mono border-b border-border whitespace-nowrap">{h}</th>
               ))}
             </tr></thead>
@@ -44,7 +48,7 @@ export default function JournalPage() {
                 <td colSpan={5} className="px-3 py-1.5 text-[11px] border-t border-border-2">TOTAUX</td>
                 <td className="px-3 py-1.5 text-[11px] font-mono text-right text-primary border-t border-border-2">{fmt(td)}</td>
                 <td className="px-3 py-1.5 text-[11px] font-mono text-right text-success border-t border-border-2">{fmt(tc)}</td>
-                <td className="border-t border-border-2"></td>
+                {!locked && <td className="border-t border-border-2"></td>}
               </tr>
             </tbody>
           </table>

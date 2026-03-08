@@ -2,8 +2,10 @@ import { useApp } from '@/stores/app-store';
 import { useState } from 'react';
 
 export default function ExercicesPage() {
-  const { exercices, openExercice, deleteExercice, exercice, clotureExercice, loading } = useApp();
+  const { exercices, openExercice, deleteExercice, addExercice, exercice, entreprise, clotureExercice, loading, demo } = useApp();
   const [confirming, setConfirming] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [newAnnee, setNewAnnee] = useState(new Date().getFullYear() + 1);
 
   const handleCloture = async () => {
     if (!confirming) { setConfirming(true); return; }
@@ -11,33 +13,80 @@ export default function ExercicesPage() {
     await clotureExercice();
   };
 
+  const handleAdd = async () => {
+    if (!entreprise) return;
+    await addExercice({
+      entreprise_id: entreprise.id,
+      annee: newAnnee,
+      date_debut: `${newAnnee}-01-01`,
+      date_fin: `${newAnnee}-12-31`,
+      statut: 'en_cours',
+    });
+    setShowForm(false);
+  };
+
   const canCloture = exercice?.statut === 'en_cours';
+  const existingYears = new Set(exercices.map(e => e.annee));
 
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
         <div className="font-serif text-[17px]">Exercices Comptables</div>
-        {canCloture && (
-          <div className="flex items-center gap-2">
-            {confirming && <span className="text-[10px] text-destructive font-semibold animate-pulse">Confirmer la clôture ?</span>}
-            <button
-              onClick={handleCloture}
-              disabled={loading}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${
-                confirming
-                  ? 'bg-destructive text-destructive-foreground border-destructive'
-                  : 'bg-accent/15 text-accent border-accent/30 hover:bg-accent/25'
-              }`}
-            >
-              {loading ? '⏳ Clôture...' : confirming ? '⚠ Oui, clôturer' : `🔒 Clôturer ${exercice.annee}`}
+        <div className="flex items-center gap-2">
+          {!demo && (
+            <button onClick={() => setShowForm(!showForm)} className="px-3 py-1.5 rounded-lg text-[11px] font-bold border border-border text-fg2 hover:bg-bg3">
+              {showForm ? '✕ Fermer' : '+ Nouvel Exercice'}
             </button>
-            {confirming && (
-              <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded text-[10px] border border-border text-fg2">Annuler</button>
-            )}
-          </div>
-        )}
+          )}
+          {canCloture && (
+            <>
+              {confirming && <span className="text-[10px] text-destructive font-semibold animate-pulse">Confirmer la clôture ?</span>}
+              <button
+                onClick={handleCloture}
+                disabled={loading}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${
+                  confirming
+                    ? 'bg-destructive text-destructive-foreground border-destructive'
+                    : 'bg-accent/15 text-accent border-accent/30 hover:bg-accent/25'
+                }`}
+              >
+                {loading ? '⏳ Clôture...' : confirming ? '⚠ Oui, clôturer' : `🔒 Clôturer ${exercice.annee}`}
+              </button>
+              {confirming && (
+                <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded text-[10px] border border-border text-fg2">Annuler</button>
+              )}
+            </>
+          )}
+        </div>
       </div>
       <div className="p-5">
+        {/* New exercice form */}
+        {showForm && (
+          <div className="bg-bg2 border border-border rounded-lg p-4 mb-4">
+            <div className="font-bold text-sm mb-3 text-primary">📅 Nouvel Exercice</div>
+            <div className="flex items-end gap-3">
+              <div>
+                <label className="text-[9px] text-fg3 uppercase tracking-wider font-mono block mb-1">Année</label>
+                <input type="number" value={newAnnee} onChange={e => setNewAnnee(Number(e.target.value))}
+                  className="bg-bg3 border border-border rounded px-2 py-1.5 text-[11px] text-foreground outline-none focus:border-primary w-24 font-mono" />
+              </div>
+              <div>
+                <label className="text-[9px] text-fg3 uppercase tracking-wider font-mono block mb-1">Début</label>
+                <input disabled value={`${newAnnee}-01-01`} className="bg-bg3 border border-border rounded px-2 py-1.5 text-[11px] text-fg3 w-32 font-mono" />
+              </div>
+              <div>
+                <label className="text-[9px] text-fg3 uppercase tracking-wider font-mono block mb-1">Fin</label>
+                <input disabled value={`${newAnnee}-12-31`} className="bg-bg3 border border-border rounded px-2 py-1.5 text-[11px] text-fg3 w-32 font-mono" />
+              </div>
+              <button onClick={handleAdd} disabled={existingYears.has(newAnnee) || loading}
+                className="px-4 py-1.5 rounded text-[11px] font-bold bg-primary text-primary-foreground disabled:opacity-40 hover:opacity-90">
+                ✓ Créer
+              </button>
+              {existingYears.has(newAnnee) && <span className="text-[10px] text-destructive">Exercice {newAnnee} existe déjà</span>}
+            </div>
+          </div>
+        )}
+
         {/* Info box */}
         <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4 text-[11px] text-fg2">
           <strong className="text-primary">Clôture d'exercice :</strong> À la clôture, les soldes des comptes de bilan (classes 1-5) sont reportés en à-nouveaux sur l'exercice suivant. Les comptes de résultat (classes 6-8) sont soldés et le résultat net est affecté au Report à Nouveau (131).
@@ -71,7 +120,7 @@ export default function ExercicesPage() {
                     <button onClick={() => openExercice(e.id)} className="text-[10px] px-2.5 py-1 rounded bg-primary text-primary-foreground font-semibold">
                       {exercice?.id === e.id ? '✓ Ouvert' : 'Ouvrir'}
                     </button>
-                    {e.statut === 'en_cours' && exercice?.id !== e.id && (
+                    {e.statut === 'en_cours' && exercice?.id !== e.id && !demo && (
                       <button onClick={() => deleteExercice(e.id)} className="text-[10px] px-2 py-1 rounded bg-destructive/10 text-destructive">🗑</button>
                     )}
                   </td>
