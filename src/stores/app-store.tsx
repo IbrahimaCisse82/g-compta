@@ -302,7 +302,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setJournal([]);
     setPlan([]);
     setCurrentPage('dashboard');
-    // Don't sign out from Supabase auth (user stays logged in)
+    await supabase.auth.signOut();
   }, []);
 
   // ─── JOURNAL ENTRIES ──────────────────────────────────
