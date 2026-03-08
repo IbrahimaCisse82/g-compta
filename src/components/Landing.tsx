@@ -1,10 +1,16 @@
 import { useApp } from '@/stores/app-store';
+import { useAuth } from '@/hooks/useAuth';
 import type { EnvMode } from '@/stores/app-store';
 import { useState } from 'react';
+import AuthPage from '@/pages/AuthPage';
 
 export default function Landing() {
-  const { launchDemo } = useApp();
+  const { launchDemo, launchUser } = useApp();
+  const { user } = useAuth();
   const [selectedEnv, setSelectedEnv] = useState<EnvMode>('entreprise');
+  const [showAuth, setShowAuth] = useState(false);
+
+  if (showAuth && !user) return <AuthPage />;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8"
@@ -27,20 +33,44 @@ export default function Landing() {
         ))}
       </div>
 
-      <div className="bg-bg2 border border-border rounded-xl p-6 w-full max-w-[400px]">
-        <div className="flex items-center gap-2 rounded-lg p-2 mb-4 text-xs text-accent" style={{ background: 'linear-gradient(90deg, rgba(245,158,11,.15), rgba(251,113,133,.1))', border: '1px solid rgba(245,158,11,.3)' }}>
-          ⚡ Mode démo — données PME 1 (2022) préchargées
+      <div className="flex gap-4 w-full max-w-[760px]">
+        {/* Demo access */}
+        <div className="bg-bg2 border border-border rounded-xl p-6 flex-1">
+          <div className="flex items-center gap-2 rounded-lg p-2 mb-4 text-xs text-accent" style={{ background: 'linear-gradient(90deg, rgba(245,158,11,.15), rgba(251,113,133,.1))', border: '1px solid rgba(245,158,11,.3)' }}>
+            ⚡ Mode démo — données préchargées
+          </div>
+          <div className="font-serif text-lg text-primary text-center mb-4">Accès Démo</div>
+          <p className="text-xs text-fg2 text-center leading-relaxed mb-4">Accès immédiat en lecture. Aucun compte requis.</p>
+          <button onClick={() => launchDemo(selectedEnv)}
+            className="w-full py-2.5 rounded-lg font-semibold text-sm bg-accent text-accent-foreground hover:brightness-110 transition-all">
+            ⚡ Lancer la Démo
+          </button>
         </div>
-        <div className="font-serif text-lg text-primary text-center mb-4">Accès Démo</div>
-        <p className="text-xs text-fg2 text-center leading-relaxed mb-4">Accès immédiat aux données de démonstration. Aucun compte requis.</p>
-        <button onClick={() => launchDemo('entreprise')}
-          className="w-full py-2.5 rounded-lg font-semibold text-sm bg-accent text-accent-foreground mb-2 hover:brightness-110 transition-all">
-          🏭 Démo Entreprise (PME 1)
-        </button>
-        <button onClick={() => launchDemo('cabinet')}
-          className="w-full py-2.5 rounded-lg font-semibold text-sm bg-purple text-purple-foreground hover:brightness-110 transition-all">
-          ⚖️ Démo Cabinet
-        </button>
+
+        {/* User access */}
+        <div className="bg-bg2 border border-border rounded-xl p-6 flex-1">
+          <div className="flex items-center gap-2 rounded-lg p-2 mb-4 text-xs text-success" style={{ background: 'linear-gradient(90deg, rgba(52,211,153,.15), rgba(56,189,248,.1))', border: '1px solid rgba(52,211,153,.3)' }}>
+            🔒 Espace sécurisé — vos données
+          </div>
+          <div className="font-serif text-lg text-primary text-center mb-4">Mon Espace</div>
+          {user ? (
+            <>
+              <p className="text-xs text-fg2 text-center leading-relaxed mb-2">Connecté : <strong className="text-primary">{user.email}</strong></p>
+              <button onClick={() => launchUser(selectedEnv)}
+                className="w-full py-2.5 rounded-lg font-semibold text-sm bg-primary text-primary-foreground hover:brightness-110 transition-all">
+                🚀 Accéder à mon espace
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-fg2 text-center leading-relaxed mb-4">Connectez-vous pour gérer vos propres données comptables.</p>
+              <button onClick={() => setShowAuth(true)}
+                className="w-full py-2.5 rounded-lg font-semibold text-sm bg-primary text-primary-foreground hover:brightness-110 transition-all">
+                Se connecter / S'inscrire
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

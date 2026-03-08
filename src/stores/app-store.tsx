@@ -23,17 +23,19 @@ interface AppState {
   entreprises: Entreprise[];
   setPage: (page: PageId) => void;
   launchDemo: (env: EnvMode) => void;
+  launchUser: (env: EnvMode) => void;
   logout: () => void;
   addJournalEntry: (lines: JournalLine[]) => void;
   deleteJournalEntry: (id: string) => void;
-  addCompte: (c: PlanCompte) => void;
-  deleteCompte: (id: string) => void;
+  addCompte: (c: PlanCompte) => Promise<void>;
+  deleteCompte: (id: string) => Promise<void>;
   toggleCompte: (id: string) => void;
-  addExercice: (e: Exercice) => void;
-  deleteExercice: (id: string) => void;
+  addExercice: (e: Omit<Exercice, 'id'>) => Promise<void>;
+  deleteExercice: (id: string) => Promise<void>;
   openExercice: (id: string) => void;
-  updateEntreprise: (updates: Partial<Entreprise>) => void;
+  updateEntreprise: (updates: Partial<Entreprise>) => Promise<void>;
   clotureExercice: () => Promise<void>;
+  isExerciceCloture: () => boolean;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -99,7 +101,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [plan, setPlan] = useState<PlanCompte[]>([]);
   const [entreprises, setEntreprises] = useState<Entreprise[]>([]);
 
-  // Load N-1 balance for a given exercise
+  const isExerciceCloture = useCallback(() => {
+    return exercice?.statut === 'cloture';
+  }, [exercice]);
+
   const loadBalanceN1 = useCallback(async (exercicesList: Exercice[], currentExercice: Exercice) => {
     const prevExercice = exercicesList
       .filter(e => e.annee < currentExercice.annee)
@@ -112,6 +117,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch { setBalanceN1([]); }
   }, []);
 
+  const loadExerciceData = useCallback(async (excId: string, allExercices: Exercice[], exc: Exercice) => {
+    const [balRes, jourRes] = await Promise.all([
+      supabase.from('balance').select('*').eq('exercice_id', excId),
+      supabase.from('journal').select('*').eq('exercice_id', excId).order('date_ecriture'),
+    ]);
+    if (balRes.data) setBalance(mapBalance(balRes.data));
+    if (jourRes.data) setJournal(mapJournal(jourRes.data));
+    await loadBalanceN1(allExercices, exc);
+  }, [loadBalanceN1]);
+
+  // ─── LAUNCH DEMO ─────────────────────────────────────
   const launchDemo = useCallback(async (envMode: EnvMode) => {
     setEnv(envMode);
     setDemo(true);
@@ -130,10 +146,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (entRes.data && excsRes.data && balRes.data && jourRes.data && planRes.data) {
         const ent = mapEntreprise(entRes.data);
         const allExercices = excsRes.data.map(mapExercice);
-        // Pick the most recent en_cours, or fallback to first
         const currentExc = allExercices.find(e => e.statut === 'en_cours') || allExercices[0];
-        
-        // If current exercice differs from demo default, reload its data
+
         let balData = balRes.data;
         let jourData = jourRes.data;
         if (currentExc && currentExc.id !== DEMO_EXERCICE_ID) {
@@ -152,17 +166,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setJournal(mapJournal(jourData));
         setPlan(mapPlan(planRes.data));
         if (envMode === 'cabinet') setEntreprises([ent]);
-        
-        // Load N-1
         await loadBalanceN1(allExercices, currentExc);
-        
         setLaunched(true);
         setLoading(false);
         return;
       }
-    } catch {
-      // Fallback to local demo data
-    }
+    } catch { /* fallback */ }
 
     setEntreprise(DEMO_ENTREPRISE);
     setExercice(DEMO_EXERCICE);
@@ -176,7 +185,114 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, [loadBalanceN1]);
 
-  const logout = useCallback(() => {
+  // ─── LAUNCH USER (authenticated) ─────────────────────
+  const launchUser = useCallback(async (envMode: EnvMode) => {
+    setEnv(envMode);
+    setDemo(false);
+    setLoading(true);
+    setCurrentPage('dashboard');
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error('Veuillez vous connecter.'); setLoading(false); return; }
+
+      // Fetch user's entreprises
+      const { data: entData } = await supabase.from('entreprises').select('*').eq('user_id', user.id);
+      
+      if (!entData || entData.length === 0) {
+        // Create default entreprise for new user
+        const { data: newEnt, error: entErr } = await supabase.from('entreprises').insert({
+          nom: 'Mon Entreprise',
+          user_id: user.id,
+          monnaie: 'FCFA',
+        }).select().single();
+        
+        if (entErr || !newEnt) { toast.error('Erreur création entreprise'); setLoading(false); return; }
+
+        const ent = mapEntreprise(newEnt);
+        
+        // Create default exercice
+        const year = new Date().getFullYear();
+        const { data: newExc, error: excErr } = await supabase.from('exercices').insert({
+          entreprise_id: ent.id,
+          annee: year,
+          date_debut: `${year}-01-01`,
+          date_fin: `${year}-12-31`,
+          statut: 'en_cours',
+        }).select().single();
+
+        if (excErr || !newExc) { toast.error('Erreur création exercice'); setLoading(false); return; }
+
+        const exc = mapExercice(newExc);
+        
+        // Copy default SYSCOHADA plan comptable
+        const { data: demoPlan } = await supabase.from('plan_comptable').select('*').eq('entreprise_id', DEMO_ENTREPRISE_ID).order('numero');
+        if (demoPlan && demoPlan.length > 0) {
+          const planInserts = demoPlan.map(p => ({
+            entreprise_id: ent.id,
+            numero: p.numero,
+            intitule: p.intitule,
+            classe: p.classe,
+            sens: p.sens,
+            type_compte: p.type_compte,
+            actif: p.actif,
+          }));
+          await supabase.from('plan_comptable').insert(planInserts);
+        }
+
+        const { data: userPlan } = await supabase.from('plan_comptable').select('*').eq('entreprise_id', ent.id).order('numero');
+
+        setEntreprise(ent);
+        setExercice(exc);
+        setExercices([exc]);
+        setBalance([]);
+        setJournal([]);
+        setPlan(userPlan ? mapPlan(userPlan) : []);
+        setEntreprises([ent]);
+        setLaunched(true);
+        setLoading(false);
+        return;
+      }
+
+      // Existing user with entreprises
+      const allEnts = entData.map(mapEntreprise);
+      const ent = allEnts[0];
+      setEntreprise(ent);
+      setEntreprises(allEnts);
+
+      const { data: excsData } = await supabase.from('exercices').select('*').eq('entreprise_id', ent.id).order('annee', { ascending: false });
+      const allExcs = (excsData || []).map(mapExercice);
+      const currentExc = allExcs.find(e => e.statut === 'en_cours') || allExcs[0];
+      
+      if (!currentExc) {
+        const year = new Date().getFullYear();
+        const { data: newExc } = await supabase.from('exercices').insert({
+          entreprise_id: ent.id, annee: year, date_debut: `${year}-01-01`, date_fin: `${year}-12-31`, statut: 'en_cours',
+        }).select().single();
+        if (newExc) {
+          const exc = mapExercice(newExc);
+          setExercice(exc);
+          setExercices([exc]);
+          setBalance([]);
+          setJournal([]);
+        }
+      } else {
+        setExercice(currentExc);
+        setExercices(allExcs);
+        await loadExerciceData(currentExc.id, allExcs, currentExc);
+      }
+
+      const { data: planData } = await supabase.from('plan_comptable').select('*').eq('entreprise_id', ent.id).order('numero');
+      setPlan(planData ? mapPlan(planData) : []);
+
+      setLaunched(true);
+    } catch (err: any) {
+      toast.error('Erreur: ' + (err?.message || 'Inconnue'));
+    }
+    setLoading(false);
+  }, [loadExerciceData]);
+
+  const logout = useCallback(async () => {
     setLaunched(false);
     setDemo(false);
     setEntreprise(null);
@@ -186,31 +302,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setJournal([]);
     setPlan([]);
     setCurrentPage('dashboard');
+    // Don't sign out from Supabase auth (user stays logged in)
   }, []);
 
+  // ─── JOURNAL ENTRIES ──────────────────────────────────
   const addJournalEntry = useCallback(async (lines: JournalLine[]) => {
     if (!exercice || !entreprise) return;
+    if (exercice.statut === 'cloture') { toast.error('Exercice clôturé — écritures verrouillées.'); return; }
 
-    // 1. Persist journal lines to DB
     const inserts = lines.map(l => ({
-      exercice_id: exercice.id,
-      entreprise_id: entreprise.id,
-      date_ecriture: l.date_ecriture,
-      piece: l.piece,
-      journal_code: l.journal_code,
-      libelle: l.libelle,
-      compte: l.compte,
-      intitule: l.intitule,
-      debit: l.debit || 0,
-      credit: l.credit || 0,
+      exercice_id: exercice.id, entreprise_id: entreprise.id,
+      date_ecriture: l.date_ecriture, piece: l.piece, journal_code: l.journal_code,
+      libelle: l.libelle, compte: l.compte, intitule: l.intitule,
+      debit: l.debit || 0, credit: l.credit || 0,
     }));
     const { data: savedLines, error: journalErr } = await supabase.from('journal').insert(inserts).select();
-    if (journalErr) { toast.error('Erreur enregistrement écriture: ' + journalErr.message); return; }
+    if (journalErr) { toast.error('Erreur enregistrement: ' + journalErr.message); return; }
 
     const newLines = mapJournal(savedLines);
     setJournal(prev => [...prev, ...newLines]);
 
-    // 2. Update balance in DB — upsert per account
+    // Update balance
     const balUpdates: Record<string, { debit: number; credit: number; intitule: string }> = {};
     for (const l of newLines) {
       if (!balUpdates[l.compte]) balUpdates[l.compte] = { debit: 0, credit: 0, intitule: l.intitule };
@@ -221,7 +333,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setBalance(prev => {
       const b = [...prev];
       const dbOps: Promise<any>[] = [];
-
       for (const [compte, delta] of Object.entries(balUpdates)) {
         let existing = b.find(x => x.compte === compte);
         if (existing) {
@@ -230,12 +341,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const net = (existing.sd || 0) + existing.md - ((existing.sc || 0) + existing.mc);
           existing.sfd = net > 0 ? net : 0;
           existing.sfc = net < 0 ? -net : 0;
-          dbOps.push(supabase.from('balance').update({ md: existing.md, mc: existing.mc, sfd: existing.sfd, sfc: existing.sfc }).eq('id', existing.id).then() as Promise<any>);
+          dbOps.push(supabase.from('balance').update({ md: existing.md, mc: existing.mc, sfd: existing.sfd, sfc: existing.sfc }).eq('id', existing.id));
         } else {
           const newBal: BalanceLine = {
-            id: `temp-${Date.now()}-${compte}`,
-            exercice_id: exercice.id,
-            entreprise_id: entreprise.id,
+            id: `temp-${Date.now()}-${compte}`, exercice_id: exercice.id, entreprise_id: entreprise.id,
             compte, intitule: delta.intitule,
             sd: 0, sc: 0, md: delta.debit, mc: delta.credit,
             sfd: delta.debit > delta.credit ? delta.debit - delta.credit : 0,
@@ -248,11 +357,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               compte, intitule: delta.intitule,
               sd: 0, sc: 0, md: delta.debit, mc: delta.credit,
               sfd: newBal.sfd, sfc: newBal.sfc,
-            }).select().single().then(({ data }) => { if (data) newBal.id = data.id; }) as Promise<any>
+            }).select().single().then(({ data }) => { if (data) newBal.id = data.id; })
           );
         }
       }
-      Promise.all(dbOps).catch(e => toast.error('Erreur mise à jour balance: ' + e.message));
+      Promise.all(dbOps).catch(e => toast.error('Erreur balance: ' + e.message));
       return b;
     });
 
@@ -260,6 +369,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [exercice, entreprise]);
 
   const deleteJournalEntry = useCallback(async (id: string) => {
+    if (exercice?.statut === 'cloture') { toast.error('Exercice clôturé — suppression impossible.'); return; }
+
     const entry = journal.find(j => j.id === id);
     if (!entry) return;
 
@@ -268,7 +379,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setJournal(prev => prev.filter(j => j.id !== id));
 
-    // Update balance: subtract this entry's amounts
     setBalance(prev => {
       const b = [...prev];
       const existing = b.find(x => x.compte === entry.compte);
@@ -284,108 +394,107 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     toast.success('Écriture supprimée');
-  }, [journal]);
+  }, [journal, exercice]);
 
-  const addCompte = useCallback((c: PlanCompte) => {
-    setPlan(prev => [...prev, c]);
-  }, []);
+  // ─── PLAN COMPTABLE (persisted) ───────────────────────
+  const addCompte = useCallback(async (c: PlanCompte) => {
+    if (!entreprise) return;
+    const { data, error } = await supabase.from('plan_comptable').insert({
+      entreprise_id: entreprise.id, numero: c.numero, intitule: c.intitule,
+      classe: c.classe, sens: c.sens, type_compte: c.type_compte, actif: c.actif,
+    }).select().single();
+    if (error) { toast.error('Erreur ajout compte: ' + error.message); return; }
+    if (data) setPlan(prev => [...prev, mapPlan([data])[0]]);
+    toast.success(`Compte ${c.numero} ajouté`);
+  }, [entreprise]);
 
-  const deleteCompte = useCallback((id: string) => {
+  const deleteCompte = useCallback(async (id: string) => {
+    const { error } = await supabase.from('plan_comptable').delete().eq('id', id);
+    if (error) { toast.error('Erreur suppression compte: ' + error.message); return; }
     setPlan(prev => prev.filter(p => p.id !== id));
+    toast.success('Compte supprimé');
   }, []);
 
   const toggleCompte = useCallback((id: string) => {
     setPlan(prev => prev.map(p => p.id === id ? { ...p, actif: !p.actif } : p));
   }, []);
 
-  const addExercice = useCallback((e: Exercice) => {
-    setExercices(prev => [...prev, e]);
+  // ─── EXERCICES (persisted) ────────────────────────────
+  const addExercice = useCallback(async (e: Omit<Exercice, 'id'>) => {
+    const { data, error } = await supabase.from('exercices').insert({
+      entreprise_id: e.entreprise_id, annee: e.annee,
+      date_debut: e.date_debut, date_fin: e.date_fin, statut: e.statut,
+    }).select().single();
+    if (error) { toast.error('Erreur ajout exercice: ' + error.message); return; }
+    if (data) setExercices(prev => [...prev, mapExercice(data)]);
+    toast.success(`Exercice ${e.annee} créé`);
   }, []);
 
-  const deleteExercice = useCallback((id: string) => {
+  const deleteExercice = useCallback(async (id: string) => {
+    const exc = exercices.find(e => e.id === id);
+    if (exc?.statut === 'cloture') { toast.error('Impossible de supprimer un exercice clôturé.'); return; }
+    const { error } = await supabase.from('exercices').delete().eq('id', id);
+    if (error) { toast.error('Erreur suppression exercice: ' + error.message); return; }
     setExercices(prev => prev.filter(e => e.id !== id));
-  }, []);
+    toast.success('Exercice supprimé');
+  }, [exercices]);
 
   const openExercice = useCallback(async (id: string) => {
-    setExercices(prev => {
-      const e = prev.find(x => x.id === id);
-      if (e) {
-        setExercice(e);
-        // Load balance & journal for this exercice
-        (async () => {
-          setLoading(true);
-          try {
-            const [balRes, jourRes] = await Promise.all([
-              supabase.from('balance').select('*').eq('exercice_id', id),
-              supabase.from('journal').select('*').eq('exercice_id', id).order('date_ecriture'),
-            ]);
-            if (balRes.data) setBalance(mapBalance(balRes.data));
-            if (jourRes.data) setJournal(mapJournal(jourRes.data));
-            // Load N-1
-            await loadBalanceN1(prev, e);
-          } catch { /* keep current data */ }
-          setLoading(false);
-        })();
-      }
-      return prev;
-    });
-  }, [loadBalanceN1]);
+    const e = exercices.find(x => x.id === id);
+    if (!e) return;
+    setExercice(e);
+    setLoading(true);
+    try {
+      await loadExerciceData(id, exercices, e);
+    } catch { /* keep current */ }
+    setLoading(false);
+  }, [exercices, loadExerciceData]);
 
-  const updateEntreprise = useCallback((updates: Partial<Entreprise>) => {
+  // ─── PARAMETRES (persisted) ───────────────────────────
+  const updateEntreprise = useCallback(async (updates: Partial<Entreprise>) => {
+    if (!entreprise) return;
     setEntreprise(prev => prev ? { ...prev, ...updates } : prev);
-  }, []);
+    const { error } = await supabase.from('entreprises').update(updates).eq('id', entreprise.id);
+    if (error) toast.error('Erreur sauvegarde: ' + error.message);
+  }, [entreprise]);
 
   // ─── CLÔTURE D'EXERCICE ──────────────────────────────
   const clotureExercice = useCallback(async () => {
     if (!exercice || !entreprise) return;
-    
+
     setLoading(true);
     try {
-      // 1. Mark current exercice as clôturé
       await supabase.from('exercices').update({ statut: 'cloture' }).eq('id', exercice.id);
 
-      // 2. Create new exercice N+1
       const newAnnee = exercice.annee + 1;
       const newDebut = `${newAnnee}-01-01`;
       const newFin = `${newAnnee}-12-31`;
       const { data: newExcData, error: excErr } = await supabase.from('exercices').insert({
-        entreprise_id: entreprise.id,
-        annee: newAnnee,
-        date_debut: newDebut,
-        date_fin: newFin,
-        statut: 'en_cours',
+        entreprise_id: entreprise.id, annee: newAnnee,
+        date_debut: newDebut, date_fin: newFin, statut: 'en_cours',
       }).select().single();
       if (excErr || !newExcData) throw excErr || new Error('Erreur création exercice');
 
       const newExercice = mapExercice(newExcData);
 
-      // 3. Generate à-nouveaux: carry forward bilan accounts (classes 1-5)
-      // Résultat accounts (6-8) are zeroed out
-      // Net result goes to Report à Nouveau (131/139)
       const bilanAccounts = balance.filter(b => /^[1-5]/.test(b.compte));
       const resultatNet = balance
         .filter(b => /^[6-8]/.test(b.compte))
         .reduce((sum, b) => sum + ((b.sfc || 0) - (b.sfd || 0)), 0);
 
       const aNouveaux: any[] = [];
-
       for (const b of bilanAccounts) {
         const soldeNet = (b.sfd || 0) - (b.sfc || 0);
         if (Math.abs(soldeNet) < 0.01) continue;
         aNouveaux.push({
-          exercice_id: newExercice.id,
-          entreprise_id: entreprise.id,
-          compte: b.compte,
-          intitule: b.intitule,
-          sd: soldeNet > 0 ? soldeNet : 0,
-          sc: soldeNet < 0 ? -soldeNet : 0,
+          exercice_id: newExercice.id, entreprise_id: entreprise.id,
+          compte: b.compte, intitule: b.intitule,
+          sd: soldeNet > 0 ? soldeNet : 0, sc: soldeNet < 0 ? -soldeNet : 0,
           md: 0, mc: 0,
-          sfd: soldeNet > 0 ? soldeNet : 0,
-          sfc: soldeNet < 0 ? -soldeNet : 0,
+          sfd: soldeNet > 0 ? soldeNet : 0, sfc: soldeNet < 0 ? -soldeNet : 0,
         });
       }
 
-      // Post résultat net to Report à Nouveau (compte 131)
       if (Math.abs(resultatNet) > 0.01) {
         const existingRAN = aNouveaux.find(a => a.compte === '131000');
         if (existingRAN) {
@@ -396,54 +505,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           existingRAN.sfc = existingRAN.sc;
         } else {
           aNouveaux.push({
-            exercice_id: newExercice.id,
-            entreprise_id: entreprise.id,
-            compte: '131000',
-            intitule: 'Report à nouveau',
-            sd: resultatNet < 0 ? -resultatNet : 0,
-            sc: resultatNet > 0 ? resultatNet : 0,
+            exercice_id: newExercice.id, entreprise_id: entreprise.id,
+            compte: '131000', intitule: 'Report à nouveau',
+            sd: resultatNet < 0 ? -resultatNet : 0, sc: resultatNet > 0 ? resultatNet : 0,
             md: 0, mc: 0,
-            sfd: resultatNet < 0 ? -resultatNet : 0,
-            sfc: resultatNet > 0 ? resultatNet : 0,
+            sfd: resultatNet < 0 ? -resultatNet : 0, sfc: resultatNet > 0 ? resultatNet : 0,
           });
         }
       }
 
-      // 4. Insert à-nouveaux balance into DB
       if (aNouveaux.length > 0) {
         const { error: balErr } = await supabase.from('balance').insert(aNouveaux);
         if (balErr) throw balErr;
       }
 
-      // 5. Generate à-nouveaux journal entries
       const aNouveauxJournal: any[] = [];
       for (const an of aNouveaux) {
         if (an.sd > 0) {
           aNouveauxJournal.push({
-            exercice_id: newExercice.id,
-            entreprise_id: entreprise.id,
-            date_ecriture: newDebut,
-            piece: 'AN',
-            journal_code: 'AN',
-            libelle: 'À-nouveau',
-            compte: an.compte,
-            intitule: an.intitule,
-            debit: an.sd,
-            credit: 0,
+            exercice_id: newExercice.id, entreprise_id: entreprise.id,
+            date_ecriture: newDebut, piece: 'AN', journal_code: 'AN',
+            libelle: 'À-nouveau', compte: an.compte, intitule: an.intitule,
+            debit: an.sd, credit: 0,
           });
         }
         if (an.sc > 0) {
           aNouveauxJournal.push({
-            exercice_id: newExercice.id,
-            entreprise_id: entreprise.id,
-            date_ecriture: newDebut,
-            piece: 'AN',
-            journal_code: 'AN',
-            libelle: 'À-nouveau',
-            compte: an.compte,
-            intitule: an.intitule,
-            debit: 0,
-            credit: an.sc,
+            exercice_id: newExercice.id, entreprise_id: entreprise.id,
+            date_ecriture: newDebut, piece: 'AN', journal_code: 'AN',
+            libelle: 'À-nouveau', compte: an.compte, intitule: an.intitule,
+            debit: 0, credit: an.sc,
           });
         }
       }
@@ -451,24 +542,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         await supabase.from('journal').insert(aNouveauxJournal);
       }
 
-      // 6. Update local state
       const updatedCurrent = { ...exercice, statut: 'cloture' as const };
       setExercices(prev => {
         const updated = prev.map(e => e.id === exercice.id ? updatedCurrent : e);
         return [...updated, newExercice];
       });
-      
-      // Save current balance as N-1 before switching
+
       setBalanceN1(balance);
-      
-      // Switch to new exercice
       setExercice(newExercice);
       setBalance(mapBalance(aNouveaux.map((a, i) => ({ ...a, id: `an-${i}` }))));
       setJournal(mapJournal(aNouveauxJournal.map((j, i) => ({ ...j, id: `anj-${i}` }))));
 
-      toast.success(`Exercice ${exercice.annee} clôturé. Exercice ${newAnnee} créé avec les à-nouveaux.`);
+      toast.success(`Exercice ${exercice.annee} clôturé. Exercice ${newAnnee} créé.`);
     } catch (err: any) {
-      toast.error('Erreur lors de la clôture: ' + (err?.message || 'Erreur inconnue'));
+      toast.error('Erreur clôture: ' + (err?.message || 'Erreur inconnue'));
     }
     setLoading(false);
   }, [exercice, entreprise, balance]);
@@ -477,10 +564,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{
       env, demo, launched, loading, currentPage, entreprise, exercice, exercices,
       balance, balanceN1, journal, plan, entreprises,
-      setPage: setCurrentPage, launchDemo, logout, addJournalEntry,
+      setPage: setCurrentPage, launchDemo, launchUser, logout, addJournalEntry,
       deleteJournalEntry, addCompte, deleteCompte, toggleCompte,
       addExercice, deleteExercice, openExercice, updateEntreprise,
-      clotureExercice,
+      clotureExercice, isExerciceCloture,
     }}>
       {children}
     </AppContext.Provider>

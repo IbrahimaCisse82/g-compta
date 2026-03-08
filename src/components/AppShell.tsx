@@ -1,4 +1,5 @@
 import { useApp, type PageId } from '@/stores/app-store';
+import { useAuth } from '@/hooks/useAuth';
 import Dashboard from '@/pages/Dashboard';
 import JournalPage from '@/pages/JournalPage';
 import BalancePage from '@/pages/BalancePage';
@@ -42,8 +43,10 @@ const PAGES: Record<string, React.ComponentType> = {
 };
 
 export default function AppShell() {
-  const { env, currentPage, setPage, entreprise, exercice, logout } = useApp();
+  const { env, currentPage, setPage, entreprise, exercice, logout, demo, isExerciceCloture } = useApp();
+  const { user } = useAuth();
   const PageComponent = PAGES[currentPage] || Dashboard;
+  const locked = isExerciceCloture();
 
   return (
     <div className="h-screen flex flex-col">
@@ -58,10 +61,12 @@ export default function AppShell() {
             <span className="px-2.5 py-1 text-primary font-semibold">{entreprise?.nom || '—'}</span>
             <span className="px-2 text-fg3 text-[10px]">›</span>
             <span className="px-2.5 py-1 text-accent font-mono font-bold">Ex. {exercice?.annee || '—'}</span>
+            {locked && <span className="px-2 py-0.5 text-[9px] text-destructive font-bold">🔒</span>}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-fg3 font-mono px-2 py-0.5 bg-bg3 border border-border rounded-xl">démo</span>
+          {demo && <span className="text-[10px] text-fg3 font-mono px-2 py-0.5 bg-bg3 border border-border rounded-xl">démo</span>}
+          {user && !demo && <span className="text-[10px] text-fg3 font-mono px-2 py-0.5 bg-bg3 border border-border rounded-xl">{user.email}</span>}
           <button onClick={() => window.print()} className="px-2 py-1 rounded-md text-xs border border-border text-fg2 hover:bg-bg3">🖨</button>
           <button onClick={logout} className="px-3 py-1 rounded-md text-xs border border-border text-fg2 hover:bg-bg3">⬅ Quitter</button>
         </div>
@@ -89,8 +94,8 @@ export default function AppShell() {
             ))}
           </nav>
           <div className="p-2.5 border-t border-border">
-            <div className="bg-accent text-accent-foreground px-2.5 py-1 rounded-2xl text-[10px] font-extrabold font-mono text-center">
-              Exercice {exercice?.annee || '—'}
+            <div className={`px-2.5 py-1 rounded-2xl text-[10px] font-extrabold font-mono text-center ${locked ? 'bg-destructive/10 text-destructive' : 'bg-accent text-accent-foreground'}`}>
+              {locked ? '🔒 ' : ''}Exercice {exercice?.annee || '—'}{locked ? ' (Clôturé)' : ''}
             </div>
           </div>
         </aside>
