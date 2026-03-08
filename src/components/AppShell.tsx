@@ -1,6 +1,8 @@
 import { useApp, type PageId } from '@/stores/app-store';
 import { useAuth } from '@/hooks/useAuth';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useTheme } from '@/hooks/use-theme';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import Dashboard from '@/pages/Dashboard';
 import JournalPage from '@/pages/JournalPage';
 import BalancePage from '@/pages/BalancePage';
@@ -18,21 +20,21 @@ import NotesAnnexesPage from '@/pages/NotesAnnexesPage';
 import AuditTrailPage from '@/pages/AuditTrailPage';
 import LiasseFiscalePage from '@/pages/LiasseFiscalePage';
 
-const NAV: { section: string; items: { id: PageId; icon: string; label: string; cabinet?: boolean }[] }[] = [
+const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
-    { id: 'dashboard', icon: '◈', label: 'Tableau de bord' },
+    { id: 'dashboard', icon: '◈', label: 'Tableau de bord', shortcut: 'Alt+D' },
     { id: 'clients', icon: '👥', label: 'Mes Clients', cabinet: true },
   ]},
   { section: 'Comptabilité', items: [
-    { id: 'saisie', icon: '✏️', label: "Saisie d'écritures" },
-    { id: 'journal', icon: '📋', label: 'Journal' },
-    { id: 'balance', icon: '⚖️', label: 'Balance' },
-    { id: 'grandlivre', icon: '📖', label: 'Grand Livre' },
+    { id: 'saisie', icon: '✏️', label: "Saisie d'écritures", shortcut: 'Alt+S' },
+    { id: 'journal', icon: '📋', label: 'Journal', shortcut: 'Alt+J' },
+    { id: 'balance', icon: '⚖️', label: 'Balance', shortcut: 'Alt+B' },
+    { id: 'grandlivre', icon: '📖', label: 'Grand Livre', shortcut: 'Alt+G' },
     { id: 'rapprochement', icon: '🏦', label: 'Rapprochement' },
   ]},
   { section: 'États Financiers', items: [
-    { id: 'bilan', icon: '🏛️', label: 'Bilan' },
-    { id: 'resultat', icon: '📊', label: 'Compte de Résultat' },
+    { id: 'bilan', icon: '🏛️', label: 'Bilan', shortcut: 'Alt+I' },
+    { id: 'resultat', icon: '📊', label: 'Compte de Résultat', shortcut: 'Alt+R' },
     { id: 'tft', icon: '💸', label: 'Flux de Trésorerie' },
     { id: 'note34', icon: '📝', label: 'Notes Annexes' },
     { id: 'liasse', icon: '📦', label: 'Liasse Fiscale DSF' },
@@ -42,8 +44,8 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'audit', icon: '🔍', label: "Piste d'Audit" },
   ]},
   { section: 'Paramètres', items: [
-    { id: 'plan', icon: '🗂️', label: 'Plan Comptable' },
-    { id: 'exercices', icon: '📅', label: 'Exercices' },
+    { id: 'plan', icon: '🗂️', label: 'Plan Comptable', shortcut: 'Alt+P' },
+    { id: 'exercices', icon: '📅', label: 'Exercices', shortcut: 'Alt+E' },
     { id: 'parametres', icon: '⚙️', label: 'Paramètres' },
   ]},
 ];
@@ -57,7 +59,6 @@ const PAGES: Record<string, React.ComponentType> = {
   note34: NotesAnnexesPage, audit: AuditTrailPage, liasse: LiasseFiscalePage,
 };
 
-// Cabinet mode: client list page with real switching
 function ClientsPage() {
   const { entreprises, entreprise, switchEntreprise, loading } = useApp();
   return (
@@ -84,11 +85,63 @@ function ClientsPage() {
   );
 }
 
+function ShortcutsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  if (!open) return null;
+  const shortcuts = [
+    { keys: 'Alt+D', action: 'Tableau de bord' },
+    { keys: 'Alt+S', action: "Saisie d'écritures" },
+    { keys: 'Alt+J', action: 'Journal' },
+    { keys: 'Alt+B', action: 'Balance' },
+    { keys: 'Alt+G', action: 'Grand Livre' },
+    { keys: 'Alt+I', action: 'Bilan' },
+    { keys: 'Alt+R', action: 'Compte de Résultat' },
+    { keys: 'Alt+P', action: 'Plan Comptable' },
+    { keys: 'Alt+E', action: 'Exercices' },
+    { keys: 'Alt+T', action: 'Basculer thème' },
+    { keys: 'Alt+M', action: 'Menu latéral' },
+    { keys: 'Alt+?', action: 'Aide raccourcis' },
+  ];
+  return (
+    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center" onClick={onClose}>
+      <div className="bg-bg2 border border-border rounded-xl p-5 w-[360px] max-h-[80vh] overflow-y-auto shadow-lg" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-serif text-base text-foreground">⌨️ Raccourcis clavier</h3>
+          <button onClick={onClose} className="text-fg3 hover:text-foreground text-sm">✕</button>
+        </div>
+        <div className="space-y-1">
+          {shortcuts.map(s => (
+            <div key={s.keys} className="flex items-center justify-between py-1.5 border-b border-border/30">
+              <span className="text-xs text-fg2">{s.action}</span>
+              <kbd className="px-2 py-0.5 bg-bg3 border border-border rounded text-[10px] font-mono text-primary font-bold">{s.keys}</kbd>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AppShell() {
   const { env, currentPage, setPage, entreprise, exercice, logout, demo, isExerciceCloture } = useApp();
   const { user } = useAuth();
+  const { resolved, toggle } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const locked = isExerciceCloture();
+
+  const toggleSidebar = useCallback(() => setSidebarOpen(o => !o), []);
+
+  useKeyboardShortcuts({
+    setPage: (page: PageId) => { setPage(page); setSidebarOpen(false); },
+    toggleTheme: toggle,
+    toggleSidebar,
+  });
+
+  useEffect(() => {
+    const handler = () => setShowShortcuts(true);
+    window.addEventListener('show-shortcuts', handler);
+    return () => window.removeEventListener('show-shortcuts', handler);
+  }, []);
 
   const PageComponent = currentPage === 'clients' ? ClientsPage : (PAGES[currentPage] || Dashboard);
 
@@ -99,10 +152,12 @@ export default function AppShell() {
 
   return (
     <div className="h-screen flex flex-col">
+      <ShortcutsModal open={showShortcuts} onClose={() => setShowShortcuts(false)} />
+
       {/* TOPBAR */}
       <div className="h-[50px] bg-bg2 border-b border-border flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3.5">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-fg2 text-lg">☰</button>
+          <button onClick={toggleSidebar} className="lg:hidden text-fg2 text-lg">☰</button>
           <span className="font-serif text-lg text-primary">G-Compta</span>
           <div className="hidden sm:flex items-center bg-bg3 border border-border rounded-full overflow-hidden text-[11px]">
             <span className={`px-2.5 py-1 font-bold border-r border-border ${env === 'cabinet' ? 'text-purple' : 'text-accent'}`}>
@@ -115,6 +170,14 @@ export default function AppShell() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Theme toggle */}
+          <button onClick={toggle} title="Alt+T : Basculer thème"
+            className="px-2 py-1 rounded-md text-xs border border-border text-fg2 hover:bg-bg3 transition-colors">
+            {resolved === 'dark' ? '☀️' : '🌙'}
+          </button>
+          {/* Shortcuts help */}
+          <button onClick={() => setShowShortcuts(true)} title="Alt+? : Raccourcis"
+            className="hidden sm:inline px-2 py-1 rounded-md text-xs border border-border text-fg2 hover:bg-bg3">⌨️</button>
           {demo && <span className="hidden sm:inline text-[10px] text-fg3 font-mono px-2 py-0.5 bg-bg3 border border-border rounded-xl">démo</span>}
           {user && !demo && <span className="hidden sm:inline text-[10px] text-fg3 font-mono px-2 py-0.5 bg-bg3 border border-border rounded-xl truncate max-w-[150px]">{user.email}</span>}
           <button onClick={() => window.print()} className="hidden sm:inline px-2 py-1 rounded-md text-xs border border-border text-fg2 hover:bg-bg3">🖨</button>
@@ -134,13 +197,17 @@ export default function AppShell() {
                 <div className="px-3.5 pt-2 pb-0.5 text-[9px] text-fg3 uppercase tracking-[2px] font-mono">{section.section}</div>
                 {section.items.filter(item => !item.cabinet || env === 'cabinet').map(item => (
                   <button key={item.id} onClick={() => handlePageChange(item.id)}
-                    className={`w-full flex items-center gap-2.5 px-3.5 py-1.5 text-xs border-l-2 transition-all ${
+                    title={item.shortcut || undefined}
+                    className={`w-full flex items-center gap-2.5 px-3.5 py-1.5 text-xs border-l-2 transition-all group ${
                       currentPage === item.id
-                        ? 'bg-gradient-to-r from-[rgba(56,189,248,.08)] to-transparent text-primary border-l-primary font-semibold'
+                        ? 'bg-gradient-to-r from-primary/10 to-transparent text-primary border-l-primary font-semibold'
                         : 'text-fg2 border-l-transparent hover:bg-bg3 hover:text-foreground hover:border-l-border-2'
                     }`}>
                     <span className="text-[13px] w-4 text-center">{item.icon}</span>
-                    {item.label}
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {item.shortcut && (
+                      <span className="hidden group-hover:inline text-[8px] text-fg3 font-mono">{item.shortcut}</span>
+                    )}
                   </button>
                 ))}
               </div>
