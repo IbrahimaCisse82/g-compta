@@ -103,7 +103,13 @@
 }
 
 @media print {
-  .sidebar, .topbar, .no-print { display: none !important; }
-  @page { size: A4 portrait; margin: 14mm 12mm; }
-  html, body { background: #fff !important; color: #000 !important; font-size: 9pt !important; }
+  .sidebar, aside, .no-print, button, input { display: none !important; }
+  @page { size: A4 landscape; margin: 10mm 8mm; }
+  html, body { background: #fff !important; color: #000 !important; font-size: 8pt !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bg-bg2, .bg-bg3, .bg-bg4 { background: #fff !important; }
+  .border-border, .border-border\/30 { border-color: #ddd !important; }
+  .text-primary, .text-accent, .text-success, .text-fg2, .text-fg3 { color: #333 !important; }
+  .text-destructive { color: #c00 !important; }
+  main { overflow: visible !important; }
+  h1, .font-serif { color: #000 !important; }
 }
