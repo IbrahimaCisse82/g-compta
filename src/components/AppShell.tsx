@@ -20,6 +20,8 @@ import NotesAnnexesPage from '@/pages/NotesAnnexesPage';
 import AuditTrailPage from '@/pages/AuditTrailPage';
 import LiasseFiscalePage from '@/pages/LiasseFiscalePage';
 
+import CabinetPage from '@/pages/CabinetPage';
+
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
     { id: 'dashboard', icon: '◈', label: 'Tableau de bord', shortcut: 'Alt+D' },
