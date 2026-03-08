@@ -259,7 +259,7 @@ export const CR: MapLine[] = [
   { id: 'TH', label: 'Reprises amort. & provisions expl. T', c: [['791', '795']], s: 'C', m: 'n' },
   { id: 'TI', label: 'Transferts de charges expl. U', c: [['781', '781']], s: 'C', m: 'n' },
   { id: 'RL', label: '(−) Dotations amort. expl. V', c: [['681', '681']], s: 'D', m: 'n' },
-  { id: 'RM', label: '(−) Dotations provisions expl. W', c: [['691', '694']], s: 'D', m: 'n' },
+  { id: 'RM', label: '(−) Dotations provisions expl. W', c: [['691', '693']], s: 'D', m: 'n' },
   { id: 'RN', label: '(−) Autres charges expl. X', c: [['65', '659']], s: 'D', m: 'n' },
   { id: 'RE_E', label: "RÉSULTAT D'EXPLOITATION", type: 'gtotal', f: v => v.EBE + v.TH + v.TI - v.RL - v.RM - v.RN },
   { id: 'TJ', label: 'Revenus financiers Y', c: [['77', '779']], s: 'C', m: 'n' },
@@ -275,7 +275,7 @@ export const CR: MapLine[] = [
   { id: 'RS', label: '(−) VCN immo. cédées AG', c: [['81', '819']], s: 'D', m: 'n' },
   { id: 'RE_H', label: 'RÉSULTAT HAO', type: 'gtotal', f: v => v.TL + v.TM - v.RQ - v.RS },
   { id: 'RU', label: '(−) Participation travailleurs AH', c: [['664', '664']], s: 'D', m: 'n' },
-  { id: 'RV', label: '(−) Impôts sur le résultat AI', c: [['89', '899']], s: 'D', m: 'n' },
+  { id: 'RV', label: '(−) Impôts sur le résultat AI', c: [['89', '899'], ['694', '699']], s: 'D', m: 'n' },
   { id: 'RN_', label: "RÉSULTAT NET DE L'EXERCICE", type: 'gtotal', f: v => v.RAO + v.RE_H - v.RU - v.RV },
 ];
 

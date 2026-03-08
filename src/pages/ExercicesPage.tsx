@@ -89,7 +89,7 @@ export default function ExercicesPage() {
 
         {/* Info box */}
         <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4 text-[11px] text-fg2">
-          <strong className="text-primary">Clôture d'exercice :</strong> À la clôture, les soldes des comptes de bilan (classes 1-5) sont reportés en à-nouveaux sur l'exercice suivant. Les comptes de résultat (classes 6-8) sont soldés et le résultat net est affecté au Report à Nouveau (131).
+          <strong className="text-primary">Clôture d'exercice :</strong> À la clôture, les soldes des comptes de bilan (classes 1-5) sont reportés en à-nouveaux sur l'exercice suivant. Les comptes de résultat (classes 6-8) sont soldés et le résultat net est affecté au Report à Nouveau (121 créditeur / 129 débiteur).
         </div>
 
         <div className="bg-bg2 border border-border rounded-lg overflow-hidden">

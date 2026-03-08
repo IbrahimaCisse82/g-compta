@@ -13,7 +13,7 @@ import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { exportCsv } from '@/lib/csv-export';
 
-const fmt = (n: number) => n ? n.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '';
+const fmtGL = (n: number) => n ? n.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '';
 
 const JOURNALS = [
   { code: '', label: 'Tous les journaux' },
@@ -178,8 +178,8 @@ export default function GrandLivrePage() {
       </div>
 
       <div className="flex gap-4 text-xs font-mono">
-        <span className="px-3 py-1.5 bg-muted rounded">Total Débit: <strong className="text-primary">{fmt(totalDebit)}</strong></span>
-        <span className="px-3 py-1.5 bg-muted rounded">Total Crédit: <strong className="text-primary">{fmt(totalCredit)}</strong></span>
+        <span className="px-3 py-1.5 bg-muted rounded">Total Débit: <strong className="text-primary">{fmtGL(totalDebit)}</strong></span>
+        <span className="px-3 py-1.5 bg-muted rounded">Total Crédit: <strong className="text-primary">{fmtGL(totalCredit)}</strong></span>
       </div>
 
       <ScrollArea className="h-[calc(100vh-260px)]">
@@ -203,10 +203,10 @@ export default function GrandLivrePage() {
                       <span className="text-[10px] text-muted-foreground">({acc.entries.length} mvt{acc.entries.length > 1 ? 's' : ''})</span>
                     </div>
                     <div className="flex items-center gap-4 font-mono text-[11px]">
-                      <span>D: {fmt(totalD)}</span>
-                      <span>C: {fmt(totalC)}</span>
+                      <span>D: {fmtGL(totalD)}</span>
+                      <span>C: {fmtGL(totalC)}</span>
                       <span className={`font-bold ${closingSolde >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                        Solde: {fmt(Math.abs(closingSolde))} {closingSolde >= 0 ? 'D' : 'C'}
+                        Solde: {fmtGL(Math.abs(closingSolde))} {closingSolde >= 0 ? 'D' : 'C'}
                       </span>
                     </div>
                   </button>
@@ -232,10 +232,10 @@ export default function GrandLivrePage() {
                             <TableCell className="text-[10px] font-mono text-muted-foreground" colSpan={4}>
                               ↳ Solde d'ouverture (à-nouveaux)
                             </TableCell>
-                            <TableCell className="text-[10px] text-right font-mono">{fmt(acc.balLine?.sd || 0)}</TableCell>
-                            <TableCell className="text-[10px] text-right font-mono">{fmt(acc.balLine?.sc || 0)}</TableCell>
+                            <TableCell className="text-[10px] text-right font-mono">{fmtGL(acc.balLine?.sd || 0)}</TableCell>
+                            <TableCell className="text-[10px] text-right font-mono">{fmtGL(acc.balLine?.sc || 0)}</TableCell>
                             <TableCell className={`text-[10px] text-right font-mono font-bold ${openingSolde >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                              {fmt(Math.abs(openingSolde))} {openingSolde >= 0 ? 'D' : 'C'}
+                              {fmtGL(Math.abs(openingSolde))} {openingSolde >= 0 ? 'D' : 'C'}
                             </TableCell>
                           </TableRow>
                         ) : null}
@@ -246,20 +246,20 @@ export default function GrandLivrePage() {
                             <TableCell className="text-[10px] font-mono">{entry.piece}</TableCell>
                             <TableCell className="text-[10px] font-mono">{entry.journal_code}</TableCell>
                             <TableCell className="text-[10px]">{entry.libelle}</TableCell>
-                            <TableCell className="text-[10px] text-right font-mono">{fmt(entry.debit)}</TableCell>
-                            <TableCell className="text-[10px] text-right font-mono">{fmt(entry.credit)}</TableCell>
+                            <TableCell className="text-[10px] text-right font-mono">{fmtGL(entry.debit)}</TableCell>
+                            <TableCell className="text-[10px] text-right font-mono">{fmtGL(entry.credit)}</TableCell>
                             <TableCell className={`text-[10px] text-right font-mono font-bold ${solde >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                              {fmt(Math.abs(solde))} {solde >= 0 ? 'D' : 'C'}
+                              {fmtGL(Math.abs(solde))} {solde >= 0 ? 'D' : 'C'}
                             </TableCell>
                           </TableRow>
                         ))}
 
                         <TableRow className="bg-muted/40 font-bold">
                           <TableCell className="text-[10px]" colSpan={4}>Totaux</TableCell>
-                          <TableCell className="text-[10px] text-right font-mono">{fmt(totalD)}</TableCell>
-                          <TableCell className="text-[10px] text-right font-mono">{fmt(totalC)}</TableCell>
+                          <TableCell className="text-[10px] text-right font-mono">{fmtGL(totalD)}</TableCell>
+                          <TableCell className="text-[10px] text-right font-mono">{fmtGL(totalC)}</TableCell>
                           <TableCell className={`text-[10px] text-right font-mono ${closingSolde >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                            {fmt(Math.abs(closingSolde))} {closingSolde >= 0 ? 'D' : 'C'}
+                            {fmtGL(Math.abs(closingSolde))} {closingSolde >= 0 ? 'D' : 'C'}
                           </TableCell>
                         </TableRow>
                       </TableBody>

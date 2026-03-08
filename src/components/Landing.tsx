@@ -18,7 +18,7 @@ export default function Landing() {
       <h1 className="font-serif text-5xl text-primary tracking-tight mb-1">G-Compta</h1>
       <p className="text-[11px] text-fg3 tracking-[3px] uppercase font-mono mb-12">Comptabilité SYSCOHADA · Deux Environnements</p>
 
-      <div className="grid grid-cols-2 gap-5 w-full max-w-[760px] mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full max-w-[760px] mb-8">
         {([
           { env: 'entreprise' as EnvMode, icon: '🏭', title: 'Espace Entreprise', desc: 'Une société gère elle-même sa comptabilité. Accès direct à ses données, journal, balance et états financiers.', color: 'var(--accent)' },
           { env: 'cabinet' as EnvMode, icon: '⚖️', title: 'Espace Cabinet', desc: "Un expert-comptable gère la comptabilité de plusieurs clients. Tableau de bord multi-entreprises.", color: 'hsl(var(--purple))' },
@@ -33,7 +33,7 @@ export default function Landing() {
         ))}
       </div>
 
-      <div className="flex gap-4 w-full max-w-[760px]">
+      <div className="flex flex-col sm:flex-row gap-4 w-full max-w-[760px]">
         {/* Demo access */}
         <div className="bg-bg2 border border-border rounded-xl p-6 flex-1">
           <div className="flex items-center gap-2 rounded-lg p-2 mb-4 text-xs text-accent" style={{ background: 'linear-gradient(90deg, rgba(245,158,11,.15), rgba(251,113,133,.1))', border: '1px solid rgba(245,158,11,.3)' }}>

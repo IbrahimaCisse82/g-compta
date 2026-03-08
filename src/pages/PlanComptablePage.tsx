@@ -1,6 +1,5 @@
 import { useApp } from '@/stores/app-store';
 import { useState, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { exportCsv } from '@/lib/csv-export';
 
@@ -39,13 +38,8 @@ export default function PlanComptablePage() {
   }, [plan]);
 
   const handleToggle = async (id: string) => {
-    const compte = plan.find(p => p.id === id);
-    if (!compte) return;
     setToggling(prev => new Set(prev).add(id));
-    toggleCompte(id);
-    try {
-      await supabase.from('plan_comptable').update({ actif: !compte.actif }).eq('id', id);
-    } catch { /* fallback already toggled locally */ }
+    await toggleCompte(id);
     setToggling(prev => { const s = new Set(prev); s.delete(id); return s; });
   };
 

@@ -88,7 +88,7 @@ export default function BilanPage() {
   const vAAmort = computeAmort(balance, ACTIF);
   const tA = vA['T_ACT'] || 0;
   const tP = vP['T_PAS'] || 0;
-  const eq = Math.abs(tA - tP) < 1000;
+  const eq = Math.abs(tA - tP) < 1;
 
   const handleExport = () => {
     const actifLines = ACTIF.filter(l => l.type !== 'sect').map(l => [
