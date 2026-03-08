@@ -1,5 +1,6 @@
 import { useApp } from '@/stores/app-store';
 import { calc, TFT, CR, fmt } from '@/lib/accounting';
+import { exportEtatCsv } from '@/lib/csv-export';
 
 export default function TFTPage() {
   const { balance, balanceN1, entreprise, exercice } = useApp();
@@ -10,10 +11,18 @@ export default function TFTPage() {
   const vCRN1 = hasN1 ? calc(balanceN1, CR) : {};
   const vTN1 = hasN1 ? calc(balanceN1, TFT, { RN_: vCRN1['RN_'] || 0 }) : {};
 
+  const handleExport = () => {
+    const lines = TFT.filter(l => l.type !== 'sect').map(l => ({
+      ref: l.id, label: l.label, valN: vT[l.id] || 0, valN1: hasN1 ? vTN1[l.id] || 0 : undefined,
+    }));
+    exportEtatCsv(lines, `tft_${exercice?.annee}`);
+  };
+
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
         <div><div className="font-serif text-[17px]">Tableau des Flux de Trésorerie</div><div className="text-[10px] text-fg3 font-mono">Méthode indirecte — SYSCOHADA</div></div>
+        <button onClick={handleExport} className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-border text-fg2 hover:bg-bg3">📥 Export CSV</button>
       </div>
       <div className="p-5">
         <div className="bg-bg2 border border-border rounded-lg overflow-hidden">

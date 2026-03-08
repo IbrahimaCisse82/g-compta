@@ -1,9 +1,6 @@
 import { useApp } from '@/stores/app-store';
-import { calc, ACTIF, PASSIF, fmt, fmtSigned, type MapLine, type BalanceLine, aggBalance } from '@/lib/accounting';
-
-/**
- * SYSCOHADA Bilan — Brut / Amort-Dépréc / Net format
- */
+import { calc, ACTIF, PASSIF, fmt, fmtSigned, type MapLine, type BalanceLine } from '@/lib/accounting';
+import { exportCsv } from '@/lib/csv-export';
 
 function BilanTable({ def, vals, valsN1, valsBrut, valsAmort, title, acColor }: {
   def: MapLine[];
@@ -71,19 +68,14 @@ function BilanTable({ def, vals, valsN1, valsBrut, valsAmort, title, acColor }: 
   );
 }
 
-// Compute brut values (before amort/depreciation)
 function computeBrut(balance: BalanceLine[], def: MapLine[]): Record<string, number> {
-  // For actif: brut = sum of debit balances ignoring amort accounts (28x, 29x, 39x)
   const brutBalance = balance.filter(b => !/^(28|29|39)/.test(b.compte));
-  const v = calc(brutBalance, def);
-  return v;
+  return calc(brutBalance, def);
 }
 
 function computeAmort(balance: BalanceLine[], def: MapLine[]): Record<string, number> {
-  // Amort/depreciation accounts only (28x, 29x, 39x)
   const amortBalance = balance.filter(b => /^(28|29|39)/.test(b.compte));
-  const v = calc(amortBalance, def);
-  return v;
+  return calc(amortBalance, def);
 }
 
 export default function BilanPage() {
@@ -98,13 +90,28 @@ export default function BilanPage() {
   const tP = vP['T_PAS'] || 0;
   const eq = Math.abs(tA - tP) < 1000;
 
+  const handleExport = () => {
+    const actifLines = ACTIF.filter(l => l.type !== 'sect').map(l => [
+      l.id, l.label, vABrut[l.id] || 0, vAAmort[l.id] || 0, vA[l.id] || 0, vAN1[l.id] || 0,
+    ]);
+    const passifLines = PASSIF.filter(l => l.type !== 'sect').map(l => [
+      l.id, l.label, '', '', vP[l.id] || 0, vPN1[l.id] || 0,
+    ]);
+    exportCsv(
+      ['Réf', 'Libellé', 'Brut', 'Amort/Dép', 'Net N', 'Net N-1'],
+      [...actifLines, ['', '---PASSIF---', '', '', '', ''], ...passifLines] as any,
+      `bilan_${exercice?.annee}`,
+    );
+  };
+
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
         <div><div className="font-serif text-[17px]">Bilan</div><div className="text-[10px] text-fg3 font-mono">{entreprise?.nom} — Au {exercice?.date_fin || exercice?.annee}</div></div>
+        <button onClick={handleExport} className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-border text-fg2 hover:bg-bg3">📥 Export CSV</button>
       </div>
       <div className="p-5">
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
           <BilanTable def={ACTIF} vals={vA} valsN1={vAN1} valsBrut={vABrut} valsAmort={vAAmort} title="ACTIF" acColor="#0B1F3A" />
           <BilanTable def={PASSIF} vals={vP} valsN1={vPN1} valsBrut={{}} valsAmort={{}} title="PASSIF" acColor="#163158" />
         </div>
