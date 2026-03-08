@@ -220,6 +220,102 @@ export type Database = {
           },
         ]
       }
+      journal_audit: {
+        Row: {
+          action: string
+          created_at: string
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          journal_id: string | null
+          new_data: Json | null
+          old_data: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          journal_id?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          journal_id?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_audit_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_audit_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes_annexes_data: {
+        Row: {
+          created_at: string
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          note_key: string
+          note_value: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          note_key: string
+          note_value?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          note_key?: string
+          note_value?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_annexes_data_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_annexes_data_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_comptable: {
         Row: {
           actif: boolean
