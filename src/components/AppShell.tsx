@@ -43,25 +43,26 @@ const PAGES: Record<string, React.ComponentType> = {
   saisie: SaisiePage, grandlivre: GrandLivrePage,
 };
 
-// Cabinet mode: client list page
+// Cabinet mode: client list page with real switching
 function ClientsPage() {
-  const { entreprises, entreprise, setPage } = useApp();
-  // In cabinet mode we show a list of entreprises with ability to switch
+  const { entreprises, entreprise, switchEntreprise, loading } = useApp();
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
         <div className="font-serif text-[17px]">👥 Mes Clients</div>
+        <span className="text-[10px] text-fg3 font-mono">{entreprises.length} entreprise(s)</span>
       </div>
       <div className="p-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {entreprises.map(ent => (
-            <div key={ent.id} className={`bg-bg2 border rounded-lg p-4 cursor-pointer hover:border-primary transition-all ${ent.id === entreprise?.id ? 'border-primary bg-primary/5' : 'border-border'}`}
-              onClick={() => setPage('dashboard')}>
+            <button key={ent.id} disabled={loading}
+              className={`text-left bg-bg2 border rounded-lg p-4 hover:border-primary transition-all ${ent.id === entreprise?.id ? 'border-primary bg-primary/5' : 'border-border'}`}
+              onClick={() => switchEntreprise(ent.id)}>
               <div className="font-bold text-sm text-foreground mb-1">{ent.nom}</div>
               <div className="text-[10px] text-fg3 font-mono">{ent.sigle && `${ent.sigle} · `}{ent.ninea || '—'}</div>
               <div className="text-[10px] text-fg3">{ent.forme_juridique} · {ent.secteur || '—'}</div>
               {ent.id === entreprise?.id && <div className="text-[9px] text-primary font-bold mt-2">✓ Sélectionné</div>}
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -79,7 +80,7 @@ export default function AppShell() {
 
   const handlePageChange = (page: PageId) => {
     setPage(page);
-    setSidebarOpen(false); // close mobile sidebar
+    setSidebarOpen(false);
   };
 
   return (
@@ -87,7 +88,6 @@ export default function AppShell() {
       {/* TOPBAR */}
       <div className="h-[50px] bg-bg2 border-b border-border flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3.5">
-          {/* Mobile hamburger */}
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-fg2 text-lg">☰</button>
           <span className="font-serif text-lg text-primary">G-Compta</span>
           <div className="hidden sm:flex items-center bg-bg3 border border-border rounded-full overflow-hidden text-[11px]">
@@ -109,12 +109,10 @@ export default function AppShell() {
       </div>
 
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Mobile overlay */}
         {sidebarOpen && (
           <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
         )}
         
-        {/* SIDEBAR */}
         <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:relative z-50 lg:z-auto w-[225px] h-full bg-bg2 border-r border-border flex flex-col overflow-y-auto shrink-0 sidebar transition-transform duration-200`}>
           <nav className="py-1.5 flex-1">
             {NAV.map(section => (
@@ -141,7 +139,6 @@ export default function AppShell() {
           </div>
         </aside>
 
-        {/* MAIN */}
         <main className="flex-1 overflow-y-auto">
           <PageComponent />
         </main>

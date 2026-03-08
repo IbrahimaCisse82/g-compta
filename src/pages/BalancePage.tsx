@@ -1,27 +1,148 @@
 import { useApp } from '@/stores/app-store';
-import { fmt } from '@/lib/accounting';
+import { fmt, pf } from '@/lib/accounting';
 import { exportBalanceCsv } from '@/lib/csv-export';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { toast } from 'sonner';
+
+function ImportCsvModal({ onImport, onClose }: { onImport: (lines: { compte: string; intitule: string; sd: number; sc: number; md: number; mc: number; sfd: number; sfc: number }[]) => void; onClose: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<{ compte: string; intitule: string; sd: number; sc: number; md: number; mc: number; sfd: number; sfc: number }[]>([]);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const lines = text.split('\n').filter(l => l.trim());
+      if (lines.length < 2) { toast.error('Fichier vide ou invalide'); return; }
+
+      // Detect separator (;  or ,  or \t)
+      const sep = lines[0].includes(';') ? ';' : lines[0].includes('\t') ? '\t' : ',';
+      const rows = lines.slice(1).map(l => l.split(sep).map(c => c.replace(/^"|"$/g, '').trim()));
+
+      const parsed = rows
+        .filter(r => r.length >= 2 && r[0])
+        .map(r => ({
+          compte: r[0],
+          intitule: r[1] || '',
+          sd: pf(r[2] || '0'),
+          sc: pf(r[3] || '0'),
+          md: pf(r[4] || '0'),
+          mc: pf(r[5] || '0'),
+          sfd: pf(r[6] || '0'),
+          sfc: pf(r[7] || '0'),
+        }));
+
+      if (parsed.length === 0) { toast.error('Aucune ligne valide détectée'); return; }
+      setPreview(parsed);
+    };
+    reader.readAsText(file, 'UTF-8');
+  };
+
+  return (
+    <div className="bg-bg2 border border-border rounded-lg p-4 mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="font-bold text-sm text-primary">📂 Import CSV Balance</div>
+        <button onClick={onClose} className="text-fg3 text-xs hover:text-foreground">✕ Fermer</button>
+      </div>
+      <p className="text-[10px] text-fg3 mb-3">
+        Format attendu : <code className="bg-bg3 px-1 rounded">Compte;Intitulé;SD;SC;MD;MC;SFD;SFC</code> — Séparateur : <code>;</code> ou <code>,</code> ou tabulation.
+      </p>
+      <input ref={fileRef} type="file" accept=".csv,.txt,.tsv" onChange={handleFile} className="text-xs text-fg2 mb-3" />
+
+      {preview.length > 0 && (
+        <>
+          <div className="text-[11px] text-success font-bold mb-2">✓ {preview.length} ligne(s) détectée(s)</div>
+          <div className="max-h-48 overflow-auto border border-border rounded mb-3">
+            <table className="w-full border-collapse text-[10px]">
+              <thead><tr>
+                {['Compte', 'Intitulé', 'SD', 'SC', 'MD', 'MC', 'SFD', 'SFC'].map(h => (
+                  <th key={h} className="bg-bg3 px-2 py-1 text-left font-mono border-b border-border">{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {preview.slice(0, 10).map((r, i) => (
+                  <tr key={i}>
+                    <td className="px-2 py-0.5 font-mono text-primary border-b border-border/30">{r.compte}</td>
+                    <td className="px-2 py-0.5 border-b border-border/30">{r.intitule}</td>
+                    <td className="px-2 py-0.5 font-mono text-right border-b border-border/30">{fmt(r.sd)}</td>
+                    <td className="px-2 py-0.5 font-mono text-right border-b border-border/30">{fmt(r.sc)}</td>
+                    <td className="px-2 py-0.5 font-mono text-right border-b border-border/30">{fmt(r.md)}</td>
+                    <td className="px-2 py-0.5 font-mono text-right border-b border-border/30">{fmt(r.mc)}</td>
+                    <td className="px-2 py-0.5 font-mono text-right border-b border-border/30">{fmt(r.sfd)}</td>
+                    <td className="px-2 py-0.5 font-mono text-right border-b border-border/30">{fmt(r.sfc)}</td>
+                  </tr>
+                ))}
+                {preview.length > 10 && <tr><td colSpan={8} className="px-2 py-1 text-fg3">...et {preview.length - 10} lignes de plus</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          <button onClick={() => onImport(preview)} className="px-4 py-1.5 rounded text-[11px] font-bold bg-primary text-primary-foreground hover:opacity-90">
+            ✓ Importer {preview.length} lignes
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function BalancePage() {
-  const { balance, entreprise, exercice } = useApp();
+  const { balance, entreprise, exercice, demo, isExerciceCloture } = useApp();
   const [filter, setFilter] = useState('');
-  const rows = balance.filter(r => !filter || r.compte.includes(filter) || r.intitule.toLowerCase().includes(filter.toLowerCase()));
+  const [showImport, setShowImport] = useState(false);
+  const locked = isExerciceCloture();
+
+  const rows = balance
+    .filter(r => !filter || r.compte.includes(filter) || r.intitule.toLowerCase().includes(filter.toLowerCase()))
+    .sort((a, b) => a.compte.localeCompare(b.compte));
+
   const T = rows.reduce((t, r) => ({ sd: t.sd + (r.sd || 0), sc: t.sc + (r.sc || 0), md: t.md + (r.md || 0), mc: t.mc + (r.mc || 0), sfd: t.sfd + (r.sfd || 0), sfc: t.sfc + (r.sfc || 0) }), { sd: 0, sc: 0, md: 0, mc: 0, sfd: 0, sfc: 0 });
   const eqInit = Math.abs(T.sd - T.sc) < 1;
   const eqMvt = Math.abs(T.md - T.mc) < 1;
   const eqFin = Math.abs(T.sfd - T.sfc) < 1;
 
+  const handleImport = async (lines: { compte: string; intitule: string; sd: number; sc: number; md: number; mc: number; sfd: number; sfc: number }[]) => {
+    // For now, just show a message — full DB import requires supabase insert
+    const { supabase } = await import('@/integrations/supabase/client');
+    if (!exercice || !entreprise) { toast.error('Sélectionnez un exercice.'); return; }
+
+    const inserts = lines.map(l => ({
+      exercice_id: exercice.id,
+      entreprise_id: entreprise.id,
+      compte: l.compte,
+      intitule: l.intitule,
+      sd: l.sd, sc: l.sc, md: l.md, mc: l.mc, sfd: l.sfd, sfc: l.sfc,
+    }));
+
+    const { error } = await supabase.from('balance').upsert(inserts, { onConflict: 'exercice_id,compte' }).select();
+    if (error) {
+      // Fallback: insert without upsert
+      const { error: err2 } = await supabase.from('balance').insert(inserts);
+      if (err2) { toast.error('Erreur import: ' + err2.message); return; }
+    }
+    toast.success(`${lines.length} lignes importées. Rechargez la page pour voir les changements.`);
+    setShowImport(false);
+  };
+
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
         <div><div className="font-serif text-[17px]">Balance Générale</div><div className="text-[10px] text-fg3 font-mono">{entreprise?.nom} — Exercice {exercice?.annee}</div></div>
-        <button onClick={() => exportBalanceCsv(rows, `balance_${exercice?.annee}`)} className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-border text-fg2 hover:bg-bg3">
-          📥 Export CSV
-        </button>
+        <div className="flex items-center gap-2">
+          {!locked && !demo && (
+            <button onClick={() => setShowImport(!showImport)} className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-border text-fg2 hover:bg-bg3">
+              {showImport ? '✕' : '📂 Import CSV'}
+            </button>
+          )}
+          <button onClick={() => exportBalanceCsv(rows, `balance_${exercice?.annee}`)} className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-border text-fg2 hover:bg-bg3">
+            📥 Export CSV
+          </button>
+        </div>
       </div>
       <div className="p-5">
-        {/* Equilibrium check */}
+        {showImport && <ImportCsvModal onImport={handleImport} onClose={() => setShowImport(false)} />}
+
         <div className={`rounded-lg px-4 py-2 mb-4 text-center font-bold text-[11px] ${eqInit && eqMvt && eqFin ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
           {eqInit && eqMvt && eqFin ? '✓ BALANCE ÉQUILIBRÉE' : '⚠ BALANCE DÉSÉQUILIBRÉE'}
           {!eqInit && ` — Écart soldes initiaux: ${fmt(Math.abs(T.sd - T.sc))}`}

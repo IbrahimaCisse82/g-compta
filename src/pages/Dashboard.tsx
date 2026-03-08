@@ -1,22 +1,28 @@
 import { useApp } from '@/stores/app-store';
-import { calc, CR, ACTIF, PASSIF, fmt, fmtSigned, type BalanceLine } from '@/lib/accounting';
+import { calc, CR, ACTIF, PASSIF, fmt, fmtSigned } from '@/lib/accounting';
 
-/**
- * Dashboard with proper SYSCOHADA SIG computed from balance aggregation 
- * (not hardcoded account numbers)
- */
+const colorMap: Record<string, string> = {
+  primary: 'text-primary',
+  success: 'text-success',
+  destructive: 'text-destructive',
+  accent: 'text-accent',
+};
+
+const bgColorMap: Record<string, string> = {
+  primary: 'bg-primary',
+  success: 'bg-success',
+  destructive: 'bg-destructive',
+  accent: 'bg-accent',
+};
+
 export default function Dashboard() {
   const { entreprise, exercice, balance, balanceN1 } = useApp();
   
-  // Compute SIG from CR mapping (proper range aggregation)
   const vCR = calc(balance, CR);
   const vCRN1 = balanceN1.length > 0 ? calc(balanceN1, CR) : null;
-  
-  // Compute balance sheet totals
   const vA = calc(balance, ACTIF);
   const vP = calc(balance, PASSIF);
 
-  // Treasury from balance sheet
   const tresoActif = vA['T_TA'] || 0;
   const tresoPassif = vP['T_TP'] || 0;
   const tresoNette = tresoActif - tresoPassif;
@@ -62,9 +68,9 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
           {kpis.map(k => (
             <div key={k.label} className="bg-bg2 border border-border rounded-lg p-3.5 relative overflow-hidden">
-              <div className={`absolute top-0 left-0 right-0 h-0.5 bg-${k.color}`} />
+              <div className={`absolute top-0 left-0 right-0 h-0.5 ${bgColorMap[k.color] || 'bg-primary'}`} />
               <div className="text-[9px] text-fg3 uppercase tracking-[1px] font-mono">{k.label}</div>
-              <div className={`text-lg font-bold font-mono mt-1 text-${k.color}`}>{k.value}</div>
+              <div className={`text-lg font-bold font-mono mt-1 ${colorMap[k.color] || 'text-primary'}`}>{k.value}</div>
               {k.sub && <div className="text-[10px] text-fg3">{k.sub}</div>}
               <div className="text-[10px] text-fg3">{entreprise?.monnaie || 'FCFA'}</div>
             </div>

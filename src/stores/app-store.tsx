@@ -36,6 +36,7 @@ interface AppState {
   updateEntreprise: (updates: Partial<Entreprise>) => Promise<void>;
   clotureExercice: () => Promise<void>;
   isExerciceCloture: () => boolean;
+  switchEntreprise: (entrepriseId: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -462,9 +463,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (error) toast.error('Erreur sauvegarde: ' + error.message);
   }, [entreprise]);
 
+  // ─── SWITCH ENTREPRISE (cabinet mode) ─────────────────
+  const switchEntreprise = useCallback(async (entrepriseId: string) => {
+    const ent = entreprises.find(e => e.id === entrepriseId);
+    if (!ent) return;
+    setEntreprise(ent);
+    setLoading(true);
+    try {
+      const [excsRes, planRes] = await Promise.all([
+        supabase.from('exercices').select('*').eq('entreprise_id', entrepriseId).order('annee', { ascending: false }),
+        supabase.from('plan_comptable').select('*').eq('entreprise_id', entrepriseId).order('numero'),
+      ]);
+      const allExcs = (excsRes.data || []).map(mapExercice);
+      const currentExc = allExcs.find(e => e.statut === 'en_cours') || allExcs[0];
+      setExercices(allExcs);
+      setPlan(planRes.data ? mapPlan(planRes.data) : []);
+      if (currentExc) {
+        setExercice(currentExc);
+        await loadExerciceData(currentExc.id, allExcs, currentExc);
+      } else {
+        setExercice(null);
+        setBalance([]);
+        setJournal([]);
+      }
+    } catch { /* keep current */ }
+    setLoading(false);
+    setCurrentPage('dashboard');
+  }, [entreprises, loadExerciceData]);
+
   // ─── CLÔTURE D'EXERCICE ──────────────────────────────
   const clotureExercice = useCallback(async () => {
-    if (!exercice || !entreprise) return;
 
     setLoading(true);
     try {
@@ -573,7 +601,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setPage: setCurrentPage, launchDemo, launchUser, logout, addJournalEntry,
       deleteJournalEntry, addCompte, deleteCompte, toggleCompte,
       addExercice, deleteExercice, openExercice, updateEntreprise,
-      clotureExercice, isExerciceCloture,
+      clotureExercice, isExerciceCloture, switchEntreprise,
     }}>
       {children}
     </AppContext.Provider>
