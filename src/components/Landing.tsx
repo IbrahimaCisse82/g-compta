@@ -18,7 +18,7 @@ export default function Landing() {
       <h1 className="font-serif text-5xl text-primary tracking-tight mb-1">G-Compta</h1>
       <p className="text-[11px] text-fg3 tracking-[3px] uppercase font-mono mb-12">Comptabilité SYSCOHADA · Deux Environnements</p>
 
-      <div className="grid grid-cols-2 gap-5 w-full max-w-[760px] mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full max-w-[760px] mb-8">
         {([
           { env: 'entreprise' as EnvMode, icon: '🏭', title: 'Espace Entreprise', desc: 'Une société gère elle-même sa comptabilité. Accès direct à ses données, journal, balance et états financiers.', color: 'var(--accent)' },
           { env: 'cabinet' as EnvMode, icon: '⚖️', title: 'Espace Cabinet', desc: "Un expert-comptable gère la comptabilité de plusieurs clients. Tableau de bord multi-entreprises.", color: 'hsl(var(--purple))' },
