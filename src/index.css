@@ -67,6 +67,63 @@
     --glow-primary: rgba(56, 189, 248, 0.12);
     --glow-accent: rgba(245, 158, 11, 0.1);
   }
+
+  .light {
+    --background: 220 20% 97%;
+    --background-2: 220 18% 94%;
+    --background-3: 220 16% 90%;
+    --background-4: 220 14% 86%;
+    --foreground: 220 20% 12%;
+    --foreground-2: 220 14% 38%;
+    --foreground-3: 220 10% 55%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 12%;
+
+    --primary: 197 95% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 90%;
+    --secondary-foreground: 220 20% 12%;
+
+    --muted: 220 16% 92%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 38 92% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 350 81% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 160 64% 38%;
+    --success-foreground: 0 0% 100%;
+
+    --purple: 263 65% 56%;
+    --purple-foreground: 0 0% 100%;
+
+    --orange: 24 95% 52%;
+
+    --border: 220 18% 82%;
+    --border-2: 220 18% 74%;
+    --input: 220 18% 82%;
+    --ring: 197 95% 42%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 20% 12%;
+    --sidebar-primary: 197 95% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 16% 94%;
+    --sidebar-accent-foreground: 220 20% 12%;
+    --sidebar-border: 220 18% 82%;
+    --sidebar-ring: 197 95% 42%;
+
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --glow-primary: rgba(14, 165, 233, 0.08);
+    --glow-accent: rgba(245, 158, 11, 0.06);
+  }
 }
 
 @layer base {
