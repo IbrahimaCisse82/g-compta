@@ -205,7 +205,7 @@ export const ACTIF: MapLine[] = [
 export const PASSIF: MapLine[] = [
   { id: 'S_CP', label: 'CAPITAUX PROPRES', type: 'sect' },
   { id: 'CA', label: 'Capital social', c: [['101', '104']], s: 'C' },
-  { id: 'CB', label: 'Primes liées au capital', c: [['105', '109']], s: 'C' },
+  { id: 'CB', label: 'Primes liées au capital', c: [['105', '105'], ['107', '109']], s: 'C' },
   { id: 'CC', label: 'Écarts de réévaluation', c: [['106', '106']], s: 'C' },
   { id: 'CD', label: 'Réserves indisponibles', c: [['111', '113']], s: 'C' },
   { id: 'CE', label: 'Réserves libres', c: [['114', '119']], s: 'C' },

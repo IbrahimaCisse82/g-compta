@@ -59,7 +59,7 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="p-5">
-        <div className="grid grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
           {kpis.map(k => (
             <div key={k.label} className="bg-bg2 border border-border rounded-lg p-3.5 relative overflow-hidden">
               <div className={`absolute top-0 left-0 right-0 h-0.5 bg-${k.color}`} />

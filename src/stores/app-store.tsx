@@ -302,7 +302,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setJournal([]);
     setPlan([]);
     setCurrentPage('dashboard');
-    // Don't sign out from Supabase auth (user stays logged in)
+    await supabase.auth.signOut();
   }, []);
 
   // ─── JOURNAL ENTRIES ──────────────────────────────────
@@ -415,9 +415,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     toast.success('Compte supprimé');
   }, []);
 
-  const toggleCompte = useCallback((id: string) => {
-    setPlan(prev => prev.map(p => p.id === id ? { ...p, actif: !p.actif } : p));
-  }, []);
+  const toggleCompte = useCallback(async (id: string) => {
+    const compte = plan.find(p => p.id === id);
+    if (!compte) return;
+    const newActif = !compte.actif;
+    setPlan(prev => prev.map(p => p.id === id ? { ...p, actif: newActif } : p));
+    await supabase.from('plan_comptable').update({ actif: newActif }).eq('id', id);
+  }, [plan]);
 
   // ─── EXERCICES (persisted) ────────────────────────────
   const addExercice = useCallback(async (e: Omit<Exercice, 'id'>) => {
@@ -496,22 +500,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (Math.abs(resultatNet) > 0.01) {
-        const existingRAN = aNouveaux.find(a => a.compte === '131000');
-        if (existingRAN) {
-          const newSolde = (existingRAN.sc - existingRAN.sd) + resultatNet;
-          existingRAN.sd = newSolde < 0 ? -newSolde : 0;
-          existingRAN.sc = newSolde > 0 ? newSolde : 0;
-          existingRAN.sfd = existingRAN.sd;
-          existingRAN.sfc = existingRAN.sc;
-        } else {
-          aNouveaux.push({
-            exercice_id: newExercice.id, entreprise_id: entreprise.id,
-            compte: '131000', intitule: 'Report à nouveau',
-            sd: resultatNet < 0 ? -resultatNet : 0, sc: resultatNet > 0 ? resultatNet : 0,
-            md: 0, mc: 0,
-            sfd: resultatNet < 0 ? -resultatNet : 0, sfc: resultatNet > 0 ? resultatNet : 0,
-          });
-        }
+      // SYSCOHADA: RAN = compte 121 (créditeur) ou 129 (débiteur)
+      const ranCompte = resultatNet >= 0 ? '121000' : '129000';
+      const existingRAN = aNouveaux.find(a => a.compte === ranCompte);
+      if (existingRAN) {
+        const newSolde = (existingRAN.sc - existingRAN.sd) + resultatNet;
+        existingRAN.sd = newSolde < 0 ? -newSolde : 0;
+        existingRAN.sc = newSolde > 0 ? newSolde : 0;
+        existingRAN.sfd = existingRAN.sd;
+        existingRAN.sfc = existingRAN.sc;
+      } else {
+        aNouveaux.push({
+          exercice_id: newExercice.id, entreprise_id: entreprise.id,
+          compte: ranCompte, intitule: 'Report à nouveau',
+          sd: resultatNet < 0 ? -resultatNet : 0, sc: resultatNet > 0 ? resultatNet : 0,
+          md: 0, mc: 0,
+          sfd: resultatNet < 0 ? -resultatNet : 0, sfc: resultatNet > 0 ? resultatNet : 0,
+        });
+      }
       }
 
       if (aNouveaux.length > 0) {
