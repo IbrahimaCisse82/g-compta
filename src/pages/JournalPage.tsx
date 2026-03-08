@@ -3,8 +3,9 @@ import { fmt } from '@/lib/accounting';
 import { useState } from 'react';
 
 export default function JournalPage() {
-  const { journal, deleteJournalEntry } = useApp();
+  const { journal, deleteJournalEntry, isExerciceCloture } = useApp();
   const [filter, setFilter] = useState('');
+  const locked = isExerciceCloture();
   const rows = journal.filter(r => !filter || r.libelle?.toLowerCase().includes(filter.toLowerCase()) || r.compte?.includes(filter));
   const td = rows.reduce((s, r) => s + (r.debit || 0), 0);
   const tc = rows.reduce((s, r) => s + (r.credit || 0), 0);
@@ -36,7 +37,7 @@ export default function JournalPage() {
                   <td className="px-3 py-1.5 text-[11px] border-b border-border/50">{r.libelle}<br /><small className="text-fg3">{r.intitule}</small></td>
                   <td className="px-3 py-1.5 text-[11px] font-mono text-right text-primary border-b border-border/50">{r.debit ? fmt(r.debit) : ''}</td>
                   <td className="px-3 py-1.5 text-[11px] font-mono text-right text-success border-b border-border/50">{r.credit ? fmt(r.credit) : ''}</td>
-                  <td className="px-3 py-1.5 border-b border-border/50"><button onClick={() => deleteJournalEntry(r.id)} className="text-destructive text-xs hover:underline">🗑</button></td>
+                  {!locked && <td className="px-3 py-1.5 border-b border-border/50"><button onClick={() => deleteJournalEntry(r.id)} className="text-destructive text-xs hover:underline">🗑</button></td>}
                 </tr>
               ))}
               <tr className="bg-bg3 font-bold">
