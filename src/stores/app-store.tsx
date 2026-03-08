@@ -207,7 +207,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         allEntData = data || [];
       }
       
-      if (!entData || entData.length === 0) {
+      if (allEntData.length === 0) {
         // Create default entreprise for new user
         const { data: newEnt, error: entErr } = await supabase.from('entreprises').insert({
           nom: 'Mon Entreprise',
