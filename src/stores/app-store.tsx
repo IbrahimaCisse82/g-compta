@@ -500,22 +500,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (Math.abs(resultatNet) > 0.01) {
-        const existingRAN = aNouveaux.find(a => a.compte === '131000');
-        if (existingRAN) {
-          const newSolde = (existingRAN.sc - existingRAN.sd) + resultatNet;
-          existingRAN.sd = newSolde < 0 ? -newSolde : 0;
-          existingRAN.sc = newSolde > 0 ? newSolde : 0;
-          existingRAN.sfd = existingRAN.sd;
-          existingRAN.sfc = existingRAN.sc;
-        } else {
-          aNouveaux.push({
-            exercice_id: newExercice.id, entreprise_id: entreprise.id,
-            compte: '131000', intitule: 'Report à nouveau',
-            sd: resultatNet < 0 ? -resultatNet : 0, sc: resultatNet > 0 ? resultatNet : 0,
-            md: 0, mc: 0,
-            sfd: resultatNet < 0 ? -resultatNet : 0, sfc: resultatNet > 0 ? resultatNet : 0,
-          });
-        }
+      // SYSCOHADA: RAN = compte 121 (créditeur) ou 129 (débiteur)
+      const ranCompte = resultatNet >= 0 ? '121000' : '129000';
+      const existingRAN = aNouveaux.find(a => a.compte === ranCompte);
+      if (existingRAN) {
+        const newSolde = (existingRAN.sc - existingRAN.sd) + resultatNet;
+        existingRAN.sd = newSolde < 0 ? -newSolde : 0;
+        existingRAN.sc = newSolde > 0 ? newSolde : 0;
+        existingRAN.sfd = existingRAN.sd;
+        existingRAN.sfc = existingRAN.sc;
+      } else {
+        aNouveaux.push({
+          exercice_id: newExercice.id, entreprise_id: entreprise.id,
+          compte: ranCompte, intitule: 'Report à nouveau',
+          sd: resultatNet < 0 ? -resultatNet : 0, sc: resultatNet > 0 ? resultatNet : 0,
+          md: 0, mc: 0,
+          sfd: resultatNet < 0 ? -resultatNet : 0, sfc: resultatNet > 0 ? resultatNet : 0,
+        });
+      }
       }
 
       if (aNouveaux.length > 0) {
