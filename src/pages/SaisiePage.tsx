@@ -1,6 +1,7 @@
 import { useApp } from '@/stores/app-store';
-import { fmt } from '@/lib/accounting';
+import { fmt, pf } from '@/lib/accounting';
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { toast } from 'sonner';
 
 interface LigneEcriture {
   compte: string;
@@ -9,6 +10,117 @@ interface LigneEcriture {
   credit: number;
 }
 
+// ─── Import CSV Modal ────────────────────────────────
+function ImportCsvJournalModal({ onImport, onClose }: {
+  onImport: (entries: { date: string; piece: string; journal_code: string; libelle: string; compte: string; intitule: string; debit: number; credit: number }[]) => void;
+  onClose: () => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<{ date: string; piece: string; journal_code: string; libelle: string; compte: string; intitule: string; debit: number; credit: number }[]>([]);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const lines = text.split('\n').filter(l => l.trim());
+      if (lines.length < 2) { toast.error('Fichier vide'); return; }
+      const sep = lines[0].includes(';') ? ';' : lines[0].includes('\t') ? '\t' : ',';
+      const rows = lines.slice(1).map(l => l.split(sep).map(c => c.replace(/^"|"$/g, '').trim()));
+
+      const parsed = rows.filter(r => r.length >= 6 && r[0]).map(r => ({
+        date: r[0],
+        piece: r[1] || '',
+        journal_code: r[2] || 'OD',
+        compte: r[3] || '',
+        intitule: r[4] || '',
+        libelle: r[5] || '',
+        debit: pf(r[6] || '0'),
+        credit: pf(r[7] || '0'),
+      }));
+
+      if (parsed.length === 0) { toast.error('Aucune ligne valide. Format attendu: Date;Pièce;Journal;Compte;Intitulé;Libellé;Débit;Crédit'); return; }
+      setPreview(parsed);
+    };
+    reader.readAsText(file, 'UTF-8');
+  };
+
+  // Validate balance per piece
+  const validation = useMemo(() => {
+    const pieceMap = new Map<string, { debit: number; credit: number }>();
+    for (const p of preview) {
+      if (!pieceMap.has(p.piece)) pieceMap.set(p.piece, { debit: 0, credit: 0 });
+      const t = pieceMap.get(p.piece)!;
+      t.debit += p.debit;
+      t.credit += p.credit;
+    }
+    const unbalanced: string[] = [];
+    for (const [piece, t] of pieceMap) {
+      if (Math.abs(t.debit - t.credit) > 0.01) unbalanced.push(piece);
+    }
+    return { pieces: pieceMap.size, unbalanced };
+  }, [preview]);
+
+  return (
+    <div className="bg-bg2 border border-border rounded-lg p-4 mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="font-bold text-sm text-primary">📂 Import CSV Écritures</div>
+        <button onClick={onClose} className="text-fg3 text-xs hover:text-foreground">✕ Fermer</button>
+      </div>
+      <p className="text-[10px] text-fg3 mb-3">
+        Format : <code className="bg-bg3 px-1 rounded">Date;Pièce;Journal;Compte;Intitulé;Libellé;Débit;Crédit</code>
+      </p>
+      <input ref={fileRef} type="file" accept=".csv,.txt,.tsv" onChange={handleFile} className="text-xs text-fg2 mb-3" />
+
+      {preview.length > 0 && (
+        <>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-[11px] text-success font-bold">✓ {preview.length} ligne(s) · {validation.pieces} pièce(s)</span>
+            {validation.unbalanced.length > 0 && (
+              <span className="text-[10px] text-destructive font-bold">
+                ⚠ {validation.unbalanced.length} pièce(s) déséquilibrée(s): {validation.unbalanced.join(', ')}
+              </span>
+            )}
+          </div>
+          <div className="max-h-48 overflow-auto border border-border rounded mb-3">
+            <table className="w-full border-collapse text-[10px]">
+              <thead><tr>
+                {['Date', 'Pièce', 'Jrn', 'Compte', 'Intitulé', 'Libellé', 'Débit', 'Crédit'].map(h => (
+                  <th key={h} className="bg-bg3 px-2 py-1 text-left font-mono border-b border-border">{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {preview.slice(0, 15).map((r, i) => (
+                  <tr key={i}>
+                    <td className="px-2 py-0.5 font-mono border-b border-border/30">{r.date}</td>
+                    <td className="px-2 py-0.5 font-mono border-b border-border/30">{r.piece}</td>
+                    <td className="px-2 py-0.5 font-mono border-b border-border/30">{r.journal_code}</td>
+                    <td className="px-2 py-0.5 font-mono text-primary border-b border-border/30">{r.compte}</td>
+                    <td className="px-2 py-0.5 border-b border-border/30">{r.intitule}</td>
+                    <td className="px-2 py-0.5 border-b border-border/30">{r.libelle}</td>
+                    <td className="px-2 py-0.5 font-mono text-right border-b border-border/30">{r.debit ? fmt(r.debit) : ''}</td>
+                    <td className="px-2 py-0.5 font-mono text-right border-b border-border/30">{r.credit ? fmt(r.credit) : ''}</td>
+                  </tr>
+                ))}
+                {preview.length > 15 && <tr><td colSpan={8} className="px-2 py-1 text-fg3">...et {preview.length - 15} de plus</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          <button onClick={() => onImport(preview)} disabled={validation.unbalanced.length > 0}
+            className="px-4 py-1.5 rounded text-[11px] font-bold bg-primary text-primary-foreground disabled:opacity-40 hover:opacity-90">
+            ✓ Importer {preview.length} lignes
+          </button>
+          {validation.unbalanced.length > 0 && (
+            <span className="text-[10px] text-destructive ml-2">Corrigez les pièces déséquilibrées avant d'importer</span>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Nouvelle Écriture Form ──────────────────────────
 function NouvelleEcritureForm({ onSubmit, plan, loading }: { onSubmit: (data: { date: string; piece: string; journal_code: string; libelle: string; lignes: LigneEcriture[] }) => void; plan: { numero: string; intitule: string; actif: boolean }[]; loading: boolean }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [piece, setPiece] = useState('');
@@ -22,7 +134,6 @@ function NouvelleEcritureForm({ onSubmit, plan, loading }: { onSubmit: (data: { 
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -161,10 +272,12 @@ function NouvelleEcritureForm({ onSubmit, plan, loading }: { onSubmit: (data: { 
   );
 }
 
+// ─── Main Page ───────────────────────────────────────
 export default function SaisiePage() {
   const { journal, deleteJournalEntry, addJournalEntry, plan, exercice, loading, isExerciceCloture, demo } = useApp();
   const [filter, setFilter] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const rows = journal.filter(r => !filter || r.libelle?.toLowerCase().includes(filter.toLowerCase()) || r.compte?.includes(filter));
   const locked = isExerciceCloture();
 
@@ -186,6 +299,37 @@ export default function SaisiePage() {
     setShowForm(false);
   };
 
+  const handleCsvImport = async (entries: { date: string; piece: string; journal_code: string; libelle: string; compte: string; intitule: string; debit: number; credit: number }[]) => {
+    // Group by piece and import each piece as a journal entry
+    const pieceMap = new Map<string, typeof entries>();
+    for (const e of entries) {
+      if (!pieceMap.has(e.piece)) pieceMap.set(e.piece, []);
+      pieceMap.get(e.piece)!.push(e);
+    }
+
+    let count = 0;
+    for (const [, pieceEntries] of pieceMap) {
+      const lines = pieceEntries.map(e => ({
+        id: '',
+        exercice_id: exercice?.id || '',
+        entreprise_id: '',
+        date_ecriture: e.date,
+        piece: e.piece,
+        journal_code: e.journal_code,
+        libelle: e.libelle,
+        compte: e.compte,
+        intitule: e.intitule,
+        debit: e.debit,
+        credit: e.credit,
+      }));
+      await addJournalEntry(lines);
+      count += lines.length;
+    }
+
+    setShowImport(false);
+    toast.success(`${count} écritures importées (${pieceMap.size} pièces)`);
+  };
+
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
@@ -197,12 +341,18 @@ export default function SaisiePage() {
           </div>
         </div>
         {!locked && !demo && (
-          <button onClick={() => setShowForm(!showForm)} className="px-3 py-1.5 rounded text-[11px] font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
-            {showForm ? '✕ Fermer' : '+ Nouvelle Écriture'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => { setShowImport(!showImport); setShowForm(false); }} className="px-3 py-1.5 rounded text-[11px] font-semibold border border-border text-fg2 hover:bg-bg3">
+              {showImport ? '✕' : '📂 Import CSV'}
+            </button>
+            <button onClick={() => { setShowForm(!showForm); setShowImport(false); }} className="px-3 py-1.5 rounded text-[11px] font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
+              {showForm ? '✕ Fermer' : '+ Nouvelle Écriture'}
+            </button>
+          </div>
         )}
       </div>
       <div className="p-5">
+        {showImport && !locked && <ImportCsvJournalModal onImport={handleCsvImport} onClose={() => setShowImport(false)} />}
         {showForm && !locked && <NouvelleEcritureForm onSubmit={handleSubmit} plan={plan} loading={loading} />}
 
         <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
