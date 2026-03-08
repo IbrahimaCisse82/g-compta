@@ -197,8 +197,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error('Veuillez vous connecter.'); setLoading(false); return; }
 
-      // Fetch user's entreprises
-      const { data: entData } = await supabase.from('entreprises').select('*').eq('user_id', user.id);
+      // Fetch user's entreprises (owned + shared via cabinet)
+      const { data: entData } = await supabase.rpc('get_user_entreprise_ids', { _user_id: user.id });
+      const entIds: string[] = (entData as string[]) || [];
+      
+      let allEntData: any[] = [];
+      if (entIds.length > 0) {
+        const { data } = await supabase.from('entreprises').select('*').in('id', entIds);
+        allEntData = data || [];
+      }
       
       if (!entData || entData.length === 0) {
         // Create default entreprise for new user
