@@ -178,8 +178,8 @@ export default function GrandLivrePage() {
       </div>
 
       <div className="flex gap-4 text-xs font-mono">
-        <span className="px-3 py-1.5 bg-muted rounded">Total Débit: <strong className="text-primary">{fmt(totalDebit)}</strong></span>
-        <span className="px-3 py-1.5 bg-muted rounded">Total Crédit: <strong className="text-primary">{fmt(totalCredit)}</strong></span>
+        <span className="px-3 py-1.5 bg-muted rounded">Total Débit: <strong className="text-primary">{fmtGL(totalDebit)}</strong></span>
+        <span className="px-3 py-1.5 bg-muted rounded">Total Crédit: <strong className="text-primary">{fmtGL(totalCredit)}</strong></span>
       </div>
 
       <ScrollArea className="h-[calc(100vh-260px)]">
