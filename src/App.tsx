@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import CguPage from "./pages/CguPage";
+import ConfidentialitePage from "./pages/ConfidentialitePage";
+import ProtectionDonneesPage from "./pages/ProtectionDonneesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +23,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/cgu" element={<CguPage />} />
+            <Route path="/confidentialite" element={<ConfidentialitePage />} />
+            <Route path="/protection-donnees" element={<ProtectionDonneesPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
