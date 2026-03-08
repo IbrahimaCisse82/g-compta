@@ -88,6 +88,7 @@ export type Database = {
           secteur: string | null
           sigle: string | null
           tel: string | null
+          user_id: string | null
         }
         Insert: {
           adresse?: string | null
@@ -102,6 +103,7 @@ export type Database = {
           secteur?: string | null
           sigle?: string | null
           tel?: string | null
+          user_id?: string | null
         }
         Update: {
           adresse?: string | null
@@ -116,6 +118,7 @@ export type Database = {
           secteur?: string | null
           sigle?: string | null
           tel?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -261,12 +264,33 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_entreprise_ids: { Args: { _user_id: string }; Returns: string[] }
     }
     Enums: {
       [_ in never]: never
