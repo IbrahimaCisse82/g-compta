@@ -256,10 +256,10 @@ export default function GrandLivrePage() {
 
                         <TableRow className="bg-muted/40 font-bold">
                           <TableCell className="text-[10px]" colSpan={4}>Totaux</TableCell>
-                          <TableCell className="text-[10px] text-right font-mono">{fmt(totalD)}</TableCell>
-                          <TableCell className="text-[10px] text-right font-mono">{fmt(totalC)}</TableCell>
+                          <TableCell className="text-[10px] text-right font-mono">{fmtGL(totalD)}</TableCell>
+                          <TableCell className="text-[10px] text-right font-mono">{fmtGL(totalC)}</TableCell>
                           <TableCell className={`text-[10px] text-right font-mono ${closingSolde >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                            {fmt(Math.abs(closingSolde))} {closingSolde >= 0 ? 'D' : 'C'}
+                            {fmtGL(Math.abs(closingSolde))} {closingSolde >= 0 ? 'D' : 'C'}
                           </TableCell>
                         </TableRow>
                       </TableBody>

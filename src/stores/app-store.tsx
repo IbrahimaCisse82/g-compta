@@ -389,7 +389,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const net = (existing.sd || 0) + existing.md - ((existing.sc || 0) + existing.mc);
         existing.sfd = net > 0 ? net : 0;
         existing.sfc = net < 0 ? -net : 0;
-        await supabase.from('balance').update({ md: existing.md, mc: existing.mc, sfd: existing.sfd, sfc: existing.sfc }).eq('id', existing.id);
+        supabase.from('balance').update({ md: existing.md, mc: existing.mc, sfd: existing.sfd, sfc: existing.sfc }).eq('id', existing.id).then();
       }
       return b;
     });
