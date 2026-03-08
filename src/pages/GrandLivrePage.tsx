@@ -203,10 +203,10 @@ export default function GrandLivrePage() {
                       <span className="text-[10px] text-muted-foreground">({acc.entries.length} mvt{acc.entries.length > 1 ? 's' : ''})</span>
                     </div>
                     <div className="flex items-center gap-4 font-mono text-[11px]">
-                      <span>D: {fmt(totalD)}</span>
-                      <span>C: {fmt(totalC)}</span>
+                      <span>D: {fmtGL(totalD)}</span>
+                      <span>C: {fmtGL(totalC)}</span>
                       <span className={`font-bold ${closingSolde >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                        Solde: {fmt(Math.abs(closingSolde))} {closingSolde >= 0 ? 'D' : 'C'}
+                        Solde: {fmtGL(Math.abs(closingSolde))} {closingSolde >= 0 ? 'D' : 'C'}
                       </span>
                     </div>
                   </button>
