@@ -3,8 +3,9 @@ import { fmt } from '@/lib/accounting';
 import { useState } from 'react';
 
 export default function JournalPage() {
-  const { journal, deleteJournalEntry } = useApp();
+  const { journal, deleteJournalEntry, isExerciceCloture } = useApp();
   const [filter, setFilter] = useState('');
+  const locked = isExerciceCloture();
   const rows = journal.filter(r => !filter || r.libelle?.toLowerCase().includes(filter.toLowerCase()) || r.compte?.includes(filter));
   const td = rows.reduce((s, r) => s + (r.debit || 0), 0);
   const tc = rows.reduce((s, r) => s + (r.credit || 0), 0);
