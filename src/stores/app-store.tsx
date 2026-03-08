@@ -415,9 +415,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     toast.success('Compte supprimé');
   }, []);
 
-  const toggleCompte = useCallback((id: string) => {
-    setPlan(prev => prev.map(p => p.id === id ? { ...p, actif: !p.actif } : p));
-  }, []);
+  const toggleCompte = useCallback(async (id: string) => {
+    const compte = plan.find(p => p.id === id);
+    if (!compte) return;
+    const newActif = !compte.actif;
+    setPlan(prev => prev.map(p => p.id === id ? { ...p, actif: newActif } : p));
+    await supabase.from('plan_comptable').update({ actif: newActif }).eq('id', id);
+  }, [plan]);
 
   // ─── EXERCICES (persisted) ────────────────────────────
   const addExercice = useCallback(async (e: Omit<Exercice, 'id'>) => {
