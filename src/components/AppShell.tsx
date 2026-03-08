@@ -12,6 +12,9 @@ import ExercicesPage from '@/pages/ExercicesPage';
 import ParametresPage from '@/pages/ParametresPage';
 import SaisiePage from '@/pages/SaisiePage';
 import GrandLivrePage from '@/pages/GrandLivrePage';
+import BalanceAgeePage from '@/pages/BalanceAgeePage';
+import RapprochementPage from '@/pages/RapprochementPage';
+import NotesAnnexesPage from '@/pages/NotesAnnexesPage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -23,11 +26,16 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'journal', icon: '📋', label: 'Journal' },
     { id: 'balance', icon: '⚖️', label: 'Balance' },
     { id: 'grandlivre', icon: '📖', label: 'Grand Livre' },
+    { id: 'rapprochement', icon: '🏦', label: 'Rapprochement' },
   ]},
   { section: 'États Financiers', items: [
     { id: 'bilan', icon: '🏛️', label: 'Bilan' },
     { id: 'resultat', icon: '📊', label: 'Compte de Résultat' },
     { id: 'tft', icon: '💸', label: 'Flux de Trésorerie' },
+    { id: 'note34', icon: '📝', label: 'Notes Annexes' },
+  ]},
+  { section: 'Analyse', items: [
+    { id: 'balance_agee', icon: '⏳', label: 'Balance Âgée' },
   ]},
   { section: 'Paramètres', items: [
     { id: 'plan', icon: '🗂️', label: 'Plan Comptable' },
@@ -41,6 +49,8 @@ const PAGES: Record<string, React.ComponentType> = {
   bilan: BilanPage, resultat: ResultatPage, tft: TFTPage,
   plan: PlanComptablePage, exercices: ExercicesPage, parametres: ParametresPage,
   saisie: SaisiePage, grandlivre: GrandLivrePage,
+  balance_agee: BalanceAgeePage, rapprochement: RapprochementPage,
+  note34: NotesAnnexesPage,
 };
 
 // Cabinet mode: client list page with real switching
