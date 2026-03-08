@@ -13,7 +13,7 @@ import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { exportCsv } from '@/lib/csv-export';
 
-const fmt = (n: number) => n ? n.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '';
+const fmtGL = (n: number) => n ? n.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '';
 
 const JOURNALS = [
   { code: '', label: 'Tous les journaux' },

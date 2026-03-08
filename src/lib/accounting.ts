@@ -275,7 +275,7 @@ export const CR: MapLine[] = [
   { id: 'RS', label: '(−) VCN immo. cédées AG', c: [['81', '819']], s: 'D', m: 'n' },
   { id: 'RE_H', label: 'RÉSULTAT HAO', type: 'gtotal', f: v => v.TL + v.TM - v.RQ - v.RS },
   { id: 'RU', label: '(−) Participation travailleurs AH', c: [['664', '664']], s: 'D', m: 'n' },
-  { id: 'RV', label: '(−) Impôts sur le résultat AI', c: [['89', '899']], s: 'D', m: 'n' },
+  { id: 'RV', label: '(−) Impôts sur le résultat AI', c: [['89', '899'], ['694', '699']], s: 'D', m: 'n' },
   { id: 'RN_', label: "RÉSULTAT NET DE L'EXERCICE", type: 'gtotal', f: v => v.RAO + v.RE_H - v.RU - v.RV },
 ];
 
