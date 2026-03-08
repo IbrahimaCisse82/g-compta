@@ -306,26 +306,4 @@ export const TFT: MapLine[] = [
   { id: 'T_TC', label: 'TRÉSORERIE DE CLÔTURE (N)', type: 'gtotal', f: v => v.T_TFT + v.FP },
 ];
 
-// ─── COMPUTE INDICATORS (simplified) ──────────────────
-export function computeIndicateurs(balance: BalanceLine[]) {
-  const g = (num: string) => balance.find(r => r.compte === num) || { sfd: 0, sfc: 0, md: 0, mc: 0, sd: 0, sc: 0 };
-  const gs = (num: string) => { const r = g(num); return (r.sfd || 0) + (r.md || 0); };
-  const ca = parseFloat(String(g('702100').sfc)) || parseFloat(String(g('702100').mc)) || 0;
-  const achats = gs('601100') + gs('608100');
-  const transports = gs('612000');
-  const fraisBanc = gs('631800');
-  const interim = gs('637100');
-  const prestations = gs('638900');
-  const salaires = gs('661100');
-  const amort = gs('681200');
-  const chargesExt = transports + fraisBanc + interim + prestations;
-  const marge = ca - achats;
-  const va = marge - chargesExt;
-  const ebe = va - salaires;
-  const resultat = ebe - amort;
-  const bqAct = Math.max(0, parseFloat(String(g('521100').sfd || 0)) - parseFloat(String(g('521100').sfc || 0)));
-  const bqPas = Math.max(0, parseFloat(String(g('521100').sfc || 0)) - parseFloat(String(g('521100').sfd || 0)));
-  const caisse = parseFloat(String(g('571100').sfd)) || 0;
-  const tresoNette = bqAct + caisse - bqPas;
-  return { ca, achats, transports, fraisBanc, interim, prestations, chargesExt, salaires, amort, marge, va, ebe, resultat, tresoNette, bqAct, bqPas, caisse };
-}
+// computeIndicateurs removed — use calc(balance, CR) instead for proper SIG computation
