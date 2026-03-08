@@ -36,6 +36,7 @@ interface AppState {
   updateEntreprise: (updates: Partial<Entreprise>) => Promise<void>;
   clotureExercice: () => Promise<void>;
   isExerciceCloture: () => boolean;
+  switchEntreprise: (entrepriseId: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppState | null>(null);
