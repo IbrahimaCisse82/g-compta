@@ -601,7 +601,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setPage: setCurrentPage, launchDemo, launchUser, logout, addJournalEntry,
       deleteJournalEntry, addCompte, deleteCompte, toggleCompte,
       addExercice, deleteExercice, openExercice, updateEntreprise,
-      clotureExercice, isExerciceCloture,
+      clotureExercice, isExerciceCloture, switchEntreprise,
     }}>
       {children}
     </AppContext.Provider>
