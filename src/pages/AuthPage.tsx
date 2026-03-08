@@ -20,7 +20,7 @@ export default function AuthPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -29,7 +29,17 @@ export default function AuthPage() {
       },
     });
     if (error) toast.error(error.message);
-    else toast.success('Vérifiez votre email pour confirmer votre inscription.');
+    else {
+      // Auto-create profile since trigger on auth.users isn't available
+      if (data.user) {
+        await supabase.from('profiles').upsert({
+          id: data.user.id,
+          email,
+          full_name: fullName,
+        }, { onConflict: 'id' });
+      }
+      toast.success('Vérifiez votre email pour confirmer votre inscription.');
+    }
     setLoading(false);
   };
 
