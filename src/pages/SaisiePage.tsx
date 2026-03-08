@@ -1,6 +1,6 @@
 import { useApp } from '@/stores/app-store';
 import { fmt } from '@/lib/accounting';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 
 interface LigneEcriture {
   compte: string;
@@ -20,6 +20,18 @@ function NouvelleEcritureForm({ onSubmit, plan, loading }: { onSubmit: (data: { 
   ]);
   const [compteSearch, setCompteSearch] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setCompteSearch(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const totalDebit = lignes.reduce((s, l) => s + (l.debit || 0), 0);
   const totalCredit = lignes.reduce((s, l) => s + (l.credit || 0), 0);
@@ -58,9 +70,9 @@ function NouvelleEcritureForm({ onSubmit, plan, loading }: { onSubmit: (data: { 
   };
 
   return (
-    <div className="bg-bg2 border border-border rounded-lg p-4 mb-4">
+    <div className="bg-bg2 border border-border rounded-lg p-4 mb-4" ref={dropdownRef}>
       <div className="font-bold text-sm mb-3 text-primary">✏️ Nouvelle Écriture</div>
-      <div className="grid grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
         <div>
           <label className="text-[9px] text-fg3 uppercase tracking-wider font-mono block mb-1">Date</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-bg3 border border-border rounded px-2 py-1.5 text-[11px] text-foreground outline-none focus:border-primary" />
@@ -198,29 +210,31 @@ export default function SaisiePage() {
             <span className="text-xs font-semibold">{rows.length} écriture(s)</span>
             <input className="bg-bg3 border border-border rounded-md px-2.5 py-1 text-[11px] text-foreground outline-none focus:border-primary w-40" placeholder="Rechercher..." value={filter} onChange={e => setFilter(e.target.value)} />
           </div>
-          <table className="w-full border-collapse">
-            <thead><tr>
-              {['Date', 'Pièce', 'Journal', 'Compte', 'Libellé', 'Débit', 'Crédit', ...(locked ? [] : [''])].map(h => (
-                <th key={h} className="bg-bg3 px-3 py-1.5 text-left text-[9px] font-bold text-fg3 uppercase tracking-[1px] font-mono border-b border-border whitespace-nowrap">{h}</th>
-              ))}
-            </tr></thead>
-            <tbody>
-              {rows.map(r => (
-                <tr key={r.id} className="hover:bg-[rgba(56,189,248,.02)]">
-                  <td className="px-3 py-1.5 text-[11px] font-mono border-b border-border/50">{r.date_ecriture}</td>
-                  <td className="px-3 py-1.5 text-[11px] border-b border-border/50"><span className="bg-[rgba(56,189,248,.12)] text-primary rounded-lg px-1.5 py-0.5 text-[9px] font-bold font-mono">{r.piece}</span></td>
-                  <td className="px-3 py-1.5 text-[9px] text-fg3 border-b border-border/50">{r.journal_code}</td>
-                  <td className="px-3 py-1.5 text-[11px] text-primary font-mono border-b border-border/50">{r.compte}</td>
-                  <td className="px-3 py-1.5 text-[11px] border-b border-border/50">{r.libelle}</td>
-                  <td className="px-3 py-1.5 text-[11px] font-mono text-right text-primary border-b border-border/50">{r.debit ? fmt(r.debit) : ''}</td>
-                  <td className="px-3 py-1.5 text-[11px] font-mono text-right text-success border-b border-border/50">{r.credit ? fmt(r.credit) : ''}</td>
-                  {!locked && (
-                    <td className="px-3 py-1.5 border-b border-border/50"><button onClick={() => deleteJournalEntry(r.id)} className="text-destructive text-xs">🗑</button></td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead><tr>
+                {['Date', 'Pièce', 'Journal', 'Compte', 'Libellé', 'Débit', 'Crédit', ...(locked ? [] : [''])].map(h => (
+                  <th key={h} className="bg-bg3 px-3 py-1.5 text-left text-[9px] font-bold text-fg3 uppercase tracking-[1px] font-mono border-b border-border whitespace-nowrap">{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {rows.map(r => (
+                  <tr key={r.id} className="hover:bg-[rgba(56,189,248,.02)]">
+                    <td className="px-3 py-1.5 text-[11px] font-mono border-b border-border/50">{r.date_ecriture}</td>
+                    <td className="px-3 py-1.5 text-[11px] border-b border-border/50"><span className="bg-[rgba(56,189,248,.12)] text-primary rounded-lg px-1.5 py-0.5 text-[9px] font-bold font-mono">{r.piece}</span></td>
+                    <td className="px-3 py-1.5 text-[9px] text-fg3 border-b border-border/50">{r.journal_code}</td>
+                    <td className="px-3 py-1.5 text-[11px] text-primary font-mono border-b border-border/50">{r.compte}</td>
+                    <td className="px-3 py-1.5 text-[11px] border-b border-border/50">{r.libelle}</td>
+                    <td className="px-3 py-1.5 text-[11px] font-mono text-right text-primary border-b border-border/50">{r.debit ? fmt(r.debit) : ''}</td>
+                    <td className="px-3 py-1.5 text-[11px] font-mono text-right text-success border-b border-border/50">{r.credit ? fmt(r.credit) : ''}</td>
+                    {!locked && (
+                      <td className="px-3 py-1.5 border-b border-border/50"><button onClick={() => deleteJournalEntry(r.id)} className="text-destructive text-xs">🗑</button></td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

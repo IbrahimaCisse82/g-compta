@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { exportCsv } from '@/lib/csv-export';
 
 const fmt = (n: number) => n ? n.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '';
 
@@ -48,7 +49,6 @@ export default function GrandLivrePage() {
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [openAccounts, setOpenAccounts] = useState<Set<string>>(new Set());
 
-  // Filter journal entries first
   const filteredJournal = useMemo(() => {
     let entries = journal;
     if (journalFilter && journalFilter !== '__all__') entries = entries.filter(j => j.journal_code === journalFilter);
@@ -59,11 +59,9 @@ export default function GrandLivrePage() {
 
   const hasFilters = (journalFilter && journalFilter !== '__all__') || dateFrom || dateTo;
 
-  // Group journal entries by account
   const accounts = useMemo(() => {
     const map = new Map<string, { compte: string; intitule: string; entries: typeof journal; balLine: typeof balance[0] | undefined }>();
 
-    // Build from balance (only if no journal filter active — otherwise only show accounts with matching entries)
     if (!hasFilters) {
       for (const b of balance) {
         if (!map.has(b.compte)) {
@@ -121,11 +119,27 @@ export default function GrandLivrePage() {
   const totalDebit = accounts.reduce((s, a) => s + a.entries.reduce((s2, e) => s2 + (e.debit || 0), 0), 0);
   const totalCredit = accounts.reduce((s, a) => s + a.entries.reduce((s2, e) => s2 + (e.credit || 0), 0), 0);
 
-  // Detect unique journal codes in data for dynamic filter
   const uniqueJournals = useMemo(() => {
     const codes = new Set(journal.map(j => j.journal_code));
     return JOURNALS.filter(j => j.code === '' || codes.has(j.code));
   }, [journal]);
+
+  const handleExportCsv = () => {
+    const rows: (string | number)[][] = [];
+    for (const acc of accounts) {
+      const { openingSolde, rows: entries, closingSolde } = computeRunning(acc);
+      rows.push([acc.compte, acc.intitule, '', '', '', 'Solde ouverture', acc.balLine?.sd || 0, acc.balLine?.sc || 0, openingSolde]);
+      for (const { entry, solde } of entries) {
+        rows.push([acc.compte, acc.intitule, entry.date_ecriture, entry.piece, entry.journal_code, entry.libelle, entry.debit, entry.credit, solde]);
+      }
+      rows.push([acc.compte, acc.intitule, '', '', '', 'Solde clôture', '', '', closingSolde]);
+    }
+    exportCsv(
+      ['Compte', 'Intitulé', 'Date', 'Pièce', 'Journal', 'Libellé', 'Débit', 'Crédit', 'Solde'],
+      rows,
+      `grand_livre_${exercice?.annee}`,
+    );
+  };
 
   return (
     <div className="p-6 space-y-4">
@@ -136,19 +150,14 @@ export default function GrandLivrePage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-muted-foreground font-mono">{accounts.length} comptes · {filteredJournal.length} écritures</span>
+          <button onClick={handleExportCsv} className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-border text-fg2 hover:bg-bg3">📥 CSV</button>
           <button onClick={expandAll} className="px-2 py-1 text-[10px] border border-border rounded hover:bg-muted">Tout ouvrir</button>
           <button onClick={collapseAll} className="px-2 py-1 text-[10px] border border-border rounded hover:bg-muted">Tout fermer</button>
         </div>
       </div>
 
-      {/* Filters bar */}
       <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Rechercher un compte..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="max-w-[200px] h-8 text-xs"
-        />
+        <Input placeholder="Rechercher un compte..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-[200px] h-8 text-xs" />
         <Select value={journalFilter} onValueChange={setJournalFilter}>
           <SelectTrigger className="w-[180px] h-8 text-xs">
             <SelectValue placeholder="Tous les journaux" />
@@ -168,7 +177,6 @@ export default function GrandLivrePage() {
         )}
       </div>
 
-      {/* Summary bar */}
       <div className="flex gap-4 text-xs font-mono">
         <span className="px-3 py-1.5 bg-muted rounded">Total Débit: <strong className="text-primary">{fmt(totalDebit)}</strong></span>
         <span className="px-3 py-1.5 bg-muted rounded">Total Crédit: <strong className="text-primary">{fmt(totalCredit)}</strong></span>
@@ -197,7 +205,7 @@ export default function GrandLivrePage() {
                     <div className="flex items-center gap-4 font-mono text-[11px]">
                       <span>D: {fmt(totalD)}</span>
                       <span>C: {fmt(totalC)}</span>
-                      <span className={`font-bold ${closingSolde >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                      <span className={`font-bold ${closingSolde >= 0 ? 'text-primary' : 'text-destructive'}`}>
                         Solde: {fmt(Math.abs(closingSolde))} {closingSolde >= 0 ? 'D' : 'C'}
                       </span>
                     </div>
@@ -226,7 +234,7 @@ export default function GrandLivrePage() {
                             </TableCell>
                             <TableCell className="text-[10px] text-right font-mono">{fmt(acc.balLine?.sd || 0)}</TableCell>
                             <TableCell className="text-[10px] text-right font-mono">{fmt(acc.balLine?.sc || 0)}</TableCell>
-                            <TableCell className={`text-[10px] text-right font-mono font-bold ${openingSolde >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                            <TableCell className={`text-[10px] text-right font-mono font-bold ${openingSolde >= 0 ? 'text-primary' : 'text-destructive'}`}>
                               {fmt(Math.abs(openingSolde))} {openingSolde >= 0 ? 'D' : 'C'}
                             </TableCell>
                           </TableRow>
@@ -240,7 +248,7 @@ export default function GrandLivrePage() {
                             <TableCell className="text-[10px]">{entry.libelle}</TableCell>
                             <TableCell className="text-[10px] text-right font-mono">{fmt(entry.debit)}</TableCell>
                             <TableCell className="text-[10px] text-right font-mono">{fmt(entry.credit)}</TableCell>
-                            <TableCell className={`text-[10px] text-right font-mono font-bold ${solde >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                            <TableCell className={`text-[10px] text-right font-mono font-bold ${solde >= 0 ? 'text-primary' : 'text-destructive'}`}>
                               {fmt(Math.abs(solde))} {solde >= 0 ? 'D' : 'C'}
                             </TableCell>
                           </TableRow>
@@ -250,7 +258,7 @@ export default function GrandLivrePage() {
                           <TableCell className="text-[10px]" colSpan={4}>Totaux</TableCell>
                           <TableCell className="text-[10px] text-right font-mono">{fmt(totalD)}</TableCell>
                           <TableCell className="text-[10px] text-right font-mono">{fmt(totalC)}</TableCell>
-                          <TableCell className={`text-[10px] text-right font-mono ${closingSolde >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                          <TableCell className={`text-[10px] text-right font-mono ${closingSolde >= 0 ? 'text-primary' : 'text-destructive'}`}>
                             {fmt(Math.abs(closingSolde))} {closingSolde >= 0 ? 'D' : 'C'}
                           </TableCell>
                         </TableRow>
