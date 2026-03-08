@@ -246,10 +246,10 @@ export default function GrandLivrePage() {
                             <TableCell className="text-[10px] font-mono">{entry.piece}</TableCell>
                             <TableCell className="text-[10px] font-mono">{entry.journal_code}</TableCell>
                             <TableCell className="text-[10px]">{entry.libelle}</TableCell>
-                            <TableCell className="text-[10px] text-right font-mono">{fmt(entry.debit)}</TableCell>
-                            <TableCell className="text-[10px] text-right font-mono">{fmt(entry.credit)}</TableCell>
+                            <TableCell className="text-[10px] text-right font-mono">{fmtGL(entry.debit)}</TableCell>
+                            <TableCell className="text-[10px] text-right font-mono">{fmtGL(entry.credit)}</TableCell>
                             <TableCell className={`text-[10px] text-right font-mono font-bold ${solde >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                              {fmt(Math.abs(solde))} {solde >= 0 ? 'D' : 'C'}
+                              {fmtGL(Math.abs(solde))} {solde >= 0 ? 'D' : 'C'}
                             </TableCell>
                           </TableRow>
                         ))}
