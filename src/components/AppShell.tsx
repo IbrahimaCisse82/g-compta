@@ -15,6 +15,8 @@ import GrandLivrePage from '@/pages/GrandLivrePage';
 import BalanceAgeePage from '@/pages/BalanceAgeePage';
 import RapprochementPage from '@/pages/RapprochementPage';
 import NotesAnnexesPage from '@/pages/NotesAnnexesPage';
+import AuditTrailPage from '@/pages/AuditTrailPage';
+import LiasseFiscalePage from '@/pages/LiasseFiscalePage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -33,9 +35,11 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'resultat', icon: '📊', label: 'Compte de Résultat' },
     { id: 'tft', icon: '💸', label: 'Flux de Trésorerie' },
     { id: 'note34', icon: '📝', label: 'Notes Annexes' },
+    { id: 'liasse', icon: '📦', label: 'Liasse Fiscale DSF' },
   ]},
   { section: 'Analyse', items: [
     { id: 'balance_agee', icon: '⏳', label: 'Balance Âgée' },
+    { id: 'audit', icon: '🔍', label: "Piste d'Audit" },
   ]},
   { section: 'Paramètres', items: [
     { id: 'plan', icon: '🗂️', label: 'Plan Comptable' },
@@ -50,7 +54,7 @@ const PAGES: Record<string, React.ComponentType> = {
   plan: PlanComptablePage, exercices: ExercicesPage, parametres: ParametresPage,
   saisie: SaisiePage, grandlivre: GrandLivrePage,
   balance_agee: BalanceAgeePage, rapprochement: RapprochementPage,
-  note34: NotesAnnexesPage,
+  note34: NotesAnnexesPage, audit: AuditTrailPage, liasse: LiasseFiscalePage,
 };
 
 // Cabinet mode: client list page with real switching

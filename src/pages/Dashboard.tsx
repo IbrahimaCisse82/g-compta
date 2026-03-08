@@ -1,5 +1,6 @@
 import { useApp } from '@/stores/app-store';
 import { calc, CR, ACTIF, PASSIF, fmt, fmtSigned } from '@/lib/accounting';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const colorMap: Record<string, string> = {
   primary: 'text-primary',
@@ -14,6 +15,8 @@ const bgColorMap: Record<string, string> = {
   destructive: 'bg-destructive',
   accent: 'bg-accent',
 };
+
+const CHART_COLORS = ['#38bdf8', '#22c55e', '#ef4444', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 export default function Dashboard() {
   const { entreprise, exercice, balance, balanceN1 } = useApp();
@@ -31,6 +34,20 @@ export default function Dashboard() {
   const ca = vCR['XB'] || 0;
   const rn = vCR['RN_'] || 0;
   const ebe = vCR['EBE'] || 0;
+  const va = vCR['VA'] || 0;
+  const totalActif = vA['T_ACT'] || 0;
+  const capitauxPropres = vP['T_CP'] || 0;
+  const dettesFinancieres = vP['T_DF'] || 0;
+  const actifCirculant = vA['T_AC'] || 0;
+  const passifCirculant = vP['T_PC'] || 0;
+
+  // ─── Ratios financiers ───────────────────────────
+  const ratioRentaCA = ca ? (rn / ca) * 100 : 0;
+  const ratioRentaCP = capitauxPropres ? (rn / capitauxPropres) * 100 : 0;
+  const ratioLiqGen = passifCirculant ? actifCirculant / passifCirculant : 0;
+  const ratioSolvabilite = totalActif ? (capitauxPropres / totalActif) * 100 : 0;
+  const ratioEndettement = capitauxPropres ? (dettesFinancieres / capitauxPropres) * 100 : 0;
+  const ratioEBECA = ca ? (ebe / ca) * 100 : 0;
 
   const kpis = [
     { label: "Chiffre d'Affaires (XB)", value: fmt(ca), color: 'primary' },
@@ -42,7 +59,7 @@ export default function Dashboard() {
   const sigs = [
     { ref: 'XB', lib: "Chiffre d'Affaires", n: ca, n1: vCRN1?.['XB'] },
     { ref: 'XA', lib: 'Marge Commerciale', n: vCR['MARGE'] || 0, n1: vCRN1?.['MARGE'] },
-    { ref: 'XC', lib: 'Valeur Ajoutée', n: vCR['VA'] || 0, n1: vCRN1?.['VA'] },
+    { ref: 'XC', lib: 'Valeur Ajoutée', n: va, n1: vCRN1?.['VA'] },
     { ref: 'XD', lib: "Excédent Brut d'Expl.", n: ebe, n1: vCRN1?.['EBE'] },
     { ref: 'XE', lib: "Résultat d'Exploitation", n: vCR['RE_E'] || 0, n1: vCRN1?.['RE_E'] },
     { ref: 'XF', lib: 'Résultat Financier', n: vCR['RE_F'] || 0, n1: vCRN1?.['RE_F'] },
@@ -50,6 +67,31 @@ export default function Dashboard() {
     { ref: 'XH', lib: 'Résultat HAO', n: vCR['RE_H'] || 0, n1: vCRN1?.['RE_H'] },
     { ref: 'XI', lib: 'Résultat Net', n: rn, n1: vCRN1?.['RN_'] },
     { ref: 'ZH', lib: 'Trésorerie Nette', n: tresoNette, n1: tresoNetteN1 },
+  ];
+
+  // Chart data
+  const sigChartData = [
+    { name: 'CA', N: ca, 'N-1': vCRN1?.['XB'] || 0 },
+    { name: 'VA', N: va, 'N-1': vCRN1?.['VA'] || 0 },
+    { name: 'EBE', N: ebe, 'N-1': vCRN1?.['EBE'] || 0 },
+    { name: 'RE', N: vCR['RE_E'] || 0, 'N-1': vCRN1?.['RE_E'] || 0 },
+    { name: 'RN', N: rn, 'N-1': vCRN1?.['RN_'] || 0 },
+  ];
+
+  const bilanPieData = [
+    { name: 'Immo.', value: Math.abs(vA['T_IA'] || 0) },
+    { name: 'Stocks', value: Math.abs(vA['T_ST'] || 0) },
+    { name: 'Créances', value: Math.abs(vA['T_CR'] || 0) },
+    { name: 'Tréso.', value: Math.abs(tresoActif) },
+  ].filter(d => d.value > 0);
+
+  const ratios = [
+    { label: 'Rentabilité / CA', value: ratioRentaCA, unit: '%', color: ratioRentaCA >= 0 ? 'text-success' : 'text-destructive', desc: 'RN / CA' },
+    { label: 'Rentabilité / CP', value: ratioRentaCP, unit: '%', color: ratioRentaCP >= 0 ? 'text-success' : 'text-destructive', desc: 'RN / Capitaux Propres' },
+    { label: 'Liquidité Générale', value: ratioLiqGen, unit: 'x', color: ratioLiqGen >= 1 ? 'text-success' : 'text-destructive', desc: 'AC / PC' },
+    { label: 'Solvabilité', value: ratioSolvabilite, unit: '%', color: ratioSolvabilite >= 20 ? 'text-success' : 'text-destructive', desc: 'CP / Total Actif' },
+    { label: 'Endettement', value: ratioEndettement, unit: '%', color: ratioEndettement <= 100 ? 'text-success' : 'text-destructive', desc: 'Dettes Fin. / CP' },
+    { label: 'Marge EBE', value: ratioEBECA, unit: '%', color: ratioEBECA >= 0 ? 'text-success' : 'text-destructive', desc: 'EBE / CA' },
   ];
 
   return (
@@ -64,8 +106,9 @@ export default function Dashboard() {
           {exercice?.statut === 'en_cours' && <span className="bg-accent/10 text-accent rounded px-2 py-0.5 font-bold">🟡 En cours</span>}
         </div>
       </div>
-      <div className="p-5">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      <div className="p-5 space-y-4">
+        {/* KPIs */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {kpis.map(k => (
             <div key={k.label} className="bg-bg2 border border-border rounded-lg p-3.5 relative overflow-hidden">
               <div className={`absolute top-0 left-0 right-0 h-0.5 ${bgColorMap[k.color] || 'bg-primary'}`} />
@@ -77,6 +120,74 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* Charts row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {/* SIG Bar Chart */}
+          <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+            <div className="px-3.5 py-2 border-b border-border">
+              <span className="text-xs font-semibold">📊 SIG — Comparaison N / N-1</span>
+            </div>
+            <div className="p-3 h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={sigChartData} barGap={2}>
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 9 }} tickFormatter={v => v >= 1000000 ? `${(v/1000000).toFixed(0)}M` : v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
+                  <Tooltip formatter={(v: number) => fmt(v)} labelStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="N" fill="#38bdf8" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="N-1" fill="#38bdf8" opacity={0.3} radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Bilan Pie Chart */}
+          <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+            <div className="px-3.5 py-2 border-b border-border">
+              <span className="text-xs font-semibold">🏛️ Structure de l'Actif</span>
+            </div>
+            <div className="p-3 h-[220px] flex items-center">
+              <div className="w-1/2 h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={bilanPieData} dataKey="value" cx="50%" cy="50%" outerRadius={70} innerRadius={35} paddingAngle={2}>
+                      {bilanPieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip formatter={(v: number) => fmt(v)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="w-1/2 space-y-1.5 pl-2">
+                {bilanPieData.map((d, i) => (
+                  <div key={d.name} className="flex items-center gap-2 text-[10px]">
+                    <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
+                    <span className="text-fg2">{d.name}</span>
+                    <span className="font-mono text-fg3 ml-auto">{fmt(d.value)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Ratios financiers */}
+        <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+          <div className="px-3.5 py-2.5 border-b border-border">
+            <span className="text-xs font-semibold">📈 Ratios Financiers</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-x divide-border">
+            {ratios.map(r => (
+              <div key={r.label} className="p-3 text-center">
+                <div className="text-[9px] text-fg3 uppercase tracking-wider font-mono mb-1">{r.label}</div>
+                <div className={`text-lg font-bold font-mono ${r.color}`}>
+                  {isFinite(r.value) ? `${r.value.toFixed(1)}${r.unit}` : '—'}
+                </div>
+                <div className="text-[9px] text-fg3 mt-0.5">{r.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* SIG table */}
         <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
           <div className="px-3.5 py-2.5 border-b border-border">
             <span className="text-xs font-semibold">Soldes Intermédiaires de Gestion (SIG)</span>
