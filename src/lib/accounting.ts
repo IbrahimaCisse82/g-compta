@@ -259,7 +259,7 @@ export const CR: MapLine[] = [
   { id: 'TH', label: 'Reprises amort. & provisions expl. T', c: [['791', '795']], s: 'C', m: 'n' },
   { id: 'TI', label: 'Transferts de charges expl. U', c: [['781', '781']], s: 'C', m: 'n' },
   { id: 'RL', label: '(−) Dotations amort. expl. V', c: [['681', '681']], s: 'D', m: 'n' },
-  { id: 'RM', label: '(−) Dotations provisions expl. W', c: [['691', '694']], s: 'D', m: 'n' },
+  { id: 'RM', label: '(−) Dotations provisions expl. W', c: [['691', '693']], s: 'D', m: 'n' },
   { id: 'RN', label: '(−) Autres charges expl. X', c: [['65', '659']], s: 'D', m: 'n' },
   { id: 'RE_E', label: "RÉSULTAT D'EXPLOITATION", type: 'gtotal', f: v => v.EBE + v.TH + v.TI - v.RL - v.RM - v.RN },
   { id: 'TJ', label: 'Revenus financiers Y', c: [['77', '779']], s: 'C', m: 'n' },
