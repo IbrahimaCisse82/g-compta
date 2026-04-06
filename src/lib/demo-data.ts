@@ -15,7 +15,7 @@ export const PLAN_SYSCOHADA: Omit<PlanCompte, 'id' | 'entreprise_id'>[] = [
   { numero: '281300', intitule: 'Amort. sites internet', classe: '2', sens: 'C', type_compte: 'Bilan', actif: true },
   { numero: '282300', intitule: 'Amort. bâtiments', classe: '2', sens: 'C', type_compte: 'Bilan', actif: true },
   { numero: '311000', intitule: 'Marchandises', classe: '3', sens: 'D', type_compte: 'Bilan', actif: true },
-  { numero: '351000', intitule: 'Produits finis', classe: '3', sens: 'D', type_compte: 'Bilan', actif: true },
+  { numero: '361000', intitule: 'Produits finis', classe: '3', sens: 'D', type_compte: 'Bilan', actif: true },
   { numero: '401100', intitule: 'Fournisseurs', classe: '4', sens: 'C', type_compte: 'Bilan', actif: true },
   { numero: '411100', intitule: 'Clients', classe: '4', sens: 'D', type_compte: 'Bilan', actif: true },
   { numero: '419000', intitule: 'Clients — Avances reçues', classe: '4', sens: 'C', type_compte: 'Bilan', actif: true },
