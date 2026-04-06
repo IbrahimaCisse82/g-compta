@@ -2,7 +2,7 @@ import type { BalanceLine, JournalLine, Entreprise, Exercice, PlanCompte } from 
 
 export const PLAN_SYSCOHADA: Omit<PlanCompte, 'id' | 'entreprise_id'>[] = [
   { numero: '101000', intitule: 'Capital social', classe: '1', sens: 'C', type_compte: 'Bilan', actif: true },
-  { numero: '106000', intitule: 'Réserves légales', classe: '1', sens: 'C', type_compte: 'Bilan', actif: true },
+  { numero: '106000', intitule: 'Écarts de réévaluation', classe: '1', sens: 'C', type_compte: 'Bilan', actif: true },
   { numero: '121000', intitule: 'Report à nouveau créditeur', classe: '1', sens: 'C', type_compte: 'Bilan', actif: true },
   { numero: '129000', intitule: 'Report à nouveau débiteur', classe: '1', sens: 'D', type_compte: 'Bilan', actif: true },
   { numero: '131000', intitule: 'Résultat net — Bénéfice', classe: '1', sens: 'C', type_compte: 'Bilan', actif: true },
