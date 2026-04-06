@@ -176,7 +176,7 @@ export const ACTIF: MapLine[] = [
   { id: 'AE', label: 'Matériel, mobilier & actifs biologiques', c: [['241', '244'], ['246', '248']], s: 'D' },
   { id: 'AG', label: 'Matériels de transport', c: [['245', '245']], s: 'D' },
   { id: 'AH', label: 'Avances et acomptes sur immobilisations', c: [['25', '259']], s: 'D' },
-  { id: 'T_IC', label: 'TOTAL IMMO. CORPORELLES', type: 'total', refs: ['AC', 'AD', 'AE', 'AF', 'AG'] },
+  { id: 'T_IC', label: 'TOTAL IMMO. CORPORELLES', type: 'total', refs: ['AC', 'AD', 'AE', 'AG'] },
   { id: 'AI', label: 'Titres de participation', c: [['261', '263']], s: 'D' },
   { id: 'AJ', label: 'Autres immobilisations financières', c: [['264', '269'], ['271', '279']], s: 'D' },
   { id: 'T_IF', label: 'TOTAL IMMO. FINANCIÈRES', type: 'total', refs: ['AI', 'AJ'] },
