@@ -6,11 +6,11 @@ import { exportTFTPdf } from '@/lib/pdf-export';
 export default function TFTPage() {
   const { balance, balanceN1, entreprise, exercice } = useApp();
   const vCR = calc(balance, CR);
-  const vT = calc(balance, TFT, { RN_: vCR['RN_'] || 0 });
+  const vT = calc(balance, TFT, { XI: vCR['XI'] || 0 });
 
   const hasN1 = balanceN1.length > 0;
   const vCRN1 = hasN1 ? calc(balanceN1, CR) : {};
-  const vTN1 = hasN1 ? calc(balanceN1, TFT, { RN_: vCRN1['RN_'] || 0 }) : {};
+  const vTN1 = hasN1 ? calc(balanceN1, TFT, { XI: vCRN1['XI'] || 0 }) : {};
 
   const handleExport = () => {
     const lines = TFT.filter(l => l.type !== 'sect').map(l => ({

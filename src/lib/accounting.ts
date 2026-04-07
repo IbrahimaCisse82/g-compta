@@ -33,9 +33,9 @@ export const inRange = (compte: string, ranges: string[][]): boolean => {
 export interface BalanceLine {
   compte: string;
   intitule: string;
-  sd: number; sc: number;   // soldes initiaux
-  md: number; mc: number;   // mouvements
-  sfd: number; sfc: number; // soldes finaux
+  sd: number; sc: number;
+  md: number; mc: number;
+  sfd: number; sfc: number;
   id?: string;
   exercice_id?: string;
   entreprise_id?: string;
@@ -166,143 +166,180 @@ export function calc(balance: BalanceLine[], def: MapLine[], extra: Record<strin
   return v;
 }
 
-// ─── SYSCOHADA MAPPINGS ──────────────────────────────
+// ══════════════════════════════════════════════════════════
+// SYSCOHADA RÉVISÉ — RÉFÉRENCES OFFICIELLES DSF
+// ══════════════════════════════════════════════════════════
+
 export const ACTIF: MapLine[] = [
-  { id: 'S_IA', label: 'ACTIF IMMOBILISÉ', type: 'sect' },
-  { id: 'AA', label: 'Charges immobilisées', c: [['201', '209']], s: 'D' },
-  { id: 'AB', label: 'Immobilisations incorporelles', c: [['211', '219']], s: 'D' },
-  { id: 'AC', label: 'Terrains', c: [['221', '229']], s: 'D' },
-  { id: 'AD', label: 'Bâtiments, installations techniques', c: [['231', '239']], s: 'D' },
-  { id: 'AE', label: 'Matériel, mobilier & actifs biologiques', c: [['241', '244'], ['246', '248']], s: 'D' },
-  { id: 'AG', label: 'Matériels de transport', c: [['245', '245']], s: 'D' },
-  { id: 'AH', label: 'Avances et acomptes sur immobilisations', c: [['25', '259']], s: 'D' },
-  { id: 'T_IC', label: 'TOTAL IMMO. CORPORELLES', type: 'total', refs: ['AC', 'AD', 'AE', 'AG'] },
-  { id: 'AI', label: 'Titres de participation', c: [['261', '263']], s: 'D' },
-  { id: 'AJ', label: 'Autres immobilisations financières', c: [['264', '269'], ['271', '279']], s: 'D' },
-  { id: 'T_IF', label: 'TOTAL IMMO. FINANCIÈRES', type: 'total', refs: ['AI', 'AJ'] },
-  { id: 'T_IA', label: 'TOTAL ACTIF IMMOBILISÉ (I)', type: 'gtotal', refs: ['AA', 'AB', 'T_IC', 'AH', 'T_IF'] },
+  { id: 'S_II', label: 'ACTIF IMMOBILISÉ', type: 'sect' },
+  // Immobilisations incorporelles
+  { id: 'AD', label: 'IMMOBILISATIONS INCORPORELLES', type: 'total', refs: ['AE', 'AF', 'AG', 'AH'] },
+  { id: 'AE', label: 'Frais de développement et de prospection', c: [['201', '206']], s: 'D' },
+  { id: 'AF', label: 'Brevets, licences, logiciels, droits similaires', c: [['212', '215']], s: 'D' },
+  { id: 'AG', label: 'Fonds commercial et droit au bail', c: [['216', '217']], s: 'D' },
+  { id: 'AH', label: 'Autres immobilisations incorporelles', c: [['211', '211'], ['218', '219']], s: 'D' },
+  // Immobilisations corporelles
+  { id: 'AI', label: 'IMMOBILISATIONS CORPORELLES', type: 'total', refs: ['AJ', 'AK', 'AL', 'AM', 'AN'] },
+  { id: 'AJ', label: 'Terrains', c: [['221', '229']], s: 'D' },
+  { id: 'AK', label: 'Bâtiments', c: [['231', '239']], s: 'D' },
+  { id: 'AL', label: 'Aménagements, agencements et installations', c: [['241', '243']], s: 'D' },
+  { id: 'AM', label: 'Matériel, mobilier et actifs biologiques', c: [['244', '244'], ['246', '248']], s: 'D' },
+  { id: 'AN', label: 'Matériel de transport', c: [['245', '245']], s: 'D' },
+  { id: 'AP', label: 'Avances et acomptes sur immobilisations', c: [['25', '259']], s: 'D' },
+  // Immobilisations financières
+  { id: 'AQ', label: 'IMMOBILISATIONS FINANCIÈRES', type: 'total', refs: ['AR', 'AS'] },
+  { id: 'AR', label: 'Titres de participation', c: [['261', '263']], s: 'D' },
+  { id: 'AS', label: 'Autres immobilisations financières', c: [['264', '269'], ['271', '279']], s: 'D' },
+  { id: 'AZ', label: 'TOTAL ACTIF IMMOBILISÉ (I)', type: 'gtotal', refs: ['AD', 'AI', 'AP', 'AQ'] },
+
   { id: 'S_AC', label: 'ACTIF CIRCULANT', type: 'sect' },
   { id: 'BA', label: 'Actif circulant HAO', c: [['475', '475']], s: 'D' },
-  { id: 'BB', label: 'Stocks de marchandises', c: [['31', '319']], s: 'D' },
-  { id: 'BC', label: 'Stocks mat. premières & fournitures', c: [['32', '329']], s: 'D' },
-  { id: 'BD', label: 'En-cours de production', c: [['33', '349']], s: 'D' },
-  { id: 'BE', label: 'Stocks de produits fabriqués', c: [['35', '369']], s: 'D' },
-  { id: 'T_ST', label: 'TOTAL STOCKS', type: 'total', refs: ['BB', 'BC', 'BD', 'BE'] },
-  { id: 'BF', label: 'Fournisseurs, avances versées', c: [['4091', '4098']], s: 'D' },
-  { id: 'BG', label: 'Clients', c: [['411', '4198']], s: 'D' },
-  { id: 'BH', label: 'Autres créances', c: [['42', '47']], s: 'D' },
-  { id: 'T_CR', label: 'TOTAL CRÉANCES', type: 'total', refs: ['BF', 'BG', 'BH'] },
-  { id: 'T_AC', label: 'TOTAL ACTIF CIRCULANT (II)', type: 'gtotal', refs: ['BA', 'T_ST', 'T_CR'] },
+  { id: 'BB', label: 'Stocks et en-cours', c: [['31', '39']], s: 'D' },
+  // Créances et emplois assimilés
+  { id: 'BG', label: 'CRÉANCES ET EMPLOIS ASSIMILÉS', type: 'total', refs: ['BH', 'BI', 'BJ'] },
+  { id: 'BH', label: 'Fournisseurs, avances versées', c: [['4091', '4098']], s: 'D' },
+  { id: 'BI', label: 'Clients', c: [['411', '4198']], s: 'D' },
+  { id: 'BJ', label: 'Autres créances', c: [['42', '47']], s: 'D' },
+  { id: 'BK', label: 'TOTAL ACTIF CIRCULANT (II)', type: 'gtotal', refs: ['BA', 'BB', 'BG'] },
+
   { id: 'S_TA', label: 'TRÉSORERIE — ACTIF', type: 'sect' },
-  { id: 'BJ', label: 'Titres de placement', c: [['50', '509']], s: 'D' },
-  { id: 'BK', label: 'Valeurs à encaisser', c: [['511', '519']], s: 'D' },
-  { id: 'BL', label: 'Banques, chèques postaux, caisse', c: [['521', '585']], s: 'D' },
-  { id: 'T_TA', label: 'TOTAL TRÉSORERIE ACTIF (III)', type: 'total', refs: ['BJ', 'BK', 'BL'] },
-  { id: 'T_ACT', label: 'TOTAL GÉNÉRAL ACTIF (I+II+III)', type: 'gtotal', refs: ['T_IA', 'T_AC', 'T_TA'] },
+  { id: 'BQ', label: 'Titres de placement', c: [['50', '509']], s: 'D' },
+  { id: 'BR', label: 'Valeurs à encaisser', c: [['511', '519']], s: 'D' },
+  { id: 'BS', label: 'Banques, chèques postaux, caisse', c: [['521', '585']], s: 'D' },
+  { id: 'BT', label: 'TOTAL TRÉSORERIE ACTIF (III)', type: 'total', refs: ['BQ', 'BR', 'BS'] },
+
+  { id: 'BU', label: 'Écart de conversion actif', c: [['478', '478']], s: 'D' },
+  { id: 'BZ', label: 'TOTAL GÉNÉRAL ACTIF (I+II+III)', type: 'gtotal', refs: ['AZ', 'BK', 'BT', 'BU'] },
 ];
 
 export const PASSIF: MapLine[] = [
   { id: 'S_CP', label: 'CAPITAUX PROPRES', type: 'sect' },
-  { id: 'CA', label: 'Capital social', c: [['101', '104']], s: 'C' },
-  { id: 'CB', label: 'Primes liées au capital', c: [['105', '105'], ['107', '109']], s: 'C' },
-  { id: 'CC', label: 'Écarts de réévaluation', c: [['106', '106']], s: 'C' },
-  { id: 'CD', label: 'Réserves indisponibles', c: [['111', '113']], s: 'C' },
-  { id: 'CE', label: 'Réserves libres', c: [['114', '119']], s: 'C' },
-  { id: 'CF', label: 'Report à nouveau (+/−)', c: [['121', '129']], s: 'SC' },
-  { id: 'CG', label: 'Résultat net (+/−)', c: [['130', '139']], s: 'SC' },
-  { id: 'CH', label: "Subventions d'investissement", c: [['14', '149']], s: 'C' },
-  { id: 'CI', label: 'Provisions réglementées', c: [['15', '159']], s: 'C' },
-  { id: 'T_CP', label: 'TOTAL CAPITAUX PROPRES (I)', type: 'gtotal', refs: ['CA', 'CB', 'CC', 'CD', 'CE', 'CF', 'CG', 'CH', 'CI'] },
-  { id: 'S_DF', label: 'DETTES FINANCIÈRES', type: 'sect' },
-  { id: 'DA', label: 'Emprunts & dettes financières', c: [['161', '169']], s: 'C' },
+  { id: 'CA', label: 'Capital', c: [['101', '104']], s: 'C' },
+  { id: 'CB', label: 'Apporteurs capital non appelé (−)', c: [['109', '109']], s: 'D' },
+  { id: 'CD', label: 'Écarts de réévaluation', c: [['106', '106']], s: 'C' },
+  { id: 'CE', label: 'Primes liées au capital social', c: [['105', '105'], ['107', '108']], s: 'C' },
+  { id: 'CF', label: 'Réserves indisponibles', c: [['111', '113']], s: 'C' },
+  { id: 'CG', label: 'Réserves libres', c: [['114', '119']], s: 'C' },
+  { id: 'CH', label: 'Report à nouveau (+/−)', c: [['121', '129']], s: 'SC' },
+  { id: 'CJ', label: 'Résultat net de l\'exercice (+/−)', c: [['130', '139']], s: 'SC' },
+  { id: 'CL', label: "Subvention d'investissement", c: [['14', '149']], s: 'C' },
+  { id: 'CM', label: 'Provisions réglementées', c: [['15', '159']], s: 'C' },
+  { id: 'CP', label: 'TOTAL CAPITAUX PROPRES (I)', type: 'gtotal', refs: ['CA', 'CB', 'CD', 'CE', 'CF', 'CG', 'CH', 'CJ', 'CL', 'CM'] },
+
+  { id: 'S_DF', label: 'DETTES FINANCIÈRES ET RESSOURCES ASSIMILÉES', type: 'sect' },
+  { id: 'DA', label: 'Emprunts et dettes financières', c: [['161', '169']], s: 'C' },
   { id: 'DB', label: 'Dettes de location-acquisition', c: [['17', '179']], s: 'C' },
-  { id: 'DC', label: 'Provisions pour risques & charges', c: [['19', '199']], s: 'C' },
-  { id: 'T_DF', label: 'TOTAL DETTES FINANCIÈRES (II)', type: 'total', refs: ['DA', 'DB', 'DC'] },
+  { id: 'DC', label: 'Provisions pour risques et charges', c: [['19', '199']], s: 'C' },
+  { id: 'DD', label: 'TOTAL DETTES FINANCIÈRES (II)', type: 'total', refs: ['DA', 'DB', 'DC'] },
+  { id: 'DF', label: 'TOTAL RESSOURCES STABLES (I+II)', type: 'gtotal', refs: ['CP', 'DD'] },
+
   { id: 'S_PC', label: 'PASSIF CIRCULANT', type: 'sect' },
-  { id: 'DH', label: 'Passif circulant HAO', c: [['479', '479']], s: 'C' },
+  { id: 'DH', label: 'Dettes circulantes HAO', c: [['479', '479']], s: 'C' },
   { id: 'DI', label: 'Clients, avances reçues', c: [['4191', '4198']], s: 'C' },
   { id: 'DJ', label: "Fournisseurs d'exploitation", c: [['401', '408']], s: 'C' },
-  { id: 'DK', label: 'Dettes fiscales & sociales', c: [['421', '459']], s: 'C' },
-  { id: 'DL', label: 'Autres dettes & provisions CT', c: [['46', '478']], s: 'C' },
-  { id: 'T_PC', label: 'TOTAL PASSIF CIRCULANT (III)', type: 'gtotal', refs: ['DH', 'DI', 'DJ', 'DK', 'DL'] },
+  { id: 'DK', label: 'Dettes fiscales et sociales', c: [['421', '459']], s: 'C' },
+  { id: 'DM', label: 'Autres dettes', c: [['46', '478']], s: 'C' },
+  { id: 'DN', label: 'Risques provisionnés', c: [['499', '499']], s: 'C' },
+  { id: 'DP', label: 'TOTAL PASSIF CIRCULANT (III)', type: 'gtotal', refs: ['DH', 'DI', 'DJ', 'DK', 'DM', 'DN'] },
+
   { id: 'S_TP', label: 'TRÉSORERIE — PASSIF', type: 'sect' },
-  { id: 'DM', label: 'Banques, crédits de trésorerie', c: [['561', '569']], s: 'C' },
-  { id: 'T_TP', label: 'TOTAL TRÉSORERIE PASSIF (IV)', type: 'total', refs: ['DM'] },
-  { id: 'T_PAS', label: 'TOTAL GÉNÉRAL PASSIF (I+II+III+IV)', type: 'gtotal', refs: ['T_CP', 'T_DF', 'T_PC', 'T_TP'] },
+  { id: 'DQ', label: "Banques, crédits d'escompte", c: [['561', '564']], s: 'C' },
+  { id: 'DR', label: 'Banques, crédits de trésorerie et découvert', c: [['565', '569']], s: 'C' },
+  { id: 'DT', label: 'TOTAL TRÉSORERIE PASSIF (IV)', type: 'total', refs: ['DQ', 'DR'] },
+
+  { id: 'DV', label: 'Écart de conversion passif', c: [['479', '479']], s: 'C' },
+  { id: 'DZ', label: 'TOTAL GÉNÉRAL PASSIF (I+II+III+IV)', type: 'gtotal', refs: ['CP', 'DD', 'DP', 'DT', 'DV'] },
 ];
 
 export const CR: MapLine[] = [
-  { id: 'TA', label: 'Ventes de marchandises A', c: [['701', '701']], s: 'C', m: 'n' },
-  { id: 'RA', label: '(−) Achats de marchandises B', c: [['601', '601']], s: 'D', m: 'n' },
-  { id: 'RB', label: '(±) Variation stocks marchands C', c: [['6031', '6031']], s: 'SC', m: 'n' },
-  { id: 'MARGE', label: 'MARGE COMMERCIALE', type: 'gtotal', f: v => v.TA - v.RA - v.RB },
-  { id: 'TB', label: 'Ventes produits fabriqués D', c: [['702', '702']], s: 'C', m: 'n' },
-  { id: 'TC', label: 'Travaux & services vendus E', c: [['703', '706']], s: 'C', m: 'n' },
-  { id: 'TD', label: 'Produits accessoires F', c: [['707', '708']], s: 'C', m: 'n' },
-  { id: 'TE2', label: 'Produits divers G', c: [['71', '719']], s: 'C', m: 'n' },
-  { id: 'XB', label: "CHIFFRE D'AFFAIRES", type: 'gtotal', f: v => v.TA + v.TB + v.TC + v.TD + v.TE2 },
-  { id: 'TE', label: '(±) Production stockée H', c: [['73', '739']], s: 'SC', m: 'n' },
-  { id: 'TF', label: 'Production immobilisée I', c: [['72', '729']], s: 'C', m: 'n' },
-  { id: 'RC', label: '(−) Achats mat. premières J', c: [['602', '602']], s: 'D', m: 'n' },
-  { id: 'RD', label: '(±) Variation stocks matières K', c: [['6032', '6032']], s: 'SC', m: 'n' },
-  { id: 'RE', label: '(−) Autres achats L', c: [['604', '609']], s: 'D', m: 'n' },
-  { id: 'RF', label: '(±) Variation autres stocks M', c: [['6033', '6039']], s: 'SC', m: 'n' },
-  { id: 'RG', label: '(−) Transports N', c: [['61', '619']], s: 'D', m: 'n' },
-  { id: 'RH', label: '(−) Services extérieurs O', c: [['62', '629']], s: 'D', m: 'n' },
-  { id: 'RI', label: '(−) Impôts & taxes P', c: [['63', '639']], s: 'D', m: 'n' },
-  { id: 'RJ', label: '(−) Autres charges Q', c: [['64', '649']], s: 'D', m: 'n' },
-  { id: 'VA', label: 'VALEUR AJOUTÉE', type: 'gtotal', f: v => v.MARGE + v.TB + v.TC + v.TD + v.TE2 + v.TE + v.TF - v.RC - v.RD - v.RE - v.RF - v.RG - v.RH - v.RI - v.RJ },
-  { id: 'TG', label: "Subventions d'exploitation R", c: [['75', '759']], s: 'C', m: 'n' },
-  { id: 'RK', label: '(−) Charges de personnel S', c: [['66', '669']], s: 'D', m: 'n' },
-  { id: 'EBE', label: "EXCÉDENT BRUT D'EXPLOITATION (EBE)", type: 'gtotal', f: v => v.VA + v.TG - v.RK },
-  { id: 'TH', label: 'Reprises amort. & provisions expl. T', c: [['791', '795']], s: 'C', m: 'n' },
-  { id: 'TI', label: 'Transferts de charges expl. U', c: [['781', '781']], s: 'C', m: 'n' },
-  { id: 'RL', label: '(−) Dotations amort. expl. V', c: [['681', '681']], s: 'D', m: 'n' },
-  { id: 'RM', label: '(−) Dotations provisions expl. W', c: [['691', '693']], s: 'D', m: 'n' },
-  { id: 'RN', label: '(−) Autres charges expl. X', c: [['65', '659']], s: 'D', m: 'n' },
-  { id: 'RE_E', label: "RÉSULTAT D'EXPLOITATION", type: 'gtotal', f: v => v.EBE + v.TH + v.TI - v.RL - v.RM - v.RN },
-  { id: 'TJ', label: 'Revenus financiers Y', c: [['77', '779']], s: 'C', m: 'n' },
-  { id: 'TK', label: 'Reprises provisions fin. Z', c: [['796', '796']], s: 'C', m: 'n' },
-  { id: 'TK2', label: 'Transferts de charges fin. AA', c: [['787', '787']], s: 'C', m: 'n' },
-  { id: 'RO', label: '(−) Frais financiers AB', c: [['67', '679']], s: 'D', m: 'n' },
-  { id: 'RP', label: '(−) Dotations prov. fin. AC', c: [['697', '697']], s: 'D', m: 'n' },
-  { id: 'RE_F', label: 'RÉSULTAT FINANCIER', type: 'gtotal', f: v => v.TJ + v.TK + v.TK2 - v.RO - v.RP },
-  { id: 'RAO', label: 'RÉSULTAT ACTIVITÉS ORDINAIRES (RAO)', type: 'gtotal', f: v => v.RE_E + v.RE_F },
-  { id: 'TL', label: 'Produits HAO AD', c: [['82', '849']], s: 'C', m: 'n' },
-  { id: 'TM', label: 'Produits cessions immo. AE', c: [['85', '859']], s: 'C', m: 'n' },
-  { id: 'RQ', label: '(−) Charges HAO AF', c: [['83', '839']], s: 'D', m: 'n' },
-  { id: 'RS', label: '(−) VCN immo. cédées AG', c: [['81', '819']], s: 'D', m: 'n' },
-  { id: 'RE_H', label: 'RÉSULTAT HAO', type: 'gtotal', f: v => v.TL + v.TM - v.RQ - v.RS },
-  { id: 'RU', label: '(−) Participation travailleurs AH', c: [['664', '664']], s: 'D', m: 'n' },
-  { id: 'RV', label: '(−) Impôts sur le résultat AI', c: [['89', '899'], ['694', '699']], s: 'D', m: 'n' },
-  { id: 'RN_', label: "RÉSULTAT NET DE L'EXERCICE", type: 'gtotal', f: v => v.RAO + v.RE_H - v.RU - v.RV },
+  { id: 'TA', label: 'Ventes de marchandises', c: [['701', '701']], s: 'C', m: 'n' },
+  { id: 'RA', label: '(−) Achats de marchandises', c: [['601', '601']], s: 'D', m: 'n' },
+  { id: 'RB', label: '(±) Variation de stocks de marchandises', c: [['6031', '6031']], s: 'SC', m: 'n' },
+  { id: 'XA', label: 'MARGE COMMERCIALE (Somme TA à RB)', type: 'gtotal', f: v => v.TA - v.RA - v.RB },
+
+  { id: 'TB', label: 'Ventes de produits fabriqués', c: [['702', '702']], s: 'C', m: 'n' },
+  { id: 'TC', label: 'Travaux, services vendus', c: [['703', '706']], s: 'C', m: 'n' },
+  { id: 'TD', label: 'Produits accessoires', c: [['707', '708']], s: 'C', m: 'n' },
+  { id: 'XB', label: "CHIFFRE D'AFFAIRES (A+B+C+D)", type: 'gtotal', f: v => v.TA + v.TB + v.TC + v.TD },
+
+  { id: 'TE', label: '(±) Production stockée (ou déstockage)', c: [['73', '739']], s: 'SC', m: 'n' },
+  { id: 'TF', label: 'Production immobilisée', c: [['72', '729']], s: 'C', m: 'n' },
+  { id: 'TG', label: "Subventions d'exploitation", c: [['75', '759']], s: 'C', m: 'n' },
+  { id: 'TH', label: 'Autres produits', c: [['71', '719']], s: 'C', m: 'n' },
+  { id: 'TI', label: "Transferts de charges d'exploitation", c: [['781', '781']], s: 'C', m: 'n' },
+
+  { id: 'RC', label: '(−) Achats de matières premières et fournitures liées', c: [['602', '602']], s: 'D', m: 'n' },
+  { id: 'RD', label: '(±) Variation de stocks de matières premières', c: [['6032', '6032']], s: 'SC', m: 'n' },
+  { id: 'RE', label: '(−) Autres achats', c: [['604', '609']], s: 'D', m: 'n' },
+  { id: 'RF', label: '(±) Variation de stocks d\'autres approvisionnements', c: [['6033', '6039']], s: 'SC', m: 'n' },
+  { id: 'RG', label: '(−) Transports', c: [['61', '619']], s: 'D', m: 'n' },
+  { id: 'RH', label: '(−) Services extérieurs', c: [['62', '629']], s: 'D', m: 'n' },
+  { id: 'RI', label: '(−) Impôts et taxes', c: [['63', '639']], s: 'D', m: 'n' },
+  { id: 'RJ', label: '(−) Autres charges', c: [['64', '649']], s: 'D', m: 'n' },
+
+  { id: 'XC', label: 'VALEUR AJOUTÉE (XB+RA+RB) + (Somme TE à RJ)', type: 'gtotal', f: v => v.XA + v.TB + v.TC + v.TD + v.TE + v.TF + v.TG + v.TH + v.TI - v.RC - v.RD - v.RE - v.RF - v.RG - v.RH - v.RI - v.RJ },
+
+  { id: 'RK', label: '(−) Charges de personnel', c: [['66', '669']], s: 'D', m: 'n' },
+  { id: 'XD', label: "EXCÉDENT BRUT D'EXPLOITATION (XC+RK)", type: 'gtotal', f: v => v.XC - v.RK },
+
+  { id: 'TJ', label: 'Reprises d\'amortissements, provisions et dépréciations', c: [['791', '795']], s: 'C', m: 'n' },
+  { id: 'RL', label: '(−) Dotations aux amortissements, provisions et dépréciations', c: [['681', '681'], ['691', '693']], s: 'D', m: 'n' },
+
+  { id: 'XE', label: "RÉSULTAT D'EXPLOITATION (XD+TJ+RL)", type: 'gtotal', f: v => v.XD + v.TJ - v.RL },
+
+  { id: 'TK', label: 'Revenus financiers et assimilés', c: [['77', '779']], s: 'C', m: 'n' },
+  { id: 'TL', label: 'Reprises de provisions et dépréciations financières', c: [['796', '796'], ['787', '787']], s: 'C', m: 'n' },
+  { id: 'TM', label: "Transferts de charges financières", c: [['797', '797']], s: 'C', m: 'n' },
+  { id: 'RM', label: '(−) Frais financiers et charges assimilés', c: [['67', '679']], s: 'D', m: 'n' },
+  { id: 'RN', label: '(−) Dotations aux provisions et dépréciations financières', c: [['697', '697']], s: 'D', m: 'n' },
+
+  { id: 'XF', label: 'RÉSULTAT FINANCIER (Somme TK à RN)', type: 'gtotal', f: v => v.TK + v.TL + v.TM - v.RM - v.RN },
+  { id: 'XG', label: 'RÉSULTAT DES ACTIVITÉS ORDINAIRES (XE+XF)', type: 'gtotal', f: v => v.XE + v.XF },
+
+  { id: 'TN', label: "Produits des cessions d'immobilisations", c: [['85', '859']], s: 'C', m: 'n' },
+  { id: 'TO', label: 'Autres produits HAO', c: [['82', '849']], s: 'C', m: 'n' },
+  { id: 'RO', label: "(−) Valeurs comptables des cessions d'immobilisations", c: [['81', '819']], s: 'D', m: 'n' },
+  { id: 'RP', label: '(−) Autres charges HAO', c: [['83', '839']], s: 'D', m: 'n' },
+
+  { id: 'XH', label: 'RÉSULTAT HAO (Somme TN à RP)', type: 'gtotal', f: v => v.TN + v.TO - v.RO - v.RP },
+
+  { id: 'RQ', label: '(−) Participation des travailleurs', c: [['664', '664']], s: 'D', m: 'n' },
+  { id: 'RS', label: '(−) Impôts sur le résultat', c: [['89', '899'], ['694', '699']], s: 'D', m: 'n' },
+
+  { id: 'XI', label: "RÉSULTAT NET (XG+XH+RQ+RS)", type: 'gtotal', f: v => v.XG + v.XH - v.RQ - v.RS },
 ];
 
 export const TFT: MapLine[] = [
-  { id: 'S_OP', label: 'FLUX OPÉRATIONNELS', type: 'sect' },
-  { id: 'FA', label: "Résultat net de l'exercice", srcCR: 'RN_' },
-  { id: 'FB', label: '+ Dotations aux amortissements', c: [['681', '689']], s: 'D', m: 'n' },
-  { id: 'FC', label: '+ Dotations aux provisions', c: [['691', '699']], s: 'D', m: 'n' },
-  { id: 'FD', label: '− Reprises amort. & provisions', c: [['781', '799']], s: 'C', m: 'n' },
-  { id: 'FE', label: '± Variation stocks', c: [['31', '39']], s: 'D', m: 'var' },
-  { id: 'FF', label: '± Variation créances clients', c: [['411', '419']], s: 'D', m: 'var' },
-  { id: 'FG', label: '± Variation dettes fournisseurs', c: [['401', '409']], s: 'C', m: 'var' },
-  { id: 'FH', label: '± Variation autres postes', c: [['421', '499']], s: 'SC', m: 'var' },
-  { id: 'T_OP', label: 'FLUX NET OPÉRATIONNEL (A)', type: 'gtotal', refs: ['FA', 'FB', 'FC', 'FD', 'FE', 'FF', 'FG', 'FH'] },
-  { id: 'S_IV', label: "FLUX D'INVESTISSEMENT", type: 'sect' },
-  { id: 'FI', label: "− Acquisitions d'immobilisations", c: [['20', '29']], s: 'D', m: 'var' },
-  { id: 'FJ', label: '+ Produits de cessions', c: [['485', '485']], s: 'C', m: 'n' },
-  { id: 'FK', label: '± Variation immo. financières', c: [['26', '27']], s: 'D', m: 'var' },
-  { id: 'T_IV', label: "FLUX NET D'INVESTISSEMENT (B)", type: 'gtotal', f: v => -v.FI + v.FJ - v.FK },
-  { id: 'S_FN', label: 'FLUX DE FINANCEMENT', type: 'sect' },
-  { id: 'FL', label: '+ Augmentation capital', c: [['101', '103']], s: 'C', m: 'n' },
-  { id: 'FM', label: '+ Nouveaux emprunts', c: [['161', '169']], s: 'C', m: 'n' },
-  { id: 'FN', label: '− Remboursements emprunts', c: [['161', '169']], s: 'D', m: 'n' },
-  { id: 'FO', label: '− Dividendes versés', c: [['465', '465']], s: 'D', m: 'n' },
-  { id: 'T_FN', label: 'FLUX NET DE FINANCEMENT (C)', type: 'gtotal', f: v => v.FL + v.FM - v.FN - v.FO },
-  { id: 'T_TFT', label: 'VARIATION NETTE DE TRÉSORERIE (A+B+C)', type: 'gtotal', refs: ['T_OP', 'T_IV', 'T_FN'] },
-  { id: 'FP', label: "Trésorerie d'ouverture (N-1)", c: [['521', '585']], s: 'D', m: 'solde_n1' },
-  { id: 'T_TC', label: 'TRÉSORERIE DE CLÔTURE (N)', type: 'gtotal', f: v => v.T_TFT + v.FP },
-];
+  { id: 'S_OP', label: 'FLUX DE TRÉSORERIE PROVENANT DES ACTIVITÉS OPÉRATIONNELLES', type: 'sect' },
+  { id: 'ZA', label: "Trésorerie nette au 1er janvier (Trésorerie actif N-1 − Trésorerie passif N-1)", c: [['521', '585']], s: 'D', m: 'solde_n1' },
+  { id: 'FA', label: "Capacité d'Autofinancement Globale (CAFG)", srcCR: 'XI' },
+  { id: 'FB', label: '(−) Variation de l\'actif circulant HAO', c: [['475', '475']], s: 'D', m: 'var' },
+  { id: 'FC', label: '(−) Variation des stocks', c: [['31', '39']], s: 'D', m: 'var' },
+  { id: 'FD', label: '(−) Variation des créances', c: [['411', '47']], s: 'D', m: 'var' },
+  { id: 'FE', label: '(+) Variation du passif circulant', c: [['401', '499']], s: 'C', m: 'var' },
+  { id: 'T_BFR', label: 'Variation du BFR lié aux activités opérationnelles (FB+FC+FD+FE)', type: 'total', refs: ['FB', 'FC', 'FD', 'FE'] },
+  { id: 'T_OP', label: 'FLUX NET DE TRÉSORERIE DES ACTIVITÉS OPÉRATIONNELLES (A)', type: 'gtotal', f: v => v.FA - v.FB - v.FC - v.FD + v.FE },
 
-// computeIndicateurs removed — use calc(balance, CR) instead for proper SIG computation
+  { id: 'S_IV', label: "FLUX DE TRÉSORERIE PROVENANT DES ACTIVITÉS D'INVESTISSEMENT", type: 'sect' },
+  { id: 'FF', label: "(−) Décaissements liés aux acquisitions d'immobilisations incorporelles", c: [['20', '21']], s: 'D', m: 'var' },
+  { id: 'FG', label: "(−) Décaissements liés aux acquisitions d'immobilisations corporelles", c: [['22', '24']], s: 'D', m: 'var' },
+  { id: 'FH', label: "(−) Décaissements liés aux acquisitions d'immobilisations financières", c: [['26', '27']], s: 'D', m: 'var' },
+  { id: 'FI', label: "(+) Encaissements liés aux cessions d'immobilisations", c: [['85', '859']], s: 'C', m: 'n' },
+  { id: 'T_IV', label: "FLUX NET DE TRÉSORERIE DES ACTIVITÉS D'INVESTISSEMENT (B)", type: 'gtotal', f: v => -v.FF - v.FG - v.FH + v.FI },
+
+  { id: 'S_FN', label: 'FLUX DE TRÉSORERIE PROVENANT DES ACTIVITÉS DE FINANCEMENT', type: 'sect' },
+  { id: 'FK', label: '(+) Augmentation de capital par apports nouveaux', c: [['101', '103']], s: 'C', m: 'n' },
+  { id: 'FL', label: '(+) Subventions d\'investissement reçues', c: [['14', '149']], s: 'C', m: 'n' },
+  { id: 'FM', label: '(−) Prélèvements sur le capital', c: [['101', '103']], s: 'D', m: 'n' },
+  { id: 'FN', label: '(−) Dividendes versés', c: [['465', '465']], s: 'D', m: 'n' },
+  { id: 'T_CP_FN', label: 'Flux de trésorerie provenant des capitaux propres (D)', type: 'total', f: v => v.FK + v.FL - v.FM - v.FN },
+  { id: 'FO', label: '(+) Emprunts', c: [['161', '169']], s: 'C', m: 'n' },
+  { id: 'FP', label: '(+) Autres dettes financières', c: [['17', '179']], s: 'C', m: 'n' },
+  { id: 'FQ', label: '(−) Remboursements des emprunts et autres dettes financières', c: [['161', '169']], s: 'D', m: 'n' },
+  { id: 'T_CE_FN', label: 'Flux de trésorerie provenant des capitaux étrangers (E)', type: 'total', f: v => v.FO + v.FP - v.FQ },
+  { id: 'T_FN', label: 'FLUX NET DE TRÉSORERIE DES ACTIVITÉS DE FINANCEMENT (F=D+E)', type: 'gtotal', refs: ['T_CP_FN', 'T_CE_FN'] },
+
+  { id: 'ZG', label: 'VARIATION DE TRÉSORERIE NETTE DE LA PÉRIODE (G=A+B+F)', type: 'gtotal', refs: ['T_OP', 'T_IV', 'T_FN'] },
+
+  { id: 'ZH', label: 'Trésorerie nette au 31 décembre (G+A) — Contrôle', type: 'gtotal', f: v => v.ZG + v.ZA },
+];

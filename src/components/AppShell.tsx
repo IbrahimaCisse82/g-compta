@@ -19,6 +19,7 @@ import RapprochementPage from '@/pages/RapprochementPage';
 import NotesAnnexesPage from '@/pages/NotesAnnexesPage';
 import AuditTrailPage from '@/pages/AuditTrailPage';
 import LiasseFiscalePage from '@/pages/LiasseFiscalePage';
+import ImportPage from '@/pages/ImportPage';
 
 import CabinetPage from '@/pages/CabinetPage';
 
@@ -34,6 +35,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'balance', icon: '⚖️', label: 'Balance', shortcut: 'Alt+B' },
     { id: 'grandlivre', icon: '📖', label: 'Grand Livre', shortcut: 'Alt+G' },
     { id: 'rapprochement', icon: '🏦', label: 'Rapprochement' },
+    { id: 'import', icon: '📥', label: 'Import FEC/CSV' },
   ]},
   { section: 'États Financiers', items: [
     { id: 'bilan', icon: '🏛️', label: 'Bilan', shortcut: 'Alt+I' },
@@ -60,6 +62,7 @@ const PAGES: Record<string, React.ComponentType> = {
   saisie: SaisiePage, grandlivre: GrandLivrePage,
   balance_agee: BalanceAgeePage, rapprochement: RapprochementPage,
   note34: NotesAnnexesPage, audit: AuditTrailPage, liasse: LiasseFiscalePage,
+  import: ImportPage,
   cabinet_mgmt: CabinetPage,
 };
 
