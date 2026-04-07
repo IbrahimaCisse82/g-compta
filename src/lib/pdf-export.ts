@@ -85,9 +85,9 @@ export function exportBilanPdf(
   }
   passifHtml += '</tbody></table>';
 
-  const eq = Math.abs((vA['T_ACT'] || 0) - (vP['T_PAS'] || 0)) < 1;
+  const eq = Math.abs((vA['BZ'] || 0) - (vP['DZ'] || 0)) < 1;
   const eqHtml = `<div style="text-align:center;padding:8px;font-weight:bold;font-size:11px;border-radius:4px;${eq ? 'background:#e8f4e8;color:#0a6' : 'background:#fde8e8;color:#c00'}">
-    ${eq ? '✓ BILAN ÉQUILIBRÉ' : '⚠ BILAN NON ÉQUILIBRÉ'} — Actif: ${fmt(vA['T_ACT'] || 0)} / Passif: ${fmt(vP['T_PAS'] || 0)}
+    ${eq ? '✓ BILAN ÉQUILIBRÉ' : '⚠ BILAN NON ÉQUILIBRÉ'} — Actif: ${fmt(vA['BZ'] || 0)} / Passif: ${fmt(vP['DZ'] || 0)}
   </div>`;
 
   openPrintWindow(
@@ -109,7 +109,7 @@ export function exportCRPdf(
   }
   html += '</tbody></table>';
 
-  const rn = vCR['RN_'] || 0;
+  const rn = vCR['XI'] || 0;
   html += `<div style="text-align:center;padding:8px;font-weight:bold;font-size:12px;border-radius:4px;margin-top:8px;${rn >= 0 ? 'background:#e8f4e8;color:#0a6' : 'background:#fde8e8;color:#c00'}">
     RÉSULTAT NET : ${fmtSigned(rn)} ${entreprise.monnaie || 'FCFA'}
   </div>`;

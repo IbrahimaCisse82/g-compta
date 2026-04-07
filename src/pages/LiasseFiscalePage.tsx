@@ -55,8 +55,8 @@ export default function LiasseFiscalePage() {
   const vPN1 = calc(balanceN1, PASSIF);
   const vCRN1 = calc(balanceN1, CR);
   const hasN1 = balanceN1.length > 0;
-  const vT = calc(balance, TFT, { RN_: vCR['RN_'] || 0 });
-  const vTN1 = hasN1 ? calc(balanceN1, TFT, { RN_: vCRN1['RN_'] || 0 }) : {};
+  const vT = calc(balance, TFT, { XI: vCR['XI'] || 0 });
+  const vTN1 = hasN1 ? calc(balanceN1, TFT, { XI: vCRN1['XI'] || 0 }) : {};
 
   // Brut / Amort for actif
   const brutBalance = balance.filter(b => !/^(28|29|39)/.test(b.compte));
@@ -64,7 +64,7 @@ export default function LiasseFiscalePage() {
   const vABrut = calc(brutBalance, ACTIF);
   const vAAmort = calc(amortBalance, ACTIF);
 
-  const rn = vCR['RN_'] || 0;
+  const rn = vCR['XI'] || 0;
 
   const handleExportDSF = () => {
     if (!entreprise || !exercice) return;
@@ -96,8 +96,8 @@ export default function LiasseFiscalePage() {
       ${buildTable('BILAN — ACTIF', ACTIF, vA, vAN1, hasN1, { brut: vABrut, amort: vAAmort })}
       ${buildTable('BILAN — PASSIF', PASSIF, vP, vPN1, hasN1)}
 
-      <div style="text-align:center;padding:8px;font-weight:bold;font-size:11px;border-radius:4px;margin:8px 0;${Math.abs((vA['T_ACT']||0) - (vP['T_PAS']||0)) < 1 ? 'background:#e8f4e8;color:#0a6' : 'background:#fde8e8;color:#c00'}">
-        ${Math.abs((vA['T_ACT']||0) - (vP['T_PAS']||0)) < 1 ? '✓ BILAN ÉQUILIBRÉ' : '⚠ BILAN NON ÉQUILIBRÉ'} — Actif: ${fmt(vA['T_ACT']||0)} / Passif: ${fmt(vP['T_PAS']||0)}
+      <div style="text-align:center;padding:8px;font-weight:bold;font-size:11px;border-radius:4px;margin:8px 0;${Math.abs((vA['BZ']||0) - (vP['DZ']||0)) < 1 ? 'background:#e8f4e8;color:#0a6' : 'background:#fde8e8;color:#c00'}">
+        ${Math.abs((vA['BZ']||0) - (vP['DZ']||0)) < 1 ? '✓ BILAN ÉQUILIBRÉ' : '⚠ BILAN NON ÉQUILIBRÉ'} — Actif: ${fmt(vA['BZ']||0)} / Passif: ${fmt(vP['DZ']||0)}
       </div>
 
       <div style="page-break-before: always;"></div>
@@ -158,8 +158,8 @@ export default function LiasseFiscalePage() {
             {[
               { num: '1', label: 'Fiche Signalétique', desc: 'Identification complète de l\'entreprise' },
               { num: '2', label: 'Bilan (Actif & Passif)', desc: 'Brut / Amortissements / Net avec comparatif N-1' },
-              { num: '3', label: 'Compte de Résultat', desc: '4 niveaux SYSCOHADA avec SIG' },
-              { num: '4', label: 'Tableau des Flux de Trésorerie', desc: 'Méthode indirecte' },
+              { num: '3', label: 'Compte de Résultat', desc: 'SIG complets SYSCOHADA avec références officielles' },
+              { num: '4', label: 'Tableau des Flux de Trésorerie', desc: 'Méthode indirecte — Références ZA à ZH' },
             ].map(item => (
               <div key={item.num} className="bg-bg3 rounded-lg p-3 border border-border/50">
                 <div className="flex items-center gap-2 mb-1">
@@ -175,19 +175,19 @@ export default function LiasseFiscalePage() {
         {/* Summary preview */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-bg2 border border-border rounded-lg p-3">
-            <div className="text-[9px] text-fg3 uppercase font-mono">Total Actif</div>
-            <div className="text-sm font-bold font-mono mt-1">{fmt(vA['T_ACT'] || 0)}</div>
+            <div className="text-[9px] text-fg3 uppercase font-mono">Total Actif (BZ)</div>
+            <div className="text-sm font-bold font-mono mt-1">{fmt(vA['BZ'] || 0)}</div>
           </div>
           <div className="bg-bg2 border border-border rounded-lg p-3">
-            <div className="text-[9px] text-fg3 uppercase font-mono">Total Passif</div>
-            <div className="text-sm font-bold font-mono mt-1">{fmt(vP['T_PAS'] || 0)}</div>
+            <div className="text-[9px] text-fg3 uppercase font-mono">Total Passif (DZ)</div>
+            <div className="text-sm font-bold font-mono mt-1">{fmt(vP['DZ'] || 0)}</div>
           </div>
           <div className="bg-bg2 border border-border rounded-lg p-3">
-            <div className="text-[9px] text-fg3 uppercase font-mono">CA</div>
+            <div className="text-[9px] text-fg3 uppercase font-mono">CA (XB)</div>
             <div className="text-sm font-bold font-mono text-primary mt-1">{fmt(vCR['XB'] || 0)}</div>
           </div>
           <div className="bg-bg2 border border-border rounded-lg p-3">
-            <div className="text-[9px] text-fg3 uppercase font-mono">Résultat Net</div>
+            <div className="text-[9px] text-fg3 uppercase font-mono">Résultat Net (XI)</div>
             <div className={`text-sm font-bold font-mono mt-1 ${rn >= 0 ? 'text-success' : 'text-destructive'}`}>{fmtSigned(rn)}</div>
           </div>
         </div>

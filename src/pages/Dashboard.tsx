@@ -26,20 +26,20 @@ export default function Dashboard() {
   const vA = calc(balance, ACTIF);
   const vP = calc(balance, PASSIF);
 
-  const tresoActif = vA['T_TA'] || 0;
-  const tresoPassif = vP['T_TP'] || 0;
+  const tresoActif = vA['BT'] || 0;
+  const tresoPassif = vP['DT'] || 0;
   const tresoNette = tresoActif - tresoPassif;
-  const tresoNetteN1 = balanceN1.length > 0 ? ((calc(balanceN1, ACTIF)['T_TA'] || 0) - (calc(balanceN1, PASSIF)['T_TP'] || 0)) : null;
+  const tresoNetteN1 = balanceN1.length > 0 ? ((calc(balanceN1, ACTIF)['BT'] || 0) - (calc(balanceN1, PASSIF)['DT'] || 0)) : null;
 
   const ca = vCR['XB'] || 0;
-  const rn = vCR['RN_'] || 0;
-  const ebe = vCR['EBE'] || 0;
-  const va = vCR['VA'] || 0;
-  const totalActif = vA['T_ACT'] || 0;
-  const capitauxPropres = vP['T_CP'] || 0;
-  const dettesFinancieres = vP['T_DF'] || 0;
-  const actifCirculant = vA['T_AC'] || 0;
-  const passifCirculant = vP['T_PC'] || 0;
+  const rn = vCR['XI'] || 0;
+  const ebe = vCR['XD'] || 0;
+  const va = vCR['XC'] || 0;
+  const totalActif = vA['BZ'] || 0;
+  const capitauxPropres = vP['CP'] || 0;
+  const dettesFinancieres = vP['DD'] || 0;
+  const actifCirculant = vA['BK'] || 0;
+  const passifCirculant = vP['DP'] || 0;
 
   // ─── Ratios financiers ───────────────────────────
   const ratioRentaCA = ca ? (rn / ca) * 100 : 0;
@@ -58,30 +58,30 @@ export default function Dashboard() {
 
   const sigs = [
     { ref: 'XB', lib: "Chiffre d'Affaires", n: ca, n1: vCRN1?.['XB'] },
-    { ref: 'XA', lib: 'Marge Commerciale', n: vCR['MARGE'] || 0, n1: vCRN1?.['MARGE'] },
-    { ref: 'XC', lib: 'Valeur Ajoutée', n: va, n1: vCRN1?.['VA'] },
-    { ref: 'XD', lib: "Excédent Brut d'Expl.", n: ebe, n1: vCRN1?.['EBE'] },
-    { ref: 'XE', lib: "Résultat d'Exploitation", n: vCR['RE_E'] || 0, n1: vCRN1?.['RE_E'] },
-    { ref: 'XF', lib: 'Résultat Financier', n: vCR['RE_F'] || 0, n1: vCRN1?.['RE_F'] },
-    { ref: 'XG', lib: 'Résultat Activités Ord.', n: vCR['RAO'] || 0, n1: vCRN1?.['RAO'] },
-    { ref: 'XH', lib: 'Résultat HAO', n: vCR['RE_H'] || 0, n1: vCRN1?.['RE_H'] },
-    { ref: 'XI', lib: 'Résultat Net', n: rn, n1: vCRN1?.['RN_'] },
+    { ref: 'XA', lib: 'Marge Commerciale', n: vCR['XA'] || 0, n1: vCRN1?.['XA'] },
+    { ref: 'XC', lib: 'Valeur Ajoutée', n: va, n1: vCRN1?.['XC'] },
+    { ref: 'XD', lib: "Excédent Brut d'Expl.", n: ebe, n1: vCRN1?.['XD'] },
+    { ref: 'XE', lib: "Résultat d'Exploitation", n: vCR['XE'] || 0, n1: vCRN1?.['XE'] },
+    { ref: 'XF', lib: 'Résultat Financier', n: vCR['XF'] || 0, n1: vCRN1?.['XF'] },
+    { ref: 'XG', lib: 'Résultat Activités Ord.', n: vCR['XG'] || 0, n1: vCRN1?.['XG'] },
+    { ref: 'XH', lib: 'Résultat HAO', n: vCR['XH'] || 0, n1: vCRN1?.['XH'] },
+    { ref: 'XI', lib: 'Résultat Net', n: rn, n1: vCRN1?.['XI'] },
     { ref: 'ZH', lib: 'Trésorerie Nette', n: tresoNette, n1: tresoNetteN1 },
   ];
 
   // Chart data
   const sigChartData = [
     { name: 'CA', N: ca, 'N-1': vCRN1?.['XB'] || 0 },
-    { name: 'VA', N: va, 'N-1': vCRN1?.['VA'] || 0 },
-    { name: 'EBE', N: ebe, 'N-1': vCRN1?.['EBE'] || 0 },
-    { name: 'RE', N: vCR['RE_E'] || 0, 'N-1': vCRN1?.['RE_E'] || 0 },
-    { name: 'RN', N: rn, 'N-1': vCRN1?.['RN_'] || 0 },
+    { name: 'VA', N: va, 'N-1': vCRN1?.['XC'] || 0 },
+    { name: 'EBE', N: ebe, 'N-1': vCRN1?.['XD'] || 0 },
+    { name: 'RE', N: vCR['XE'] || 0, 'N-1': vCRN1?.['XE'] || 0 },
+    { name: 'RN', N: rn, 'N-1': vCRN1?.['XI'] || 0 },
   ];
 
   const bilanPieData = [
-    { name: 'Immo.', value: Math.abs(vA['T_IA'] || 0) },
-    { name: 'Stocks', value: Math.abs(vA['T_ST'] || 0) },
-    { name: 'Créances', value: Math.abs(vA['T_CR'] || 0) },
+    { name: 'Immo.', value: Math.abs(vA['AZ'] || 0) },
+    { name: 'Stocks', value: Math.abs(vA['BB'] || 0) },
+    { name: 'Créances', value: Math.abs(vA['BG'] || 0) },
     { name: 'Tréso.', value: Math.abs(tresoActif) },
   ].filter(d => d.value > 0);
 
@@ -122,7 +122,6 @@ export default function Dashboard() {
 
         {/* Charts row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {/* SIG Bar Chart */}
           <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
             <div className="px-3.5 py-2 border-b border-border">
               <span className="text-xs font-semibold">📊 SIG — Comparaison N / N-1</span>
@@ -140,7 +139,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Bilan Pie Chart */}
           <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
             <div className="px-3.5 py-2 border-b border-border">
               <span className="text-xs font-semibold">🏛️ Structure de l'Actif</span>

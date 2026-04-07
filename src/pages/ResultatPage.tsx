@@ -7,7 +7,7 @@ export default function ResultatPage() {
   const { balance, balanceN1, entreprise, exercice } = useApp();
   const vCR = calc(balance, CR);
   const vCRN1 = calc(balanceN1, CR);
-  const rn = vCR['RN_'] || 0;
+  const rn = vCR['XI'] || 0;
   const hasN1 = balanceN1.length > 0;
 
   const handleExport = () => {
@@ -50,7 +50,7 @@ export default function ResultatPage() {
             const isTotal = l.type === 'total';
             const bg = isGtotal ? 'bg-[#0B1F3A]' : isTotal ? 'bg-accent/5' : '';
             const fg = isGtotal ? 'text-foreground' : isTotal ? 'text-primary font-semibold' : v < 0 ? 'text-destructive' : '';
-            const last = l.id === 'RN_';
+            const last = l.id === 'XI';
 
             return (
               <div key={l.id} className={`grid grid-cols-[70px_1fr_50px_140px_140px] items-center px-3 py-1.5 border-b border-border/30 text-[11px] ${bg} ${isGtotal || isTotal ? 'font-bold' : ''} ${last ? (rn >= 0 ? 'border-t-2 border-t-success bg-success/5' : 'border-t-2 border-t-destructive bg-destructive/5') : ''}`}>

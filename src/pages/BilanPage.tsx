@@ -18,7 +18,8 @@ function BilanTable({ def, vals, valsN1, valsBrut, valsAmort, title, acColor }: 
   return (
     <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
       <div className="px-3 py-2 text-center font-bold text-[11px] tracking-[3px] uppercase" style={{ background: acColor, color: '#fff' }}>{title}</div>
-      <div className={`grid ${isActif ? (hasN1 ? 'grid-cols-[1fr_90px_90px_90px_90px]' : 'grid-cols-[1fr_90px_90px_90px]') : (hasN1 ? 'grid-cols-[1fr_100px_100px]' : 'grid-cols-[1fr_100px]')} text-[9px] font-bold text-fg3 uppercase tracking-[0.5px] font-mono bg-bg3 px-3 py-1 border-b border-border`}>
+      <div className={`grid ${isActif ? (hasN1 ? 'grid-cols-[40px_1fr_80px_80px_80px_80px]' : 'grid-cols-[40px_1fr_80px_80px_80px]') : (hasN1 ? 'grid-cols-[40px_1fr_90px_90px]' : 'grid-cols-[40px_1fr_90px]')} text-[9px] font-bold text-fg3 uppercase tracking-[0.5px] font-mono bg-bg3 px-3 py-1 border-b border-border`}>
+        <span>Réf</span>
         <span>Libellé</span>
         {isActif ? (
           <>
@@ -47,7 +48,8 @@ function BilanTable({ def, vals, valsN1, valsBrut, valsAmort, title, acColor }: 
         const isTot = l.type === 'total' || l.type === 'gtotal';
         
         return (
-          <div key={l.id} className={`grid ${isActif ? (hasN1 ? 'grid-cols-[1fr_90px_90px_90px_90px]' : 'grid-cols-[1fr_90px_90px_90px]') : (hasN1 ? 'grid-cols-[1fr_100px_100px]' : 'grid-cols-[1fr_100px]')} items-center px-3 py-1 border-b border-border/30 text-[11px] ${isTot ? 'bg-success/5 font-extrabold border-t-2 border-t-success font-mono' : ''}`}>
+          <div key={l.id} className={`grid ${isActif ? (hasN1 ? 'grid-cols-[40px_1fr_80px_80px_80px_80px]' : 'grid-cols-[40px_1fr_80px_80px_80px]') : (hasN1 ? 'grid-cols-[40px_1fr_90px_90px]' : 'grid-cols-[40px_1fr_90px]')} items-center px-3 py-1 border-b border-border/30 text-[11px] ${isTot ? 'bg-success/5 font-extrabold border-t-2 border-t-success font-mono' : ''}`}>
+            <span className="text-[9px] text-fg3 font-mono">{l.id}</span>
             <span>{l.label}</span>
             {isActif ? (
               <>
@@ -87,8 +89,8 @@ export default function BilanPage() {
   const vPN1 = calc(balanceN1, PASSIF);
   const vABrut = computeBrut(balance, ACTIF);
   const vAAmort = computeAmort(balance, ACTIF);
-  const tA = vA['T_ACT'] || 0;
-  const tP = vP['T_PAS'] || 0;
+  const tA = vA['BZ'] || 0;
+  const tP = vP['DZ'] || 0;
   const eq = Math.abs(tA - tP) < 1;
 
   const handleExport = () => {
