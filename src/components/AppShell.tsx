@@ -62,6 +62,7 @@ const PAGES: Record<string, React.ComponentType> = {
   saisie: SaisiePage, grandlivre: GrandLivrePage,
   balance_agee: BalanceAgeePage, rapprochement: RapprochementPage,
   note34: NotesAnnexesPage, audit: AuditTrailPage, liasse: LiasseFiscalePage,
+  import: ImportPage,
   cabinet_mgmt: CabinetPage,
 };
 
