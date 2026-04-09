@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      axes_analytiques: {
+        Row: {
+          actif: boolean
+          code: string
+          created_at: string
+          entreprise_id: string
+          id: string
+          libelle: string
+        }
+        Insert: {
+          actif?: boolean
+          code: string
+          created_at?: string
+          entreprise_id: string
+          id?: string
+          libelle: string
+        }
+        Update: {
+          actif?: boolean
+          code?: string
+          created_at?: string
+          entreprise_id?: string
+          id?: string
+          libelle?: string
+        }
+        Relationships: []
+      }
       balance: {
         Row: {
           compte: string
@@ -74,6 +101,39 @@ export type Database = {
           },
         ]
       }
+      budgets: {
+        Row: {
+          compte: string
+          created_at: string
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          intitule: string
+          mois: number
+          montant_budget: number
+        }
+        Insert: {
+          compte: string
+          created_at?: string
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          intitule?: string
+          mois: number
+          montant_budget?: number
+        }
+        Update: {
+          compte?: string
+          created_at?: string
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          intitule?: string
+          mois?: number
+          montant_budget?: number
+        }
+        Relationships: []
+      }
       cabinet_members: {
         Row: {
           cabinet_id: string
@@ -124,6 +184,132 @@ export type Database = {
           id?: string
           nom?: string
           owner_id?: string
+        }
+        Relationships: []
+      }
+      cloture_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      declarations_tva: {
+        Row: {
+          created_at: string
+          credit_precedent: number
+          date_debut: string
+          date_fin: string
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          periode: string
+          statut: string
+          tva_a_payer: number
+          tva_collectee: number
+          tva_deductible: number
+          tva_nette: number
+        }
+        Insert: {
+          created_at?: string
+          credit_precedent?: number
+          date_debut: string
+          date_fin: string
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          periode: string
+          statut?: string
+          tva_a_payer?: number
+          tva_collectee?: number
+          tva_deductible?: number
+          tva_nette?: number
+        }
+        Update: {
+          created_at?: string
+          credit_precedent?: number
+          date_debut?: string
+          date_fin?: string
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          periode?: string
+          statut?: string
+          tva_a_payer?: number
+          tva_collectee?: number
+          tva_deductible?: number
+          tva_nette?: number
+        }
+        Relationships: []
+      }
+      ecritures_abonnement: {
+        Row: {
+          actif: boolean
+          created_at: string
+          date_debut: string
+          date_fin: string | null
+          derniere_execution: string | null
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          jour_execution: number
+          journal_code: string
+          libelle: string
+          lignes: Json
+          periodicite: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          date_debut: string
+          date_fin?: string | null
+          derniere_execution?: string | null
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          jour_execution?: number
+          journal_code?: string
+          libelle: string
+          lignes?: Json
+          periodicite?: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          date_debut?: string
+          date_fin?: string | null
+          derniere_execution?: string | null
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          jour_execution?: number
+          journal_code?: string
+          libelle?: string
+          lignes?: Json
+          periodicite?: string
         }
         Relationships: []
       }
@@ -362,6 +548,42 @@ export type Database = {
           },
         ]
       }
+      lettrage: {
+        Row: {
+          code_lettrage: string
+          compte: string
+          created_at: string
+          date_lettrage: string
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          journal_entry_id: string
+          montant: number
+        }
+        Insert: {
+          code_lettrage: string
+          compte: string
+          created_at?: string
+          date_lettrage?: string
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          journal_entry_id: string
+          montant?: number
+        }
+        Update: {
+          code_lettrage?: string
+          compte?: string
+          created_at?: string
+          date_lettrage?: string
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          journal_entry_id?: string
+          montant?: number
+        }
+        Relationships: []
+      }
       notes_annexes_data: {
         Row: {
           created_at: string
@@ -471,6 +693,86 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      tva_parametrage: {
+        Row: {
+          actif: boolean
+          code: string
+          compte_tva_collectee: string
+          compte_tva_deductible: string
+          created_at: string
+          entreprise_id: string
+          id: string
+          libelle: string
+          taux: number
+        }
+        Insert: {
+          actif?: boolean
+          code: string
+          compte_tva_collectee?: string
+          compte_tva_deductible?: string
+          created_at?: string
+          entreprise_id: string
+          id?: string
+          libelle: string
+          taux?: number
+        }
+        Update: {
+          actif?: boolean
+          code?: string
+          compte_tva_collectee?: string
+          compte_tva_deductible?: string
+          created_at?: string
+          entreprise_id?: string
+          id?: string
+          libelle?: string
+          taux?: number
+        }
+        Relationships: []
+      }
+      ventilations_analytiques: {
+        Row: {
+          axe_id: string
+          centre: string
+          created_at: string
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          journal_entry_id: string
+          montant: number
+          pourcentage: number
+        }
+        Insert: {
+          axe_id: string
+          centre: string
+          created_at?: string
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          journal_entry_id: string
+          montant?: number
+          pourcentage?: number
+        }
+        Update: {
+          axe_id?: string
+          centre?: string
+          created_at?: string
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          journal_entry_id?: string
+          montant?: number
+          pourcentage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ventilations_analytiques_axe_id_fkey"
+            columns: ["axe_id"]
+            isOneToOne: false
+            referencedRelation: "axes_analytiques"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

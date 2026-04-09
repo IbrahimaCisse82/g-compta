@@ -20,8 +20,13 @@ import NotesAnnexesPage from '@/pages/NotesAnnexesPage';
 import AuditTrailPage from '@/pages/AuditTrailPage';
 import LiasseFiscalePage from '@/pages/LiasseFiscalePage';
 import ImportPage from '@/pages/ImportPage';
-
 import CabinetPage from '@/pages/CabinetPage';
+import LettragePage from '@/pages/LettragePage';
+import AnalytiquePage from '@/pages/AnalytiquePage';
+import BudgetPage from '@/pages/BudgetPage';
+import TvaPage from '@/pages/TvaPage';
+import AbonnementPage from '@/pages/AbonnementPage';
+import CloturePage from '@/pages/CloturePage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -34,6 +39,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'journal', icon: '📋', label: 'Journal', shortcut: 'Alt+J' },
     { id: 'balance', icon: '⚖️', label: 'Balance', shortcut: 'Alt+B' },
     { id: 'grandlivre', icon: '📖', label: 'Grand Livre', shortcut: 'Alt+G' },
+    { id: 'lettrage', icon: '🔗', label: 'Lettrage' },
     { id: 'rapprochement', icon: '🏦', label: 'Rapprochement' },
     { id: 'import', icon: '📥', label: 'Import FEC/CSV' },
   ]},
@@ -44,13 +50,18 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'note34', icon: '📝', label: 'Notes Annexes' },
     { id: 'liasse', icon: '📦', label: 'Liasse Fiscale DSF' },
   ]},
-  { section: 'Analyse', items: [
+  { section: 'Analyse & Gestion', items: [
+    { id: 'analytique', icon: '📊', label: 'Comptabilité Analytique' },
+    { id: 'budget', icon: '💰', label: 'Gestion Budgétaire' },
+    { id: 'tva', icon: '🧾', label: 'TVA & Fiscalité' },
     { id: 'balance_agee', icon: '⏳', label: 'Balance Âgée' },
     { id: 'audit', icon: '🔍', label: "Piste d'Audit" },
   ]},
   { section: 'Paramètres', items: [
     { id: 'plan', icon: '🗂️', label: 'Plan Comptable', shortcut: 'Alt+P' },
     { id: 'exercices', icon: '📅', label: 'Exercices', shortcut: 'Alt+E' },
+    { id: 'cloture', icon: '🔒', label: 'Clôture / Réouverture' },
+    { id: 'abonnement', icon: '🔄', label: 'Écritures Abonnement' },
     { id: 'parametres', icon: '⚙️', label: 'Paramètres' },
   ]},
 ];
@@ -62,8 +73,9 @@ const PAGES: Record<string, React.ComponentType> = {
   saisie: SaisiePage, grandlivre: GrandLivrePage,
   balance_agee: BalanceAgeePage, rapprochement: RapprochementPage,
   note34: NotesAnnexesPage, audit: AuditTrailPage, liasse: LiasseFiscalePage,
-  import: ImportPage,
-  cabinet_mgmt: CabinetPage,
+  import: ImportPage, cabinet_mgmt: CabinetPage,
+  lettrage: LettragePage, analytique: AnalytiquePage, budget: BudgetPage,
+  tva: TvaPage, abonnement: AbonnementPage, cloture: CloturePage,
 };
 
 function ClientsPage() {
