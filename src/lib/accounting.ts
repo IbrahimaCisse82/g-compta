@@ -279,7 +279,7 @@ export const CR: MapLine[] = [
 
   { id: 'XC', label: 'VALEUR AJOUTÉE (XB+RA+RB) + (Somme TE à RJ)', type: 'gtotal', f: v => v.XA + v.TB + v.TC + v.TD + v.TE + v.TF + v.TG + v.TH + v.TI - v.RC - v.RD - v.RE - v.RF - v.RG - v.RH - v.RI - v.RJ },
 
-  { id: 'RK', label: '(−) Charges de personnel', c: [['660', '663'], ['665', '669']], s: 'D', m: 'n' },
+  { id: 'RK', label: '(−) Charges de personnel', c: [['66', '669']], s: 'D', m: 'n' },
   { id: 'XD', label: "EXCÉDENT BRUT D'EXPLOITATION (XC+RK)", type: 'gtotal', f: v => v.XC - v.RK },
 
   { id: 'TJ', label: 'Reprises d\'amortissements, provisions et dépréciations', c: [['791', '795']], s: 'C', m: 'n' },
@@ -296,15 +296,15 @@ export const CR: MapLine[] = [
   { id: 'XF', label: 'RÉSULTAT FINANCIER (Somme TK à RN)', type: 'gtotal', f: v => v.TK + v.TL + v.TM - v.RM - v.RN },
   { id: 'XG', label: 'RÉSULTAT DES ACTIVITÉS ORDINAIRES (XE+XF)', type: 'gtotal', f: v => v.XE + v.XF },
 
-  { id: 'TN', label: "Produits des cessions d'immobilisations", c: [['85', '859']], s: 'C', m: 'n' },
-  { id: 'TO', label: 'Autres produits HAO', c: [['82', '849']], s: 'C', m: 'n' },
+  { id: 'TN', label: "Produits des cessions d'immobilisations", c: [['82', '829']], s: 'C', m: 'n' },
+  { id: 'TO', label: 'Autres produits HAO', c: [['84', '849'], ['86', '869'], ['88', '889']], s: 'C', m: 'n' },
   { id: 'RO', label: "(−) Valeurs comptables des cessions d'immobilisations", c: [['81', '819']], s: 'D', m: 'n' },
-  { id: 'RP', label: '(−) Autres charges HAO', c: [['83', '839']], s: 'D', m: 'n' },
+  { id: 'RP', label: '(−) Autres charges HAO', c: [['83', '839'], ['85', '859']], s: 'D', m: 'n' },
 
   { id: 'XH', label: 'RÉSULTAT HAO (Somme TN à RP)', type: 'gtotal', f: v => v.TN + v.TO - v.RO - v.RP },
 
-  { id: 'RQ', label: '(−) Participation des travailleurs', c: [['664', '664']], s: 'D', m: 'n' },
-  { id: 'RS', label: '(−) Impôts sur le résultat', c: [['89', '899'], ['694', '699']], s: 'D', m: 'n' },
+  { id: 'RQ', label: '(−) Participation des travailleurs', c: [['87', '879']], s: 'D', m: 'n' },
+  { id: 'RS', label: '(−) Impôts sur le résultat', c: [['89', '899']], s: 'D', m: 'n' },
 
   { id: 'XI', label: "RÉSULTAT NET (XG+XH+RQ+RS)", type: 'gtotal', f: v => v.XG + v.XH - v.RQ - v.RS },
 ];
