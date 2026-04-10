@@ -234,7 +234,7 @@ export const PASSIF: MapLine[] = [
   { id: 'DF', label: 'TOTAL RESSOURCES STABLES (I+II)', type: 'gtotal', refs: ['CP', 'DD'] },
 
   { id: 'S_PC', label: 'PASSIF CIRCULANT', type: 'sect' },
-  { id: 'DH', label: 'Dettes circulantes HAO', c: [['479', '479']], s: 'C' },
+  { id: 'DH', label: 'Dettes circulantes HAO', c: [['481', '489']], s: 'C' },
   { id: 'DI', label: 'Clients, avances reçues', c: [['4191', '4198']], s: 'C' },
   { id: 'DJ', label: "Fournisseurs d'exploitation", c: [['401', '408']], s: 'C' },
   { id: 'DK', label: 'Dettes fiscales et sociales', c: [['421', '459']], s: 'C' },
