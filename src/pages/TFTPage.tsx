@@ -13,7 +13,7 @@ export default function TFTPage() {
   const vTN1 = hasN1 ? calc(balanceN1, TFT, { XI: vCRN1['XI'] || 0 }) : {};
 
   const handleExport = () => {
-    const lines = TFT.filter(l => l.type !== 'sect').map(l => ({
+    const lines = TFT.filter(l => l.type !== 'sect' && !l.id.startsWith('_')).map(l => ({
       ref: l.id, label: l.label, valN: vT[l.id] || 0, valN1: hasN1 ? vTN1[l.id] || 0 : undefined,
     }));
     exportEtatCsv(lines, `tft_${exercice?.annee}`);
@@ -42,7 +42,7 @@ export default function TFTPage() {
             <span>Réf.</span><span>Libellé</span><span className="text-right">N</span>
             {hasN1 && <span className="text-right">N-1</span>}
           </div>
-          {TFT.map((l) => {
+          {TFT.filter(l => !l.id.startsWith('_')).map((l) => {
             if (l.type === 'sect') return (
               <div key={l.id} className="px-3 py-1.5 bg-bg3/50 font-bold text-[9px] text-fg3 uppercase tracking-[0.5px] font-mono border-b border-border/30">{l.label}</div>
             );
