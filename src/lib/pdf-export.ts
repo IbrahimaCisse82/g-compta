@@ -125,7 +125,7 @@ export function exportTFTPdf(
   tftDef: MapLine[], vT: Record<string, number>, vTN1: Record<string, number>, hasN1: boolean,
 ) {
   let html = `<table><thead><tr><th style="width:50px">Réf</th><th>Libellé</th><th class="right" style="width:110px">N</th>${hasN1 ? '<th class="right" style="width:110px">N-1</th>' : ''}</tr></thead><tbody>`;
-  for (const l of tftDef) {
+  for (const l of tftDef.filter(x => !x.id.startsWith('_'))) {
     if (l.type === 'sect') { html += `<tr class="sect"><td colspan="${hasN1 ? 4 : 3}">${l.label}</td></tr>`; continue; }
     const cls = l.type === 'gtotal' ? 'gtot' : l.type === 'total' ? 'tot' : '';
     const v = vT[l.id] || 0;
