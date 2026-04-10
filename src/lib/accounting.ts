@@ -279,7 +279,7 @@ export const CR: MapLine[] = [
 
   { id: 'XC', label: 'VALEUR AJOUTÉE (XB+RA+RB) + (Somme TE à RJ)', type: 'gtotal', f: v => v.XA + v.TB + v.TC + v.TD + v.TE + v.TF + v.TG + v.TH + v.TI - v.RC - v.RD - v.RE - v.RF - v.RG - v.RH - v.RI - v.RJ },
 
-  { id: 'RK', label: '(−) Charges de personnel', c: [['66', '669']], s: 'D', m: 'n' },
+  { id: 'RK', label: '(−) Charges de personnel', c: [['660', '663'], ['665', '669']], s: 'D', m: 'n' },
   { id: 'XD', label: "EXCÉDENT BRUT D'EXPLOITATION (XC+RK)", type: 'gtotal', f: v => v.XC - v.RK },
 
   { id: 'TJ', label: 'Reprises d\'amortissements, provisions et dépréciations', c: [['791', '795']], s: 'C', m: 'n' },
@@ -311,8 +311,15 @@ export const CR: MapLine[] = [
 
 export const TFT: MapLine[] = [
   { id: 'S_OP', label: 'FLUX DE TRÉSORERIE PROVENANT DES ACTIVITÉS OPÉRATIONNELLES', type: 'sect' },
-  { id: 'ZA', label: "Trésorerie nette au 1er janvier (Trésorerie actif N-1 − Trésorerie passif N-1)", c: [['521', '585']], s: 'D', m: 'solde_n1' },
-  { id: 'FA', label: "Capacité d'Autofinancement Globale (CAFG)", srcCR: 'XI' },
+  { id: 'ZA', label: "Trésorerie nette au 1er janvier (Trésorerie actif N-1 − Trésorerie passif N-1)", f: (v) => v._ZA_actif - v._ZA_passif },
+  { id: '_ZA_actif', label: '', c: [['521', '585']], s: 'D', m: 'solde_n1' },
+  { id: '_ZA_passif', label: '', c: [['561', '569']], s: 'C', m: 'solde_n1' },
+  { id: 'FA', label: "Capacité d'Autofinancement Globale (CAFG)", f: (v) => v._FA_XI + v._FA_dot - v._FA_rep + v._FA_vnc - v._FA_pci },
+  { id: '_FA_XI', label: '', srcCR: 'XI' },
+  { id: '_FA_dot', label: '', c: [['681', '681'], ['691', '693']], s: 'D', m: 'n' },
+  { id: '_FA_rep', label: '', c: [['791', '795'], ['796', '796'], ['787', '787']], s: 'C', m: 'n' },
+  { id: '_FA_vnc', label: '', c: [['81', '819']], s: 'D', m: 'n' },
+  { id: '_FA_pci', label: '', c: [['85', '859']], s: 'C', m: 'n' },
   { id: 'FB', label: '(−) Variation de l\'actif circulant HAO', c: [['475', '475']], s: 'D', m: 'var' },
   { id: 'FC', label: '(−) Variation des stocks', c: [['31', '39']], s: 'D', m: 'var' },
   { id: 'FD', label: '(−) Variation des créances', c: [['411', '47']], s: 'D', m: 'var' },
