@@ -319,7 +319,7 @@ export const TFT: MapLine[] = [
   { id: '_FA_dot', label: '', c: [['681', '681'], ['691', '693']], s: 'D', m: 'n' },
   { id: '_FA_rep', label: '', c: [['791', '795'], ['796', '796'], ['787', '787']], s: 'C', m: 'n' },
   { id: '_FA_vnc', label: '', c: [['81', '819']], s: 'D', m: 'n' },
-  { id: '_FA_pci', label: '', c: [['85', '859']], s: 'C', m: 'n' },
+  { id: '_FA_pci', label: '', c: [['82', '829']], s: 'C', m: 'n' },
   { id: 'FB', label: '(−) Variation de l\'actif circulant HAO', c: [['475', '475']], s: 'D', m: 'var' },
   { id: 'FC', label: '(−) Variation des stocks', c: [['31', '39']], s: 'D', m: 'var' },
   { id: 'FD', label: '(−) Variation des créances', c: [['411', '47']], s: 'D', m: 'var' },
@@ -331,7 +331,7 @@ export const TFT: MapLine[] = [
   { id: 'FF', label: "(−) Décaissements liés aux acquisitions d'immobilisations incorporelles", c: [['20', '21']], s: 'D', m: 'var' },
   { id: 'FG', label: "(−) Décaissements liés aux acquisitions d'immobilisations corporelles", c: [['22', '24']], s: 'D', m: 'var' },
   { id: 'FH', label: "(−) Décaissements liés aux acquisitions d'immobilisations financières", c: [['26', '27']], s: 'D', m: 'var' },
-  { id: 'FI', label: "(+) Encaissements liés aux cessions d'immobilisations", c: [['85', '859']], s: 'C', m: 'n' },
+  { id: 'FI', label: "(+) Encaissements liés aux cessions d'immobilisations", c: [['82', '829']], s: 'C', m: 'n' },
   { id: 'T_IV', label: "FLUX NET DE TRÉSORERIE DES ACTIVITÉS D'INVESTISSEMENT (B)", type: 'gtotal', f: v => -v.FF - v.FG - v.FH + v.FI },
 
   { id: 'S_FN', label: 'FLUX DE TRÉSORERIE PROVENANT DES ACTIVITÉS DE FINANCEMENT', type: 'sect' },
