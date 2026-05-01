@@ -130,9 +130,64 @@ export default function NotesAnnexesPage() {
   const { data: notesData, save: saveNote } = useNotesData(entreprise?.id, exercice?.id);
 
   // All computed notes
+  // Note 3A — Immobilisations brutes (avec apports/scissions/réévaluations)
   const immos = useMemo(() => buildNote(balance.filter(b => !/^(28|29)/.test(b.compte)), /^(20|21|22|23|24|25|26|27)/,
-    [{ key: 'brut_debut', getter: b => b.sd || 0 }, { key: 'acquisitions', getter: b => b.md || 0 }, { key: 'cessions', getter: b => b.mc || 0 }, { key: 'brut_fin', getter: b => b.sfd || 0 }],
-    r => r.brut_debut > 0 || r.brut_fin > 0), [balance]);
+    [
+      { key: 'brut_debut', getter: b => b.sd || 0 },
+      { key: 'acquisitions', getter: b => b.md || 0 },
+      { key: 'apports', getter: () => 0 },
+      { key: 'scissions', getter: () => 0 },
+      { key: 'reevaluations', getter: () => 0 },
+      { key: 'cessions', getter: b => b.mc || 0 },
+      { key: 'brut_fin', getter: b => b.sfd || 0 },
+    ],
+    r => (r.brut_debut as number) > 0 || (r.brut_fin as number) > 0), [balance]);
+
+  // Note 3B — Crédit-bail (immobilisations en location-acquisition)
+  const creditBail = useMemo(() => buildNote(balance, /^(2[0-7])5/,
+    [{ key: 'valeur_origine', getter: b => b.sd || 0 },
+     { key: 'redevances', getter: b => b.md || 0 },
+     { key: 'amort_cumule', getter: b => b.sc || 0 },
+     { key: 'vnc', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
+
+  // Note 3D — Plus et moins-values de cession (comptes 81 vs 82)
+  const plusMoinsValues = useMemo(() => {
+    const cessions: NoteLine[] = [];
+    const comptes81 = balance.filter(b => /^81/.test(b.compte));
+    const comptes82 = balance.filter(b => /^82/.test(b.compte));
+    comptes82.forEach(b82 => {
+      const suffix = b82.compte.slice(2);
+      const b81 = comptes81.find(b => b.compte.slice(2) === suffix);
+      const prixCession = b82.mc || b82.sfc || 0;
+      const vnc = b81?.md || b81?.sfd || 0;
+      const pv = prixCession - vnc;
+      if (prixCession > 0 || vnc > 0) {
+        cessions.push({
+          compte: b82.compte, intitule: b82.intitule,
+          prix_cession: prixCession, vnc, plus_value: pv > 0 ? pv : 0, moins_value: pv < 0 ? -pv : 0,
+        });
+      }
+    });
+    return cessions;
+  }, [balance]);
+
+  // Note 3E — Écarts de réévaluation (compte 106)
+  const reevaluations = useMemo(() => buildNote(balance, /^106/,
+    [{ key: 'debut', getter: b => b.sc || 0 },
+     { key: 'augmentation', getter: b => b.mc || 0 },
+     { key: 'diminution', getter: b => b.md || 0 },
+     { key: 'fin', getter: b => b.sfc || 0 }]), [balance]);
+
+  // Note 5 — Actifs et Dettes circulants HAO (475 / 481-489)
+  const actifsHAO = useMemo(() => buildNote(balance, /^475/,
+    [{ key: 'brut', getter: b => b.sfd || 0 },
+     { key: 'depreciation', getter: b => b.sfc || 0 },
+     { key: 'net', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
+  const dettesHAO = useMemo(() => buildNote(balance, /^48/,
+    [{ key: 'debut', getter: b => b.sc || 0 },
+     { key: 'augmentation', getter: b => b.mc || 0 },
+     { key: 'diminution', getter: b => b.md || 0 },
+     { key: 'fin', getter: b => b.sfc || 0 }]), [balance]);
 
   const amorts = useMemo(() => buildNote(balance, /^(28|29)/,
     [{ key: 'cumul_debut', getter: b => b.sc || 0 }, { key: 'dotation', getter: b => b.mc || 0 }, { key: 'reprises', getter: b => b.md || 0 }, { key: 'cumul_fin', getter: b => b.sfc || 0 }],
@@ -204,28 +259,54 @@ export default function NotesAnnexesPage() {
 
   const tabGroups = [
     { label: '📊 Synthèse', tabs: [{ id: 'resume', label: 'Résumé' }] },
-    { label: '🏢 Bilan', tabs: [
-      { id: 'immo', label: '1. Immobilisations' }, { id: 'amort', label: '2. Amortissements' },
-      { id: 'prov', label: '3. Provisions' }, { id: 'capitaux', label: '4. Capitaux Propres' },
-      { id: 'emprunts', label: '5. Emprunts' }, { id: 'stocks', label: '6. Stocks' },
-      { id: 'creances', label: '7. Créances & Dettes' }, { id: 'tresorerie', label: '8. Trésorerie' },
-      { id: 'participations', label: '9. Participations' }, { id: 'subventions', label: '10. Subventions' },
-      { id: 'regul', label: '11. Comptes Régul.' }, { id: 'constatees', label: '12. Ch. Constatées' },
+    { label: '🛡 Notes générales (1-2)', tabs: [
+      { id: 'engagements', label: '1. Dettes garanties' },
+      { id: 'methodes', label: '2. Méthodes comptables' },
     ]},
-    { label: '📈 Résultat', tabs: [
-      { id: 'ca', label: '13. CA' }, { id: 'achats', label: '14. Achats' },
-      { id: 'charges', label: '15. Autres Ch.' }, { id: 'personnel', label: '16. Personnel' },
-      { id: 'dotamort', label: '17. Dot. Amort.' }, { id: 'dotprov', label: '18. Dot. Prov.' },
-      { id: 'reprises', label: '19. Reprises' }, { id: 'transferts', label: '20. Transferts' },
-      { id: 'produits', label: '21. Autres Pr.' }, { id: 'fincharges', label: '22. Ch. Fin.' },
-      { id: 'finproduits', label: '23. Pr. Fin.' }, { id: 'haocharges', label: '24. Ch. HAO' },
-      { id: 'haoproduits', label: '25. Pr. HAO' }, { id: 'impots', label: '26. Impôts' },
+    { label: '🏢 Actif immobilisé (3A-3E)', tabs: [
+      { id: 'immo', label: '3A. Immo. brutes' },
+      { id: 'creditbail', label: '3B. Crédit-bail' },
+      { id: 'amort', label: '3C. Amortissements' },
+      { id: 'plusmoins', label: '3D. +/- values' },
+      { id: 'reeval', label: '3E. Réévaluations' },
     ]},
-    { label: '📝 Informations', tabs: [
-      { id: 'methodes', label: '27. Méthodes' }, { id: 'engagements', label: '28. Engagements' },
-      { id: 'parties', label: '29. Parties Liées' }, { id: 'effectifs', label: '30. Effectifs' },
-      { id: 'evenements', label: '31. Événements' }, { id: 'fiscalite', label: '32. Fiscal' },
-      { id: 'identification', label: '33. Identification' }, { id: 'approbation', label: '34. Approbation' },
+    { label: '💼 Bilan (4-12)', tabs: [
+      { id: 'participations', label: '4. Immo. financières' },
+      { id: 'haoactif', label: '5A. Actifs HAO' },
+      { id: 'haopassif', label: '5B. Dettes HAO' },
+      { id: 'stocks', label: '6. Stocks' },
+      { id: 'creances', label: '7. Créances' },
+      { id: 'tresorerie', label: '8. Trésorerie' },
+      { id: 'capitaux', label: '9. Capitaux propres' },
+      { id: 'subventions', label: '10. Subventions' },
+      { id: 'prov', label: '11. Provisions' },
+      { id: 'emprunts', label: '12. Emprunts' },
+      { id: 'regul', label: '13. Régularisation' },
+      { id: 'constatees', label: '14. Constatés' },
+    ]},
+    { label: '📈 Compte de résultat (21-29)', tabs: [
+      { id: 'ca', label: '21. CA' },
+      { id: 'achats', label: '22. Achats' },
+      { id: 'charges', label: '23. Autres charges' },
+      { id: 'personnel', label: '24. Personnel' },
+      { id: 'dotamort', label: '25. Dot. amort.' },
+      { id: 'dotprov', label: '26. Dot. prov.' },
+      { id: 'reprises', label: '27. Reprises' },
+      { id: 'transferts', label: '28. Transferts' },
+      { id: 'produits', label: '29. Autres pr.' },
+      { id: 'fincharges', label: '30. Ch. fin.' },
+      { id: 'finproduits', label: '31. Pr. fin.' },
+      { id: 'haocharges', label: '32. Ch. HAO' },
+      { id: 'haoproduits', label: '33. Pr. HAO' },
+      { id: 'impots', label: '34. Impôts' },
+    ]},
+    { label: '📝 Informations (35-38)', tabs: [
+      { id: 'parties', label: '35. Parties liées' },
+      { id: 'effectifs', label: '36. Effectifs' },
+      { id: 'evenements', label: '37. Événements' },
+      { id: 'fiscalite', label: '38. Régime fiscal' },
+      { id: 'identification', label: '39. Identification' },
+      { id: 'approbation', label: '40. Approbation' },
     ]},
   ];
 
@@ -234,7 +315,7 @@ export default function NotesAnnexesPage() {
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
         <div>
           <div className="font-serif text-[17px]">Notes Annexes</div>
-          <div className="text-[10px] text-fg3 font-mono">SYSCOHADA Révisé — {entreprise?.nom} — Exercice {exercice?.annee} — 34 notes</div>
+          <div className="text-[10px] text-fg3 font-mono">SYSCOHADA Révisé — {entreprise?.nom} — Exercice {exercice?.annee} — Notes 1 à 40 (plaquettes officielles)</div>
         </div>
       </div>
 
@@ -280,77 +361,107 @@ export default function NotesAnnexesPage() {
             </div>
           </TabsContent>
 
-          {/* Bilan notes */}
-          <TabsContent value="immo"><NoteTable noteNum={1} title="Tableau des Immobilisations" headers={['Compte', 'Intitulé', 'Brut Début', 'Acquisitions', 'Cessions', 'Brut Fin']} rows={immos} colKeys={['brut_debut', 'acquisitions', 'cessions', 'brut_fin']} colStyles={{ acquisitions: 'text-success', cessions: 'text-destructive' }} onExport={handleExportImmo} /></TabsContent>
-          <TabsContent value="amort"><NoteTable noteNum={2} title="Tableau des Amortissements" headers={['Compte', 'Intitulé', 'Cumul Début', 'Dotation', 'Reprises', 'Cumul Fin']} rows={amorts} colKeys={['cumul_debut', 'dotation', 'reprises', 'cumul_fin']} colStyles={{ dotation: 'text-destructive', reprises: 'text-success' }} /></TabsContent>
-          <TabsContent value="prov"><NoteTable noteNum={3} title="Tableau des Provisions" headers={['Compte', 'Intitulé', 'Début', 'Dotation', 'Reprises', 'Fin']} rows={provisions} colKeys={['debut', 'dotation', 'reprises', 'fin']} /></TabsContent>
-          <TabsContent value="capitaux"><NoteTable noteNum={4} title="Variation des Capitaux Propres" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={capitaux} colKeys={['debut', 'augmentation', 'diminution', 'fin']} colStyles={{ augmentation: 'text-success', diminution: 'text-destructive' }} /></TabsContent>
-          <TabsContent value="emprunts"><NoteTable noteNum={5} title="Emprunts & Dettes Financières" headers={['Compte', 'Intitulé', 'Début', 'Souscription', 'Remboursement', 'Fin']} rows={emprunts} colKeys={['debut', 'souscription', 'remboursement', 'fin']} colStyles={{ souscription: 'text-destructive', remboursement: 'text-success' }} /></TabsContent>
-          <TabsContent value="stocks"><NoteTable noteNum={6} title="État des Stocks" headers={['Compte', 'Intitulé', 'Début', 'Fin', 'Variation']} rows={stocks} colKeys={['debut', 'fin', 'variation']} /></TabsContent>
-          <TabsContent value="creances"><NoteTable noteNum={7} title="Détail des Créances & Dettes" headers={['Compte', 'Intitulé', 'Solde Débiteur', 'Solde Créditeur']} rows={creances} colKeys={['debiteur', 'crediteur']} colStyles={{ debiteur: 'text-primary', crediteur: 'text-success' }} /></TabsContent>
-          <TabsContent value="tresorerie"><NoteTable noteNum={8} title="État de la Trésorerie" headers={['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde']} rows={tresorerie} colKeys={['debit', 'credit', 'solde']} /></TabsContent>
-          <TabsContent value="participations"><NoteTable noteNum={9} title="Participations & Titres" headers={['Compte', 'Intitulé', 'Début', 'Fin', 'Produits']} rows={participations} colKeys={['debut', 'fin', 'produits']} /></TabsContent>
-          <TabsContent value="subventions"><NoteTable noteNum={10} title="Subventions" headers={['Compte', 'Intitulé', 'Début', 'Reçu', 'Repris', 'Fin']} rows={subventions} colKeys={['debut', 'recu', 'repris', 'fin']} colStyles={{ recu: 'text-success' }} /></TabsContent>
-          <TabsContent value="regul"><NoteTable noteNum={11} title="Comptes de Régularisation" headers={['Compte', 'Intitulé', 'Débit', 'Crédit']} rows={comptesRegul} colKeys={['debit', 'credit']} /></TabsContent>
-          <TabsContent value="constatees"><NoteTable noteNum={12} title="Charges & Produits Constatés d'Avance" headers={['Compte', 'Intitulé', 'Débit', 'Crédit']} rows={chargesConstatees} colKeys={['debit', 'credit']} /></TabsContent>
+          {/* Bilan notes — numérotation officielle SYSCOHADA */}
+          <TabsContent value="immo"><NoteTable noteNum="3A" title="Immobilisations brutes (acquisitions, apports, scissions, réévaluations, cessions)" headers={['Compte', 'Intitulé', 'Brut Début', 'Acquisitions', 'Apports', 'Scissions', 'Réévaluations', 'Cessions', 'Brut Fin']} rows={immos} colKeys={['brut_debut', 'acquisitions', 'apports', 'scissions', 'reevaluations', 'cessions', 'brut_fin']} colStyles={{ acquisitions: 'text-success', cessions: 'text-destructive' }} onExport={handleExportImmo} /></TabsContent>
+          <TabsContent value="creditbail"><NoteTable noteNum="3B" title="Immobilisations acquises en crédit-bail et contrats assimilés" headers={['Compte', 'Intitulé', 'Valeur d\'origine', 'Redevances', 'Amort. cumulé', 'VNC']} rows={creditBail} colKeys={['valeur_origine', 'redevances', 'amort_cumule', 'vnc']} /></TabsContent>
+          <TabsContent value="amort"><NoteTable noteNum="3C" title="Amortissements" headers={['Compte', 'Intitulé', 'Cumul Début', 'Dotation', 'Reprises', 'Cumul Fin']} rows={amorts} colKeys={['cumul_debut', 'dotation', 'reprises', 'cumul_fin']} colStyles={{ dotation: 'text-destructive', reprises: 'text-success' }} /></TabsContent>
+          <TabsContent value="plusmoins"><NoteTable noteNum="3D" title="Plus-values et moins-values de cession d'immobilisations" headers={['Compte', 'Intitulé', 'Prix de cession', 'VNC', 'Plus-value', 'Moins-value']} rows={plusMoinsValues} colKeys={['prix_cession', 'vnc', 'plus_value', 'moins_value']} colStyles={{ plus_value: 'text-success', moins_value: 'text-destructive' }} /></TabsContent>
+          <TabsContent value="reeval"><NoteTable noteNum="3E" title="Écarts de réévaluation (compte 106)" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={reevaluations} colKeys={['debut', 'augmentation', 'diminution', 'fin']} /></TabsContent>
+          <TabsContent value="participations"><NoteTable noteNum={4} title="Immobilisations financières (titres de participation, prêts, dépôts)" headers={['Compte', 'Intitulé', 'Début', 'Fin', 'Produits / Dividendes']} rows={participations} colKeys={['debut', 'fin', 'produits']} /></TabsContent>
+          <TabsContent value="haoactif"><NoteTable noteNum="5A" title="Actifs circulants HAO (compte 475)" headers={['Compte', 'Intitulé', 'Brut', 'Dépréciation', 'Net']} rows={actifsHAO} colKeys={['brut', 'depreciation', 'net']} /></TabsContent>
+          <TabsContent value="haopassif"><NoteTable noteNum="5B" title="Dettes circulantes HAO (comptes 481-489)" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={dettesHAO} colKeys={['debut', 'augmentation', 'diminution', 'fin']} /></TabsContent>
+          <TabsContent value="stocks"><NoteTable noteNum={6} title="Stocks et en-cours" headers={['Compte', 'Intitulé', 'Début', 'Fin', 'Variation']} rows={stocks} colKeys={['debut', 'fin', 'variation']} /></TabsContent>
+          <TabsContent value="creances"><NoteTable noteNum={7} title="Créances et emplois assimilés" headers={['Compte', 'Intitulé', 'Solde Débiteur', 'Solde Créditeur']} rows={creances} colKeys={['debiteur', 'crediteur']} colStyles={{ debiteur: 'text-primary', crediteur: 'text-success' }} /></TabsContent>
+          <TabsContent value="tresorerie"><NoteTable noteNum={8} title="Trésorerie" headers={['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde']} rows={tresorerie} colKeys={['debit', 'credit', 'solde']} /></TabsContent>
+          <TabsContent value="capitaux"><NoteTable noteNum={9} title="Capitaux propres et autres fonds propres" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={capitaux} colKeys={['debut', 'augmentation', 'diminution', 'fin']} colStyles={{ augmentation: 'text-success', diminution: 'text-destructive' }} /></TabsContent>
+          <TabsContent value="subventions"><NoteTable noteNum={10} title="Subventions d'investissement" headers={['Compte', 'Intitulé', 'Début', 'Reçu', 'Repris', 'Fin']} rows={subventions} colKeys={['debut', 'recu', 'repris', 'fin']} colStyles={{ recu: 'text-success' }} /></TabsContent>
+          <TabsContent value="prov"><NoteTable noteNum={11} title="Provisions pour risques et charges" headers={['Compte', 'Intitulé', 'Début', 'Dotation', 'Reprises', 'Fin']} rows={provisions} colKeys={['debut', 'dotation', 'reprises', 'fin']} /></TabsContent>
+          <TabsContent value="emprunts"><NoteTable noteNum={12} title="Emprunts et dettes financières" headers={['Compte', 'Intitulé', 'Début', 'Souscription', 'Remboursement', 'Fin']} rows={emprunts} colKeys={['debut', 'souscription', 'remboursement', 'fin']} colStyles={{ souscription: 'text-destructive', remboursement: 'text-success' }} /></TabsContent>
+          <TabsContent value="regul"><NoteTable noteNum={13} title="Comptes de régularisation" headers={['Compte', 'Intitulé', 'Débit', 'Crédit']} rows={comptesRegul} colKeys={['debit', 'credit']} /></TabsContent>
+          <TabsContent value="constatees"><NoteTable noteNum={14} title="Charges et produits constatés d'avance" headers={['Compte', 'Intitulé', 'Débit', 'Crédit']} rows={chargesConstatees} colKeys={['debit', 'credit']} /></TabsContent>
 
-          {/* Résultat notes */}
-          <TabsContent value="ca"><NoteTable noteNum={13} title="Chiffre d'Affaires Détaillé" headers={['Compte', 'Intitulé', 'Montant']} rows={ca} colKeys={['montant']} /></TabsContent>
-          <TabsContent value="achats"><NoteTable noteNum={14} title="Achats & Services Extérieurs" headers={['Compte', 'Intitulé', 'Montant']} rows={achats} colKeys={['montant']} /></TabsContent>
-          <TabsContent value="charges"><NoteTable noteNum={15} title="Autres Charges d'Exploitation" headers={['Compte', 'Intitulé', 'Montant']} rows={autresCharges} colKeys={['montant']} /></TabsContent>
-          <TabsContent value="personnel"><NoteTable noteNum={16} title="Charges de Personnel" headers={['Compte', 'Intitulé', 'Montant']} rows={personnel} colKeys={['montant']} /></TabsContent>
-          <TabsContent value="dotamort"><NoteTable noteNum={17} title="Dotations aux Amortissements" headers={['Compte', 'Intitulé', 'Montant']} rows={dotationsAmort} colKeys={['montant']} /></TabsContent>
-          <TabsContent value="dotprov"><NoteTable noteNum={18} title="Dotations aux Provisions" headers={['Compte', 'Intitulé', 'Montant']} rows={dotationsProv} colKeys={['montant']} /></TabsContent>
-          <TabsContent value="reprises"><NoteTable noteNum={19} title="Reprises" headers={['Compte', 'Intitulé', 'Montant']} rows={reprisesAll} colKeys={['montant']} colStyles={{ montant: 'text-success' }} /></TabsContent>
-          <TabsContent value="transferts"><NoteTable noteNum={20} title="Transferts de Charges" headers={['Compte', 'Intitulé', 'Montant']} rows={transfertsCharges} colKeys={['montant']} /></TabsContent>
-          <TabsContent value="produits"><NoteTable noteNum={21} title="Autres Produits" headers={['Compte', 'Intitulé', 'Montant']} rows={autresProduits} colKeys={['montant']} /></TabsContent>
-          <TabsContent value="fincharges"><NoteTable noteNum={22} title="Charges Financières" headers={['Compte', 'Intitulé', 'Montant']} rows={financierCharges} colKeys={['montant']} colStyles={{ montant: 'text-destructive' }} /></TabsContent>
-          <TabsContent value="finproduits"><NoteTable noteNum={23} title="Produits Financiers" headers={['Compte', 'Intitulé', 'Montant']} rows={financierProduits} colKeys={['montant']} colStyles={{ montant: 'text-success' }} /></TabsContent>
-          <TabsContent value="haocharges"><NoteTable noteNum={24} title="Charges HAO" headers={['Compte', 'Intitulé', 'Montant']} rows={haoCharges} colKeys={['montant']} colStyles={{ montant: 'text-destructive' }} /></TabsContent>
-          <TabsContent value="haoproduits"><NoteTable noteNum={25} title="Produits HAO" headers={['Compte', 'Intitulé', 'Montant']} rows={haoProduits} colKeys={['montant']} colStyles={{ montant: 'text-success' }} /></TabsContent>
-          <TabsContent value="impots"><NoteTable noteNum={26} title="Impôts & Taxes" headers={['Compte', 'Intitulé', 'Montant']} rows={impots} colKeys={['montant']} /></TabsContent>
+          {/* Résultat notes — Notes 21 à 34 */}
+          <TabsContent value="ca"><NoteTable noteNum={21} title="Chiffre d'affaires détaillé" headers={['Compte', 'Intitulé', 'Montant']} rows={ca} colKeys={['montant']} /></TabsContent>
+          <TabsContent value="achats"><NoteTable noteNum={22} title="Achats et services extérieurs" headers={['Compte', 'Intitulé', 'Montant']} rows={achats} colKeys={['montant']} /></TabsContent>
+          <TabsContent value="charges"><NoteTable noteNum={23} title="Autres charges d'exploitation" headers={['Compte', 'Intitulé', 'Montant']} rows={autresCharges} colKeys={['montant']} /></TabsContent>
+          <TabsContent value="personnel"><NoteTable noteNum={24} title="Charges de personnel" headers={['Compte', 'Intitulé', 'Montant']} rows={personnel} colKeys={['montant']} /></TabsContent>
+          <TabsContent value="dotamort"><NoteTable noteNum={25} title="Dotations aux amortissements" headers={['Compte', 'Intitulé', 'Montant']} rows={dotationsAmort} colKeys={['montant']} /></TabsContent>
+          <TabsContent value="dotprov"><NoteTable noteNum={26} title="Dotations aux provisions et dépréciations" headers={['Compte', 'Intitulé', 'Montant']} rows={dotationsProv} colKeys={['montant']} /></TabsContent>
+          <TabsContent value="reprises"><NoteTable noteNum={27} title="Reprises de provisions, amortissements et dépréciations" headers={['Compte', 'Intitulé', 'Montant']} rows={reprisesAll} colKeys={['montant']} colStyles={{ montant: 'text-success' }} /></TabsContent>
+          <TabsContent value="transferts"><NoteTable noteNum={28} title="Transferts de charges" headers={['Compte', 'Intitulé', 'Montant']} rows={transfertsCharges} colKeys={['montant']} /></TabsContent>
+          <TabsContent value="produits"><NoteTable noteNum={29} title="Autres produits" headers={['Compte', 'Intitulé', 'Montant']} rows={autresProduits} colKeys={['montant']} /></TabsContent>
+          <TabsContent value="fincharges"><NoteTable noteNum={30} title="Charges financières" headers={['Compte', 'Intitulé', 'Montant']} rows={financierCharges} colKeys={['montant']} colStyles={{ montant: 'text-destructive' }} /></TabsContent>
+          <TabsContent value="finproduits"><NoteTable noteNum={31} title="Produits financiers" headers={['Compte', 'Intitulé', 'Montant']} rows={financierProduits} colKeys={['montant']} colStyles={{ montant: 'text-success' }} /></TabsContent>
+          <TabsContent value="haocharges"><NoteTable noteNum={32} title="Charges HAO" headers={['Compte', 'Intitulé', 'Montant']} rows={haoCharges} colKeys={['montant']} colStyles={{ montant: 'text-destructive' }} /></TabsContent>
+          <TabsContent value="haoproduits"><NoteTable noteNum={33} title="Produits HAO" headers={['Compte', 'Intitulé', 'Montant']} rows={haoProduits} colKeys={['montant']} colStyles={{ montant: 'text-success' }} /></TabsContent>
+          <TabsContent value="impots"><NoteTable noteNum={34} title="Impôts sur le résultat" headers={['Compte', 'Intitulé', 'Montant']} rows={impots} colKeys={['montant']} /></TabsContent>
 
-          {/* Editable informational notes */}
-          <TabsContent value="methodes">
-            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
-              <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 27 — Méthodes Comptables</span>
-              </div>
-              <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
-                <p><strong>Référentiel :</strong> SYSCOHADA révisé (Acte Uniforme du 15 février 2017).</p>
-                <p><strong>Convention de base :</strong> Continuité d'exploitation, coût historique, prudence, permanence des méthodes.</p>
-                <EditableField label="Méthode d'amortissement" noteKey="methode_amort" notesData={notesData} onSave={saveNote} />
-                <EditableField label="Méthode d'évaluation des stocks" noteKey="methode_stocks" notesData={notesData} onSave={saveNote} />
-                <EditableField label="Traitement des devises" noteKey="methode_devises" notesData={notesData} onSave={saveNote} />
-                <EditableField label="Autres méthodes" noteKey="methode_autres" notesData={notesData} onSave={saveNote} />
-                <p><strong>Monnaie :</strong> {entreprise?.monnaie || 'FCFA'}</p>
-              </div>
-            </div>
-          </TabsContent>
-
+          {/* Note 1 — Dettes garanties par des sûretés réelles (officielle SYSCOHADA) */}
           <TabsContent value="engagements">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 28 — Engagements Hors Bilan</span>
+                <span className="text-xs font-bold text-primary">📋 Note 1 — Dettes garanties par des sûretés réelles & engagements hors bilan</span>
               </div>
               <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
-                <p className="font-bold">Engagements donnés :</p>
+                <p className="font-bold">Sûretés réelles consenties (sur biens de l'entreprise) :</p>
+                <EditableField label="Hypothèques sur immeubles" noteKey="sur_hypotheques" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Nantissements sur fonds de commerce" noteKey="sur_nant_fonds" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Nantissements sur titres" noteKey="sur_nant_titres" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Gages sur matériel / véhicules" noteKey="sur_gages" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Privilèges (Trésor, sécurité sociale)" noteKey="sur_privileges" notesData={notesData} onSave={saveNote} />
+
+                <p className="font-bold mt-3">Engagements donnés :</p>
                 <EditableField label="Cautions & garanties données" noteKey="eng_cautions_donnees" notesData={notesData} onSave={saveNote} />
                 <EditableField label="Effets escomptés non échus" noteKey="eng_effets" notesData={notesData} onSave={saveNote} />
-                <EditableField label="Crédit-bail" noteKey="eng_credit_bail" notesData={notesData} onSave={saveNote} />
-                <EditableField label="Hypothèques & nantissements" noteKey="eng_hypotheques" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Engagements de crédit-bail restants" noteKey="eng_credit_bail" notesData={notesData} onSave={saveNote} />
+
                 <p className="font-bold mt-3">Engagements reçus :</p>
                 <EditableField label="Cautions & garanties reçues" noteKey="eng_cautions_recues" notesData={notesData} onSave={saveNote} />
                 <EditableField label="Lignes de crédit non utilisées" noteKey="eng_lignes_credit" notesData={notesData} onSave={saveNote} />
-                <EditableField label="Avals & cautionnements" noteKey="eng_avals" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Avals & cautionnements reçus" noteKey="eng_avals" notesData={notesData} onSave={saveNote} />
               </div>
             </div>
           </TabsContent>
 
+          {/* Note 2 — Méthodes comptables (enrichi : dérogations + infos complémentaires) */}
+          <TabsContent value="methodes">
+            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+              <div className="px-3.5 py-2.5 border-b border-border">
+                <span className="text-xs font-bold text-primary">📋 Note 2 — Règles et méthodes comptables</span>
+              </div>
+              <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
+                <p><strong>Référentiel :</strong> SYSCOHADA révisé (Acte Uniforme du 26 janvier 2017).</p>
+                <p><strong>Conventions de base :</strong> Continuité d'exploitation, coût historique, prudence, permanence des méthodes, spécialisation des exercices, intangibilité du bilan d'ouverture, importance significative.</p>
+
+                <p className="font-bold mt-2">Méthodes appliquées :</p>
+                <EditableField label="Méthode d'amortissement" noteKey="methode_amort" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Méthode d'évaluation des stocks" noteKey="methode_stocks" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Traitement des devises" noteKey="methode_devises" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Méthode de comptabilisation des produits" noteKey="methode_produits" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Provisions et dépréciations" noteKey="methode_prov" notesData={notesData} onSave={saveNote} />
+
+                <p className="font-bold mt-3">Dérogations aux principes comptables :</p>
+                <EditableField label="Dérogation appliquée" noteKey="derogation_1" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Justification & impact" noteKey="derogation_just" notesData={notesData} onSave={saveNote} />
+
+                <p className="font-bold mt-3">Changements de méthode :</p>
+                <EditableField label="Changement n°1" noteKey="changement_1" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Impact sur les capitaux propres" noteKey="changement_impact" notesData={notesData} onSave={saveNote} />
+
+                <p className="font-bold mt-3">Informations complémentaires :</p>
+                <EditableField label="Méthodes spécifiques au secteur" noteKey="info_secteur" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Autres informations utiles" noteKey="info_autres" notesData={notesData} onSave={saveNote} />
+
+                <p className="mt-2"><strong>Monnaie :</strong> {entreprise?.monnaie || 'FCFA'}</p>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Note 35 — Parties Liées */}
           <TabsContent value="parties">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 29 — Parties Liées</span>
+                <span className="text-xs font-bold text-primary">📋 Note 35 — Parties liées</span>
               </div>
               <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
                 <EditableField label="Rémunérations des dirigeants" noteKey="pl_remunerations" notesData={notesData} onSave={saveNote} />
@@ -362,10 +473,11 @@ export default function NotesAnnexesPage() {
             </div>
           </TabsContent>
 
+          {/* Note 36 — Effectifs */}
           <TabsContent value="effectifs">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 30 — Effectifs</span>
+                <span className="text-xs font-bold text-primary">📋 Note 36 — Effectifs et masse salariale</span>
               </div>
               <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
                 <p>Effectif moyen de l'exercice {exercice?.annee} :</p>
@@ -381,10 +493,11 @@ export default function NotesAnnexesPage() {
             </div>
           </TabsContent>
 
+          {/* Note 37 — Événements postérieurs */}
           <TabsContent value="evenements">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 31 — Événements Postérieurs</span>
+                <span className="text-xs font-bold text-primary">📋 Note 37 — Événements postérieurs à la clôture</span>
               </div>
               <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
                 <p>Événements significatifs survenus après la clôture ({exercice?.annee ? `31/12/${exercice.annee}` : '—'}) :</p>
@@ -396,10 +509,11 @@ export default function NotesAnnexesPage() {
             </div>
           </TabsContent>
 
+          {/* Note 38 — Régime fiscal */}
           <TabsContent value="fiscalite">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 32 — Régime Fiscal</span>
+                <span className="text-xs font-bold text-primary">📋 Note 38 — Régime fiscal et information sectorielle</span>
               </div>
               <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
                 <EditableField label="Régime d'imposition" noteKey="fisc_regime" notesData={notesData} onSave={saveNote} />
@@ -416,10 +530,11 @@ export default function NotesAnnexesPage() {
             </div>
           </TabsContent>
 
+          {/* Note 39 — Identification (fiche signalétique R1) */}
           <TabsContent value="identification">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 33 — Identification</span>
+                <span className="text-xs font-bold text-primary">📋 Note 39 — Fiche signalétique de l'entreprise</span>
               </div>
               <div className="px-4 py-3">
                 <div className="bg-bg3 rounded p-4 space-y-2">
@@ -440,10 +555,11 @@ export default function NotesAnnexesPage() {
             </div>
           </TabsContent>
 
+          {/* Note 40 — Approbation */}
           <TabsContent value="approbation">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 34 — Approbation</span>
+                <span className="text-xs font-bold text-primary">📋 Note 40 — Approbation des états financiers</span>
               </div>
               <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-3">
                 <p>États financiers de l'exercice clos le {exercice?.annee ? `31/12/${exercice.annee}` : '—'} :</p>
