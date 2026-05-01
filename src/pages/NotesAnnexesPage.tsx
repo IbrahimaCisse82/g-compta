@@ -396,47 +396,72 @@ export default function NotesAnnexesPage() {
           <TabsContent value="haoproduits"><NoteTable noteNum={33} title="Produits HAO" headers={['Compte', 'Intitulé', 'Montant']} rows={haoProduits} colKeys={['montant']} colStyles={{ montant: 'text-success' }} /></TabsContent>
           <TabsContent value="impots"><NoteTable noteNum={34} title="Impôts sur le résultat" headers={['Compte', 'Intitulé', 'Montant']} rows={impots} colKeys={['montant']} /></TabsContent>
 
-          {/* Editable informational notes */}
-          <TabsContent value="methodes">
-            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
-              <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 27 — Méthodes Comptables</span>
-              </div>
-              <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
-                <p><strong>Référentiel :</strong> SYSCOHADA révisé (Acte Uniforme du 15 février 2017).</p>
-                <p><strong>Convention de base :</strong> Continuité d'exploitation, coût historique, prudence, permanence des méthodes.</p>
-                <EditableField label="Méthode d'amortissement" noteKey="methode_amort" notesData={notesData} onSave={saveNote} />
-                <EditableField label="Méthode d'évaluation des stocks" noteKey="methode_stocks" notesData={notesData} onSave={saveNote} />
-                <EditableField label="Traitement des devises" noteKey="methode_devises" notesData={notesData} onSave={saveNote} />
-                <EditableField label="Autres méthodes" noteKey="methode_autres" notesData={notesData} onSave={saveNote} />
-                <p><strong>Monnaie :</strong> {entreprise?.monnaie || 'FCFA'}</p>
-              </div>
-            </div>
-          </TabsContent>
-
+          {/* Note 1 — Dettes garanties par des sûretés réelles (officielle SYSCOHADA) */}
           <TabsContent value="engagements">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 28 — Engagements Hors Bilan</span>
+                <span className="text-xs font-bold text-primary">📋 Note 1 — Dettes garanties par des sûretés réelles & engagements hors bilan</span>
               </div>
               <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
-                <p className="font-bold">Engagements donnés :</p>
+                <p className="font-bold">Sûretés réelles consenties (sur biens de l'entreprise) :</p>
+                <EditableField label="Hypothèques sur immeubles" noteKey="sur_hypotheques" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Nantissements sur fonds de commerce" noteKey="sur_nant_fonds" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Nantissements sur titres" noteKey="sur_nant_titres" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Gages sur matériel / véhicules" noteKey="sur_gages" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Privilèges (Trésor, sécurité sociale)" noteKey="sur_privileges" notesData={notesData} onSave={saveNote} />
+
+                <p className="font-bold mt-3">Engagements donnés :</p>
                 <EditableField label="Cautions & garanties données" noteKey="eng_cautions_donnees" notesData={notesData} onSave={saveNote} />
                 <EditableField label="Effets escomptés non échus" noteKey="eng_effets" notesData={notesData} onSave={saveNote} />
-                <EditableField label="Crédit-bail" noteKey="eng_credit_bail" notesData={notesData} onSave={saveNote} />
-                <EditableField label="Hypothèques & nantissements" noteKey="eng_hypotheques" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Engagements de crédit-bail restants" noteKey="eng_credit_bail" notesData={notesData} onSave={saveNote} />
+
                 <p className="font-bold mt-3">Engagements reçus :</p>
                 <EditableField label="Cautions & garanties reçues" noteKey="eng_cautions_recues" notesData={notesData} onSave={saveNote} />
                 <EditableField label="Lignes de crédit non utilisées" noteKey="eng_lignes_credit" notesData={notesData} onSave={saveNote} />
-                <EditableField label="Avals & cautionnements" noteKey="eng_avals" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Avals & cautionnements reçus" noteKey="eng_avals" notesData={notesData} onSave={saveNote} />
               </div>
             </div>
           </TabsContent>
 
+          {/* Note 2 — Méthodes comptables (enrichi : dérogations + infos complémentaires) */}
+          <TabsContent value="methodes">
+            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+              <div className="px-3.5 py-2.5 border-b border-border">
+                <span className="text-xs font-bold text-primary">📋 Note 2 — Règles et méthodes comptables</span>
+              </div>
+              <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
+                <p><strong>Référentiel :</strong> SYSCOHADA révisé (Acte Uniforme du 26 janvier 2017).</p>
+                <p><strong>Conventions de base :</strong> Continuité d'exploitation, coût historique, prudence, permanence des méthodes, spécialisation des exercices, intangibilité du bilan d'ouverture, importance significative.</p>
+
+                <p className="font-bold mt-2">Méthodes appliquées :</p>
+                <EditableField label="Méthode d'amortissement" noteKey="methode_amort" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Méthode d'évaluation des stocks" noteKey="methode_stocks" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Traitement des devises" noteKey="methode_devises" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Méthode de comptabilisation des produits" noteKey="methode_produits" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Provisions et dépréciations" noteKey="methode_prov" notesData={notesData} onSave={saveNote} />
+
+                <p className="font-bold mt-3">Dérogations aux principes comptables :</p>
+                <EditableField label="Dérogation appliquée" noteKey="derogation_1" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Justification & impact" noteKey="derogation_just" notesData={notesData} onSave={saveNote} />
+
+                <p className="font-bold mt-3">Changements de méthode :</p>
+                <EditableField label="Changement n°1" noteKey="changement_1" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Impact sur les capitaux propres" noteKey="changement_impact" notesData={notesData} onSave={saveNote} />
+
+                <p className="font-bold mt-3">Informations complémentaires :</p>
+                <EditableField label="Méthodes spécifiques au secteur" noteKey="info_secteur" notesData={notesData} onSave={saveNote} />
+                <EditableField label="Autres informations utiles" noteKey="info_autres" notesData={notesData} onSave={saveNote} />
+
+                <p className="mt-2"><strong>Monnaie :</strong> {entreprise?.monnaie || 'FCFA'}</p>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Note 35 — Parties Liées */}
           <TabsContent value="parties">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 29 — Parties Liées</span>
+                <span className="text-xs font-bold text-primary">📋 Note 35 — Parties liées</span>
               </div>
               <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
                 <EditableField label="Rémunérations des dirigeants" noteKey="pl_remunerations" notesData={notesData} onSave={saveNote} />
@@ -448,10 +473,11 @@ export default function NotesAnnexesPage() {
             </div>
           </TabsContent>
 
+          {/* Note 36 — Effectifs */}
           <TabsContent value="effectifs">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 30 — Effectifs</span>
+                <span className="text-xs font-bold text-primary">📋 Note 36 — Effectifs et masse salariale</span>
               </div>
               <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
                 <p>Effectif moyen de l'exercice {exercice?.annee} :</p>
@@ -467,10 +493,11 @@ export default function NotesAnnexesPage() {
             </div>
           </TabsContent>
 
+          {/* Note 37 — Événements postérieurs */}
           <TabsContent value="evenements">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 31 — Événements Postérieurs</span>
+                <span className="text-xs font-bold text-primary">📋 Note 37 — Événements postérieurs à la clôture</span>
               </div>
               <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
                 <p>Événements significatifs survenus après la clôture ({exercice?.annee ? `31/12/${exercice.annee}` : '—'}) :</p>
@@ -482,10 +509,11 @@ export default function NotesAnnexesPage() {
             </div>
           </TabsContent>
 
+          {/* Note 38 — Régime fiscal */}
           <TabsContent value="fiscalite">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 32 — Régime Fiscal</span>
+                <span className="text-xs font-bold text-primary">📋 Note 38 — Régime fiscal et information sectorielle</span>
               </div>
               <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-2">
                 <EditableField label="Régime d'imposition" noteKey="fisc_regime" notesData={notesData} onSave={saveNote} />
@@ -502,10 +530,11 @@ export default function NotesAnnexesPage() {
             </div>
           </TabsContent>
 
+          {/* Note 39 — Identification (fiche signalétique R1) */}
           <TabsContent value="identification">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 33 — Identification</span>
+                <span className="text-xs font-bold text-primary">📋 Note 39 — Fiche signalétique de l'entreprise</span>
               </div>
               <div className="px-4 py-3">
                 <div className="bg-bg3 rounded p-4 space-y-2">
@@ -526,10 +555,11 @@ export default function NotesAnnexesPage() {
             </div>
           </TabsContent>
 
+          {/* Note 40 — Approbation */}
           <TabsContent value="approbation">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
               <div className="px-3.5 py-2.5 border-b border-border">
-                <span className="text-xs font-bold text-primary">📋 Note 34 — Approbation</span>
+                <span className="text-xs font-bold text-primary">📋 Note 40 — Approbation des états financiers</span>
               </div>
               <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed space-y-3">
                 <p>États financiers de l'exercice clos le {exercice?.annee ? `31/12/${exercice.annee}` : '—'} :</p>
