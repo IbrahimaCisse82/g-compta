@@ -315,7 +315,7 @@ export default function NotesAnnexesPage() {
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
         <div>
           <div className="font-serif text-[17px]">Notes Annexes</div>
-          <div className="text-[10px] text-fg3 font-mono">SYSCOHADA Révisé — {entreprise?.nom} — Exercice {exercice?.annee} — 34 notes</div>
+          <div className="text-[10px] text-fg3 font-mono">SYSCOHADA Révisé — {entreprise?.nom} — Exercice {exercice?.annee} — Notes 1 à 40 (plaquettes officielles)</div>
         </div>
       </div>
 
