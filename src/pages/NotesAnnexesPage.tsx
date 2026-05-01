@@ -130,9 +130,64 @@ export default function NotesAnnexesPage() {
   const { data: notesData, save: saveNote } = useNotesData(entreprise?.id, exercice?.id);
 
   // All computed notes
+  // Note 3A — Immobilisations brutes (avec apports/scissions/réévaluations)
   const immos = useMemo(() => buildNote(balance.filter(b => !/^(28|29)/.test(b.compte)), /^(20|21|22|23|24|25|26|27)/,
-    [{ key: 'brut_debut', getter: b => b.sd || 0 }, { key: 'acquisitions', getter: b => b.md || 0 }, { key: 'cessions', getter: b => b.mc || 0 }, { key: 'brut_fin', getter: b => b.sfd || 0 }],
-    r => r.brut_debut > 0 || r.brut_fin > 0), [balance]);
+    [
+      { key: 'brut_debut', getter: b => b.sd || 0 },
+      { key: 'acquisitions', getter: b => b.md || 0 },
+      { key: 'apports', getter: () => 0 },
+      { key: 'scissions', getter: () => 0 },
+      { key: 'reevaluations', getter: () => 0 },
+      { key: 'cessions', getter: b => b.mc || 0 },
+      { key: 'brut_fin', getter: b => b.sfd || 0 },
+    ],
+    r => (r.brut_debut as number) > 0 || (r.brut_fin as number) > 0), [balance]);
+
+  // Note 3B — Crédit-bail (immobilisations en location-acquisition)
+  const creditBail = useMemo(() => buildNote(balance, /^(2[0-7])5/,
+    [{ key: 'valeur_origine', getter: b => b.sd || 0 },
+     { key: 'redevances', getter: b => b.md || 0 },
+     { key: 'amort_cumule', getter: b => b.sc || 0 },
+     { key: 'vnc', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
+
+  // Note 3D — Plus et moins-values de cession (comptes 81 vs 82)
+  const plusMoinsValues = useMemo(() => {
+    const cessions: NoteLine[] = [];
+    const comptes81 = balance.filter(b => /^81/.test(b.compte));
+    const comptes82 = balance.filter(b => /^82/.test(b.compte));
+    comptes82.forEach(b82 => {
+      const suffix = b82.compte.slice(2);
+      const b81 = comptes81.find(b => b.compte.slice(2) === suffix);
+      const prixCession = b82.mc || b82.sfc || 0;
+      const vnc = b81?.md || b81?.sfd || 0;
+      const pv = prixCession - vnc;
+      if (prixCession > 0 || vnc > 0) {
+        cessions.push({
+          compte: b82.compte, intitule: b82.intitule,
+          prix_cession: prixCession, vnc, plus_value: pv > 0 ? pv : 0, moins_value: pv < 0 ? -pv : 0,
+        });
+      }
+    });
+    return cessions;
+  }, [balance]);
+
+  // Note 3E — Écarts de réévaluation (compte 106)
+  const reevaluations = useMemo(() => buildNote(balance, /^106/,
+    [{ key: 'debut', getter: b => b.sc || 0 },
+     { key: 'augmentation', getter: b => b.mc || 0 },
+     { key: 'diminution', getter: b => b.md || 0 },
+     { key: 'fin', getter: b => b.sfc || 0 }]), [balance]);
+
+  // Note 5 — Actifs et Dettes circulants HAO (475 / 481-489)
+  const actifsHAO = useMemo(() => buildNote(balance, /^475/,
+    [{ key: 'brut', getter: b => b.sfd || 0 },
+     { key: 'depreciation', getter: b => b.sfc || 0 },
+     { key: 'net', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
+  const dettesHAO = useMemo(() => buildNote(balance, /^48/,
+    [{ key: 'debut', getter: b => b.sc || 0 },
+     { key: 'augmentation', getter: b => b.mc || 0 },
+     { key: 'diminution', getter: b => b.md || 0 },
+     { key: 'fin', getter: b => b.sfc || 0 }]), [balance]);
 
   const amorts = useMemo(() => buildNote(balance, /^(28|29)/,
     [{ key: 'cumul_debut', getter: b => b.sc || 0 }, { key: 'dotation', getter: b => b.mc || 0 }, { key: 'reprises', getter: b => b.md || 0 }, { key: 'cumul_fin', getter: b => b.sfc || 0 }],
