@@ -208,26 +208,81 @@ export default function NotesAnnexesPage() {
   const stocks = useMemo(() => buildNote(balance, /^(3[0-8])/,
     [{ key: 'debut', getter: b => b.sd || 0 }, { key: 'fin', getter: b => b.sfd || 0 }, { key: 'variation', getter: b => (b.sfd || 0) - (b.sd || 0) }]), [balance]);
 
-  const creances = useMemo(() => buildNote(balance, /^(4[0-9])/,
-    [{ key: 'debiteur', getter: b => b.sfd || 0 }, { key: 'crediteur', getter: b => b.sfc || 0 }],
-    r => r.debiteur > 0 || r.crediteur > 0), [balance]);
+  // ─── Notes officielles 7-15A (plaquettes SYSCOHADA) ────────
+  // Note 7 — Clients (411, 412, 413, 414, 416, 418, 419, 491)
+  const note7Clients = useMemo(() => buildNote(balance, /^(411|412|413|414|416|418|419|491)/,
+    [{ key: 'brut', getter: b => b.sfd || 0 },
+     { key: 'depreciation', getter: b => b.sfc || 0 },
+     { key: 'net', getter: b => (b.sfd || 0) - (b.sfc || 0) }],
+    r => (r.brut as number) > 0 || (r.depreciation as number) > 0), [balance]);
 
+  // Note 8 — Autres créances (42, 43, 44 hors 478, 45, 46)
+  const note8Autres = useMemo(() => buildNote(balance, /^(42|43|44|45|46)/,
+    [{ key: 'brut', getter: b => b.sfd || 0 },
+     { key: 'depreciation', getter: b => b.sfc || 0 },
+     { key: 'net', getter: b => (b.sfd || 0) - (b.sfc || 0) }],
+    r => (r.brut as number) > 0 || (r.depreciation as number) > 0), [balance]);
+
+  // Note 8A — Étalement charges immobilisées (compte 20 — frais d'établissement, charges à répartir, primes obligations)
+  const note8AEtalement = useMemo(() => buildNote(balance, /^20/,
+    [{ key: 'montant_brut', getter: b => b.sfd || 0 },
+     { key: 'amort_cumule', getter: b => b.sfc || 0 },
+     { key: 'net', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
+
+  // Note 9 — Titres de placement (50)
+  const note9Titres = useMemo(() => buildNote(balance, /^50/,
+    [{ key: 'brut', getter: b => b.sfd || 0 },
+     { key: 'depreciation', getter: b => b.sfc || 0 },
+     { key: 'net', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
+
+  // Note 10 — Valeurs à encaisser (51)
+  const note10Valeurs = useMemo(() => buildNote(balance, /^51/,
+    [{ key: 'brut', getter: b => b.sfd || 0 },
+     { key: 'depreciation', getter: b => b.sfc || 0 },
+     { key: 'net', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
+
+  // Note 11 — Banques, CCP, Caisses (52, 53, 54, 57, 58)
+  const note11Banques = useMemo(() => buildNote(balance, /^(52|53|54|57|58)/,
+    [{ key: 'debit', getter: b => b.sfd || 0 },
+     { key: 'credit', getter: b => b.sfc || 0 },
+     { key: 'solde', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
+
+  // Note 12 — Écarts de conversion (478/479) et transferts de charges (781/787)
+  const note12Ecarts = useMemo(() => buildNote(balance, /^(478|479|781|787)/,
+    [{ key: 'debit', getter: b => b.sfd || 0 },
+     { key: 'credit', getter: b => b.sfc || 0 }]), [balance]);
+
+  // Note 13 — Capital (101 à 109)
+  const note13Capital = useMemo(() => buildNote(balance, /^10/,
+    [{ key: 'debut', getter: b => b.sc || 0 },
+     { key: 'augmentation', getter: b => b.mc || 0 },
+     { key: 'diminution', getter: b => b.md || 0 },
+     { key: 'fin', getter: b => b.sfc || 0 }],
+    r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
+
+  // Note 14 — Primes (105) et réserves (111-118), Report à nouveau (12)
+  const note14Primes = useMemo(() => buildNote(balance, /^(105|11|12)/,
+    [{ key: 'debut', getter: b => b.sc || 0 },
+     { key: 'augmentation', getter: b => b.mc || 0 },
+     { key: 'diminution', getter: b => b.md || 0 },
+     { key: 'fin', getter: b => b.sfc || 0 }],
+    r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
+
+  // Note 15A — Subventions d'investissement (14) et provisions réglementées (15)
+  const note15ASubvProv = useMemo(() => buildNote(balance, /^(14|15)/,
+    [{ key: 'debut', getter: b => b.sc || 0 },
+     { key: 'augmentation', getter: b => b.mc || 0 },
+     { key: 'diminution', getter: b => b.md || 0 },
+     { key: 'fin', getter: b => b.sfc || 0 }],
+    r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
+
+  // ─── Notes héritées (à remapper aux prochains lots 16+) ─────
   const tresorerie = useMemo(() => buildNote(balance, /^(5[0-9])/,
     [{ key: 'debit', getter: b => b.sfd || 0 }, { key: 'credit', getter: b => b.sfc || 0 }, { key: 'solde', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
 
   const participations = useMemo(() => buildNote(balance, /^(26|27)/,
     [{ key: 'debut', getter: b => b.sd || 0 }, { key: 'fin', getter: b => b.sfd || 0 }, { key: 'produits', getter: b => b.mc || 0 }],
     r => r.debut > 0 || r.fin > 0), [balance]);
-
-  const subventions = useMemo(() => buildNote(balance, /^(14|71)/,
-    [{ key: 'debut', getter: b => b.sc || 0 }, { key: 'recu', getter: b => b.mc || 0 }, { key: 'repris', getter: b => b.md || 0 }, { key: 'fin', getter: b => b.sfc || 0 }],
-    r => r.debut > 0 || r.fin > 0), [balance]);
-
-  const comptesRegul = useMemo(() => buildNote(balance, /^(47)/,
-    [{ key: 'debit', getter: b => b.sfd || 0 }, { key: 'credit', getter: b => b.sfc || 0 }]), [balance]);
-
-  const chargesConstatees = useMemo(() => buildNote(balance, /^(476|477|478|48)/,
-    [{ key: 'debit', getter: b => b.sfd || 0 }, { key: 'credit', getter: b => b.sfc || 0 }]), [balance]);
 
   const ca = useMemo(() => buildNote(balance, /^(70)/, [{ key: 'montant', getter: b => (b.sfc || 0) || (b.mc || 0) }]), [balance]);
   const achats = useMemo(() => buildNote(balance, /^(60|61|62)/, [{ key: 'montant', getter: b => (b.sfd || 0) || (b.md || 0) }]), [balance]);
@@ -270,19 +325,21 @@ export default function NotesAnnexesPage() {
       { id: 'plusmoins', label: '3D. +/- values' },
       { id: 'reeval', label: '3E. Réévaluations' },
     ]},
-    { label: '💼 Bilan (4-12)', tabs: [
+    { label: '💼 Bilan (4-15A) — Plaquettes officielles', tabs: [
       { id: 'participations', label: '4. Immo. financières' },
       { id: 'haoactif', label: '5A. Actifs HAO' },
       { id: 'haopassif', label: '5B. Dettes HAO' },
       { id: 'stocks', label: '6. Stocks' },
-      { id: 'creances', label: '7. Créances' },
-      { id: 'tresorerie', label: '8. Trésorerie' },
-      { id: 'capitaux', label: '9. Capitaux propres' },
-      { id: 'subventions', label: '10. Subventions' },
-      { id: 'prov', label: '11. Provisions' },
-      { id: 'emprunts', label: '12. Emprunts' },
-      { id: 'regul', label: '13. Régularisation' },
-      { id: 'constatees', label: '14. Constatés' },
+      { id: 'creances', label: '7. Clients' },
+      { id: 'tresorerie', label: '8. Autres créances' },
+      { id: 'etalement', label: '8A. Étalement' },
+      { id: 'capitaux', label: '9. Titres placement' },
+      { id: 'subventions', label: '10. Valeurs encaisser' },
+      { id: 'prov', label: '11. Banques/CCP/Caisse' },
+      { id: 'emprunts', label: '12. Écarts conv./TC' },
+      { id: 'regul', label: '13. Capital' },
+      { id: 'constatees', label: '14. Primes/Réserves' },
+      { id: 'subvprov', label: '15A. Subv./Prov. régl.' },
     ]},
     { label: '📈 Compte de résultat (21-29)', tabs: [
       { id: 'ca', label: '21. CA' },
@@ -371,14 +428,17 @@ export default function NotesAnnexesPage() {
           <TabsContent value="haoactif"><NoteTable noteNum="5A" title="Actifs circulants HAO (compte 475)" headers={['Compte', 'Intitulé', 'Brut', 'Dépréciation', 'Net']} rows={actifsHAO} colKeys={['brut', 'depreciation', 'net']} /></TabsContent>
           <TabsContent value="haopassif"><NoteTable noteNum="5B" title="Dettes circulantes HAO (comptes 481-489)" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={dettesHAO} colKeys={['debut', 'augmentation', 'diminution', 'fin']} /></TabsContent>
           <TabsContent value="stocks"><NoteTable noteNum={6} title="Stocks et en-cours" headers={['Compte', 'Intitulé', 'Début', 'Fin', 'Variation']} rows={stocks} colKeys={['debut', 'fin', 'variation']} /></TabsContent>
-          <TabsContent value="creances"><NoteTable noteNum={7} title="Créances et emplois assimilés" headers={['Compte', 'Intitulé', 'Solde Débiteur', 'Solde Créditeur']} rows={creances} colKeys={['debiteur', 'crediteur']} colStyles={{ debiteur: 'text-primary', crediteur: 'text-success' }} /></TabsContent>
-          <TabsContent value="tresorerie"><NoteTable noteNum={8} title="Trésorerie" headers={['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde']} rows={tresorerie} colKeys={['debit', 'credit', 'solde']} /></TabsContent>
-          <TabsContent value="capitaux"><NoteTable noteNum={9} title="Capitaux propres et autres fonds propres" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={capitaux} colKeys={['debut', 'augmentation', 'diminution', 'fin']} colStyles={{ augmentation: 'text-success', diminution: 'text-destructive' }} /></TabsContent>
-          <TabsContent value="subventions"><NoteTable noteNum={10} title="Subventions d'investissement" headers={['Compte', 'Intitulé', 'Début', 'Reçu', 'Repris', 'Fin']} rows={subventions} colKeys={['debut', 'recu', 'repris', 'fin']} colStyles={{ recu: 'text-success' }} /></TabsContent>
-          <TabsContent value="prov"><NoteTable noteNum={11} title="Provisions pour risques et charges" headers={['Compte', 'Intitulé', 'Début', 'Dotation', 'Reprises', 'Fin']} rows={provisions} colKeys={['debut', 'dotation', 'reprises', 'fin']} /></TabsContent>
-          <TabsContent value="emprunts"><NoteTable noteNum={12} title="Emprunts et dettes financières" headers={['Compte', 'Intitulé', 'Début', 'Souscription', 'Remboursement', 'Fin']} rows={emprunts} colKeys={['debut', 'souscription', 'remboursement', 'fin']} colStyles={{ souscription: 'text-destructive', remboursement: 'text-success' }} /></TabsContent>
-          <TabsContent value="regul"><NoteTable noteNum={13} title="Comptes de régularisation" headers={['Compte', 'Intitulé', 'Débit', 'Crédit']} rows={comptesRegul} colKeys={['debit', 'credit']} /></TabsContent>
-          <TabsContent value="constatees"><NoteTable noteNum={14} title="Charges et produits constatés d'avance" headers={['Compte', 'Intitulé', 'Débit', 'Crédit']} rows={chargesConstatees} colKeys={['debit', 'credit']} /></TabsContent>
+          {/* Notes officielles 7 à 15A — alignées plaquettes SYSCOHADA */}
+          <TabsContent value="creances"><NoteTable noteNum={7} title="Clients (411, 412, 413, 414, 416, 418, 419, 491)" headers={['Compte', 'Intitulé', 'Brut', 'Dépréciation', 'Net']} rows={note7Clients} colKeys={['brut', 'depreciation', 'net']} colStyles={{ brut: 'text-primary', depreciation: 'text-destructive' }} /></TabsContent>
+          <TabsContent value="tresorerie"><NoteTable noteNum={8} title="Autres créances (Personnel, Organismes sociaux, État, Débiteurs divers — 42, 43, 44, 45, 46)" headers={['Compte', 'Intitulé', 'Brut', 'Dépréciation', 'Net']} rows={note8Autres} colKeys={['brut', 'depreciation', 'net']} /></TabsContent>
+          <TabsContent value="etalement"><NoteTable noteNum="8A" title="Tableau d'étalement des charges immobilisées (frais d'établissement, charges à répartir, primes obligations — compte 20)" headers={['Compte', 'Intitulé', 'Montant brut', 'Amort. cumulé', 'Net']} rows={note8AEtalement} colKeys={['montant_brut', 'amort_cumule', 'net']} /></TabsContent>
+          <TabsContent value="capitaux"><NoteTable noteNum={9} title="Titres de placement (actions, obligations, bons — compte 50)" headers={['Compte', 'Intitulé', 'Brut', 'Dépréciation', 'Net']} rows={note9Titres} colKeys={['brut', 'depreciation', 'net']} /></TabsContent>
+          <TabsContent value="subventions"><NoteTable noteNum={10} title="Valeurs à encaisser (effets, chèques, cartes de crédit — compte 51)" headers={['Compte', 'Intitulé', 'Brut', 'Dépréciation', 'Net']} rows={note10Valeurs} colKeys={['brut', 'depreciation', 'net']} /></TabsContent>
+          <TabsContent value="prov"><NoteTable noteNum={11} title="Banques, chèques postaux et caisses (52, 53, 54, 57, 58)" headers={['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde']} rows={note11Banques} colKeys={['debit', 'credit', 'solde']} colStyles={{ solde: 'text-success' }} /></TabsContent>
+          <TabsContent value="emprunts"><NoteTable noteNum={12} title="Écarts de conversion (478/479) et transferts de charges (781/787)" headers={['Compte', 'Intitulé', 'Débit', 'Crédit']} rows={note12Ecarts} colKeys={['debit', 'credit']} /></TabsContent>
+          <TabsContent value="regul"><NoteTable noteNum={13} title="Capital social (compte 10 — 101 à 109)" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={note13Capital} colKeys={['debut', 'augmentation', 'diminution', 'fin']} colStyles={{ augmentation: 'text-success' }} /></TabsContent>
+          <TabsContent value="constatees"><NoteTable noteNum={14} title="Primes (105) et Réserves (11) — Report à nouveau (12)" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={note14Primes} colKeys={['debut', 'augmentation', 'diminution', 'fin']} /></TabsContent>
+          <TabsContent value="subvprov"><NoteTable noteNum="15A" title="Subventions d'investissement (14) et Provisions réglementées (15)" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={note15ASubvProv} colKeys={['debut', 'augmentation', 'diminution', 'fin']} /></TabsContent>
 
           {/* Résultat notes — Notes 21 à 34 */}
           <TabsContent value="ca"><NoteTable noteNum={21} title="Chiffre d'affaires détaillé" headers={['Compte', 'Intitulé', 'Montant']} rows={ca} colKeys={['montant']} /></TabsContent>
