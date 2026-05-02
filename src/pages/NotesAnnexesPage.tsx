@@ -208,26 +208,81 @@ export default function NotesAnnexesPage() {
   const stocks = useMemo(() => buildNote(balance, /^(3[0-8])/,
     [{ key: 'debut', getter: b => b.sd || 0 }, { key: 'fin', getter: b => b.sfd || 0 }, { key: 'variation', getter: b => (b.sfd || 0) - (b.sd || 0) }]), [balance]);
 
-  const creances = useMemo(() => buildNote(balance, /^(4[0-9])/,
-    [{ key: 'debiteur', getter: b => b.sfd || 0 }, { key: 'crediteur', getter: b => b.sfc || 0 }],
-    r => r.debiteur > 0 || r.crediteur > 0), [balance]);
+  // ─── Notes officielles 7-15A (plaquettes SYSCOHADA) ────────
+  // Note 7 — Clients (411, 412, 413, 414, 416, 418, 419, 491)
+  const note7Clients = useMemo(() => buildNote(balance, /^(411|412|413|414|416|418|419|491)/,
+    [{ key: 'brut', getter: b => b.sfd || 0 },
+     { key: 'depreciation', getter: b => b.sfc || 0 },
+     { key: 'net', getter: b => (b.sfd || 0) - (b.sfc || 0) }],
+    r => (r.brut as number) > 0 || (r.depreciation as number) > 0), [balance]);
 
+  // Note 8 — Autres créances (42, 43, 44 hors 478, 45, 46)
+  const note8Autres = useMemo(() => buildNote(balance, /^(42|43|44|45|46)/,
+    [{ key: 'brut', getter: b => b.sfd || 0 },
+     { key: 'depreciation', getter: b => b.sfc || 0 },
+     { key: 'net', getter: b => (b.sfd || 0) - (b.sfc || 0) }],
+    r => (r.brut as number) > 0 || (r.depreciation as number) > 0), [balance]);
+
+  // Note 8A — Étalement charges immobilisées (compte 20 — frais d'établissement, charges à répartir, primes obligations)
+  const note8AEtalement = useMemo(() => buildNote(balance, /^20/,
+    [{ key: 'montant_brut', getter: b => b.sfd || 0 },
+     { key: 'amort_cumule', getter: b => b.sfc || 0 },
+     { key: 'net', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
+
+  // Note 9 — Titres de placement (50)
+  const note9Titres = useMemo(() => buildNote(balance, /^50/,
+    [{ key: 'brut', getter: b => b.sfd || 0 },
+     { key: 'depreciation', getter: b => b.sfc || 0 },
+     { key: 'net', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
+
+  // Note 10 — Valeurs à encaisser (51)
+  const note10Valeurs = useMemo(() => buildNote(balance, /^51/,
+    [{ key: 'brut', getter: b => b.sfd || 0 },
+     { key: 'depreciation', getter: b => b.sfc || 0 },
+     { key: 'net', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
+
+  // Note 11 — Banques, CCP, Caisses (52, 53, 54, 57, 58)
+  const note11Banques = useMemo(() => buildNote(balance, /^(52|53|54|57|58)/,
+    [{ key: 'debit', getter: b => b.sfd || 0 },
+     { key: 'credit', getter: b => b.sfc || 0 },
+     { key: 'solde', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
+
+  // Note 12 — Écarts de conversion (478/479) et transferts de charges (781/787)
+  const note12Ecarts = useMemo(() => buildNote(balance, /^(478|479|781|787)/,
+    [{ key: 'debit', getter: b => b.sfd || 0 },
+     { key: 'credit', getter: b => b.sfc || 0 }]), [balance]);
+
+  // Note 13 — Capital (101 à 109)
+  const note13Capital = useMemo(() => buildNote(balance, /^10/,
+    [{ key: 'debut', getter: b => b.sc || 0 },
+     { key: 'augmentation', getter: b => b.mc || 0 },
+     { key: 'diminution', getter: b => b.md || 0 },
+     { key: 'fin', getter: b => b.sfc || 0 }],
+    r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
+
+  // Note 14 — Primes (105) et réserves (111-118), Report à nouveau (12)
+  const note14Primes = useMemo(() => buildNote(balance, /^(105|11|12)/,
+    [{ key: 'debut', getter: b => b.sc || 0 },
+     { key: 'augmentation', getter: b => b.mc || 0 },
+     { key: 'diminution', getter: b => b.md || 0 },
+     { key: 'fin', getter: b => b.sfc || 0 }],
+    r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
+
+  // Note 15A — Subventions d'investissement (14) et provisions réglementées (15)
+  const note15ASubvProv = useMemo(() => buildNote(balance, /^(14|15)/,
+    [{ key: 'debut', getter: b => b.sc || 0 },
+     { key: 'augmentation', getter: b => b.mc || 0 },
+     { key: 'diminution', getter: b => b.md || 0 },
+     { key: 'fin', getter: b => b.sfc || 0 }],
+    r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
+
+  // ─── Notes héritées (à remapper aux prochains lots 16+) ─────
   const tresorerie = useMemo(() => buildNote(balance, /^(5[0-9])/,
     [{ key: 'debit', getter: b => b.sfd || 0 }, { key: 'credit', getter: b => b.sfc || 0 }, { key: 'solde', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
 
   const participations = useMemo(() => buildNote(balance, /^(26|27)/,
     [{ key: 'debut', getter: b => b.sd || 0 }, { key: 'fin', getter: b => b.sfd || 0 }, { key: 'produits', getter: b => b.mc || 0 }],
     r => r.debut > 0 || r.fin > 0), [balance]);
-
-  const subventions = useMemo(() => buildNote(balance, /^(14|71)/,
-    [{ key: 'debut', getter: b => b.sc || 0 }, { key: 'recu', getter: b => b.mc || 0 }, { key: 'repris', getter: b => b.md || 0 }, { key: 'fin', getter: b => b.sfc || 0 }],
-    r => r.debut > 0 || r.fin > 0), [balance]);
-
-  const comptesRegul = useMemo(() => buildNote(balance, /^(47)/,
-    [{ key: 'debit', getter: b => b.sfd || 0 }, { key: 'credit', getter: b => b.sfc || 0 }]), [balance]);
-
-  const chargesConstatees = useMemo(() => buildNote(balance, /^(476|477|478|48)/,
-    [{ key: 'debit', getter: b => b.sfd || 0 }, { key: 'credit', getter: b => b.sfc || 0 }]), [balance]);
 
   const ca = useMemo(() => buildNote(balance, /^(70)/, [{ key: 'montant', getter: b => (b.sfc || 0) || (b.mc || 0) }]), [balance]);
   const achats = useMemo(() => buildNote(balance, /^(60|61|62)/, [{ key: 'montant', getter: b => (b.sfd || 0) || (b.md || 0) }]), [balance]);
