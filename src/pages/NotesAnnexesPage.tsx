@@ -268,15 +268,58 @@ export default function NotesAnnexesPage() {
      { key: 'fin', getter: b => b.sfc || 0 }],
     r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
 
-  // Note 15A — Subventions d'investissement (14) et provisions réglementées (15)
-  const note15ASubvProv = useMemo(() => buildNote(balance, /^(14|15)/,
+  // Note 15A — Subventions d'investissement (14) et provisions réglementées (15 base)
+  const note15ASubvProv = useMemo(() => buildNote(balance, /^(14|15[01])/,
     [{ key: 'debut', getter: b => b.sc || 0 },
      { key: 'augmentation', getter: b => b.mc || 0 },
      { key: 'diminution', getter: b => b.md || 0 },
      { key: 'fin', getter: b => b.sfc || 0 }],
     r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
 
-  // ─── Notes héritées (à remapper aux prochains lots 16+) ─────
+  // Note 15B — Autres fonds propres (Titres participatifs, avances conditionnées, TSDI, ORA — comptes 152-159)
+  const note15BAutresFP = useMemo(() => buildNote(balance, /^15[2-9]/,
+    [{ key: 'n', getter: b => b.sfc || 0 },
+     { key: 'n1', getter: b => b.sc || 0 },
+     { key: 'variation', getter: b => (b.sfc || 0) - (b.sc || 0) }],
+    r => (r.n as number) !== 0 || (r.n1 as number) !== 0), [balance]);
+
+  // Note 16A — Dettes financières et ressources assimilées (16, 17, 18)
+  // Plaquette officielle : ventilation par échéance (≤1an / 1-2ans / >2ans). Sans aging détaillé, on regroupe en total.
+  const note16ADettesFin = useMemo(() => buildNote(balance, /^(16|17|18)/,
+    [{ key: 'debut', getter: b => b.sc || 0 },
+     { key: 'souscription', getter: b => b.mc || 0 },
+     { key: 'remboursement', getter: b => b.md || 0 },
+     { key: 'fin', getter: b => b.sfc || 0 }],
+    r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
+
+  // Note 17 — Fournisseurs d'exploitation (compte 40)
+  const note17Fourn = useMemo(() => buildNote(balance, /^40/,
+    [{ key: 'debit', getter: b => b.sfd || 0 },
+     { key: 'credit', getter: b => b.sfc || 0 },
+     { key: 'solde', getter: b => (b.sfc || 0) - (b.sfd || 0) }],
+    r => (r.debit as number) > 0 || (r.credit as number) > 0), [balance]);
+
+  // Note 18 — Dettes fiscales et sociales (Personnel 42, Organismes sociaux 43, État 44)
+  const note18FiscSoc = useMemo(() => buildNote(balance, /^(42|43|44)/,
+    [{ key: 'debit', getter: b => b.sfd || 0 },
+     { key: 'credit', getter: b => b.sfc || 0 },
+     { key: 'solde', getter: b => (b.sfc || 0) - (b.sfd || 0) }],
+    r => (r.debit as number) > 0 || (r.credit as number) > 0), [balance]);
+
+  // Note 19 — Autres dettes et provisions pour risques à court terme (46, 47, 499)
+  const note19AutresDettes = useMemo(() => buildNote(balance, /^(46|47|499)/,
+    [{ key: 'debit', getter: b => b.sfd || 0 },
+     { key: 'credit', getter: b => b.sfc || 0 },
+     { key: 'solde', getter: b => (b.sfc || 0) - (b.sfd || 0) }],
+    r => (r.debit as number) > 0 || (r.credit as number) > 0), [balance]);
+
+  // Note 20 — Banques, crédits d'escompte et de trésorerie (56 — découverts, escomptes, crédits campagne)
+  const note20Decouverts = useMemo(() => buildNote(balance, /^56/,
+    [{ key: 'debit', getter: b => b.sfd || 0 },
+     { key: 'credit', getter: b => b.sfc || 0 },
+     { key: 'solde', getter: b => (b.sfc || 0) - (b.sfd || 0) }]), [balance]);
+
+  // ─── Notes héritées (à remapper aux prochains lots 22+) ─────
   const tresorerie = useMemo(() => buildNote(balance, /^(5[0-9])/,
     [{ key: 'debit', getter: b => b.sfd || 0 }, { key: 'credit', getter: b => b.sfc || 0 }, { key: 'solde', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
 
@@ -325,7 +368,7 @@ export default function NotesAnnexesPage() {
       { id: 'plusmoins', label: '3D. +/- values' },
       { id: 'reeval', label: '3E. Réévaluations' },
     ]},
-    { label: '💼 Bilan (4-15A) — Plaquettes officielles', tabs: [
+    { label: '💼 Bilan (4-20) — Plaquettes officielles', tabs: [
       { id: 'participations', label: '4. Immo. financières' },
       { id: 'haoactif', label: '5A. Actifs HAO' },
       { id: 'haopassif', label: '5B. Dettes HAO' },
@@ -340,8 +383,14 @@ export default function NotesAnnexesPage() {
       { id: 'regul', label: '13. Capital' },
       { id: 'constatees', label: '14. Primes/Réserves' },
       { id: 'subvprov', label: '15A. Subv./Prov. régl.' },
+      { id: 'autresfp', label: '15B. Autres fonds propres' },
+      { id: 'dettesfin', label: '16A. Dettes financières' },
+      { id: 'fournisseurs', label: '17. Fournisseurs' },
+      { id: 'fiscsoc', label: '18. Dettes fisc./soc.' },
+      { id: 'autresdettes', label: '19. Autres dettes/prov.' },
+      { id: 'decouverts', label: '20. Banques/découverts' },
     ]},
-    { label: '📈 Compte de résultat (21-29)', tabs: [
+    { label: '📈 Compte de résultat (21-34)', tabs: [
       { id: 'ca', label: '21. CA' },
       { id: 'achats', label: '22. Achats' },
       { id: 'charges', label: '23. Autres charges' },
@@ -357,7 +406,7 @@ export default function NotesAnnexesPage() {
       { id: 'haoproduits', label: '33. Pr. HAO' },
       { id: 'impots', label: '34. Impôts' },
     ]},
-    { label: '📝 Informations (35-38)', tabs: [
+    { label: '📝 Informations (35-40)', tabs: [
       { id: 'parties', label: '35. Parties liées' },
       { id: 'effectifs', label: '36. Effectifs' },
       { id: 'evenements', label: '37. Événements' },
@@ -438,7 +487,13 @@ export default function NotesAnnexesPage() {
           <TabsContent value="emprunts"><NoteTable noteNum={12} title="Écarts de conversion (478/479) et transferts de charges (781/787)" headers={['Compte', 'Intitulé', 'Débit', 'Crédit']} rows={note12Ecarts} colKeys={['debit', 'credit']} /></TabsContent>
           <TabsContent value="regul"><NoteTable noteNum={13} title="Capital social (compte 10 — 101 à 109)" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={note13Capital} colKeys={['debut', 'augmentation', 'diminution', 'fin']} colStyles={{ augmentation: 'text-success' }} /></TabsContent>
           <TabsContent value="constatees"><NoteTable noteNum={14} title="Primes (105) et Réserves (11) — Report à nouveau (12)" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={note14Primes} colKeys={['debut', 'augmentation', 'diminution', 'fin']} /></TabsContent>
-          <TabsContent value="subvprov"><NoteTable noteNum="15A" title="Subventions d'investissement (14) et Provisions réglementées (15)" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={note15ASubvProv} colKeys={['debut', 'augmentation', 'diminution', 'fin']} /></TabsContent>
+          <TabsContent value="subvprov"><NoteTable noteNum="15A" title="Subventions d'investissement (14) et Provisions réglementées (151 base)" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={note15ASubvProv} colKeys={['debut', 'augmentation', 'diminution', 'fin']} /></TabsContent>
+          <TabsContent value="autresfp"><NoteTable noteNum="15B" title="Autres fonds propres — Titres participatifs, avances conditionnées, TSDI, ORA (152-159)" headers={['Compte', 'Intitulé', 'Exercice N', 'Exercice N-1', 'Variation']} rows={note15BAutresFP} colKeys={['n', 'n1', 'variation']} colStyles={{ variation: 'text-success' }} /></TabsContent>
+          <TabsContent value="dettesfin"><NoteTable noteNum="16A" title="Dettes financières et ressources assimilées (Emprunts obligataires, dettes auprès des établissements de crédit, crédit-bail — 16, 17, 18)" headers={['Compte', 'Intitulé', 'Début', 'Souscription', 'Remboursement', 'Fin']} rows={note16ADettesFin} colKeys={['debut', 'souscription', 'remboursement', 'fin']} colStyles={{ souscription: 'text-success', remboursement: 'text-destructive' }} /></TabsContent>
+          <TabsContent value="fournisseurs"><NoteTable noteNum={17} title="Fournisseurs d'exploitation (compte 40 — fournisseurs, effets à payer, FNP, avances/acomptes, groupe)" headers={['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde']} rows={note17Fourn} colKeys={['debit', 'credit', 'solde']} /></TabsContent>
+          <TabsContent value="fiscsoc"><NoteTable noteNum={18} title="Dettes fiscales et sociales (Personnel 42, Organismes sociaux 43, État impôts/TVA 44)" headers={['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde']} rows={note18FiscSoc} colKeys={['debit', 'credit', 'solde']} /></TabsContent>
+          <TabsContent value="autresdettes"><NoteTable noteNum={19} title="Autres dettes et provisions pour risques à court terme (Associés 46, Débiteurs/créditeurs divers 47, Dépréciations 499)" headers={['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde']} rows={note19AutresDettes} colKeys={['debit', 'credit', 'solde']} /></TabsContent>
+          <TabsContent value="decouverts"><NoteTable noteNum={20} title="Banques, crédits d'escompte et de trésorerie (compte 56 — découverts, escomptes commerciaux/campagne)" headers={['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde']} rows={note20Decouverts} colKeys={['debit', 'credit', 'solde']} colStyles={{ solde: 'text-destructive' }} /></TabsContent>
 
           {/* Résultat notes — Notes 21 à 34 */}
           <TabsContent value="ca"><NoteTable noteNum={21} title="Chiffre d'affaires détaillé" headers={['Compte', 'Intitulé', 'Montant']} rows={ca} colKeys={['montant']} /></TabsContent>
