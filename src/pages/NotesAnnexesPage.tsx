@@ -268,15 +268,58 @@ export default function NotesAnnexesPage() {
      { key: 'fin', getter: b => b.sfc || 0 }],
     r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
 
-  // Note 15A — Subventions d'investissement (14) et provisions réglementées (15)
-  const note15ASubvProv = useMemo(() => buildNote(balance, /^(14|15)/,
+  // Note 15A — Subventions d'investissement (14) et provisions réglementées (15 base)
+  const note15ASubvProv = useMemo(() => buildNote(balance, /^(14|15[01])/,
     [{ key: 'debut', getter: b => b.sc || 0 },
      { key: 'augmentation', getter: b => b.mc || 0 },
      { key: 'diminution', getter: b => b.md || 0 },
      { key: 'fin', getter: b => b.sfc || 0 }],
     r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
 
-  // ─── Notes héritées (à remapper aux prochains lots 16+) ─────
+  // Note 15B — Autres fonds propres (Titres participatifs, avances conditionnées, TSDI, ORA — comptes 152-159)
+  const note15BAutresFP = useMemo(() => buildNote(balance, /^15[2-9]/,
+    [{ key: 'n', getter: b => b.sfc || 0 },
+     { key: 'n1', getter: b => b.sc || 0 },
+     { key: 'variation', getter: b => (b.sfc || 0) - (b.sc || 0) }],
+    r => (r.n as number) !== 0 || (r.n1 as number) !== 0), [balance]);
+
+  // Note 16A — Dettes financières et ressources assimilées (16, 17, 18)
+  // Plaquette officielle : ventilation par échéance (≤1an / 1-2ans / >2ans). Sans aging détaillé, on regroupe en total.
+  const note16ADettesFin = useMemo(() => buildNote(balance, /^(16|17|18)/,
+    [{ key: 'debut', getter: b => b.sc || 0 },
+     { key: 'souscription', getter: b => b.mc || 0 },
+     { key: 'remboursement', getter: b => b.md || 0 },
+     { key: 'fin', getter: b => b.sfc || 0 }],
+    r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
+
+  // Note 17 — Fournisseurs d'exploitation (compte 40)
+  const note17Fourn = useMemo(() => buildNote(balance, /^40/,
+    [{ key: 'debit', getter: b => b.sfd || 0 },
+     { key: 'credit', getter: b => b.sfc || 0 },
+     { key: 'solde', getter: b => (b.sfc || 0) - (b.sfd || 0) }],
+    r => (r.debit as number) > 0 || (r.credit as number) > 0), [balance]);
+
+  // Note 18 — Dettes fiscales et sociales (Personnel 42, Organismes sociaux 43, État 44)
+  const note18FiscSoc = useMemo(() => buildNote(balance, /^(42|43|44)/,
+    [{ key: 'debit', getter: b => b.sfd || 0 },
+     { key: 'credit', getter: b => b.sfc || 0 },
+     { key: 'solde', getter: b => (b.sfc || 0) - (b.sfd || 0) }],
+    r => (r.debit as number) > 0 || (r.credit as number) > 0), [balance]);
+
+  // Note 19 — Autres dettes et provisions pour risques à court terme (46, 47, 499)
+  const note19AutresDettes = useMemo(() => buildNote(balance, /^(46|47|499)/,
+    [{ key: 'debit', getter: b => b.sfd || 0 },
+     { key: 'credit', getter: b => b.sfc || 0 },
+     { key: 'solde', getter: b => (b.sfc || 0) - (b.sfd || 0) }],
+    r => (r.debit as number) > 0 || (r.credit as number) > 0), [balance]);
+
+  // Note 20 — Banques, crédits d'escompte et de trésorerie (56 — découverts, escomptes, crédits campagne)
+  const note20Decouverts = useMemo(() => buildNote(balance, /^56/,
+    [{ key: 'debit', getter: b => b.sfd || 0 },
+     { key: 'credit', getter: b => b.sfc || 0 },
+     { key: 'solde', getter: b => (b.sfc || 0) - (b.sfd || 0) }]), [balance]);
+
+  // ─── Notes héritées (à remapper aux prochains lots 22+) ─────
   const tresorerie = useMemo(() => buildNote(balance, /^(5[0-9])/,
     [{ key: 'debit', getter: b => b.sfd || 0 }, { key: 'credit', getter: b => b.sfc || 0 }, { key: 'solde', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
 
