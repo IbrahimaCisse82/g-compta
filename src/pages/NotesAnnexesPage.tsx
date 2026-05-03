@@ -406,7 +406,7 @@ export default function NotesAnnexesPage() {
       { id: 'haoproduits', label: '33. Pr. HAO' },
       { id: 'impots', label: '34. Impôts' },
     ]},
-    { label: '📝 Informations (35-38)', tabs: [
+    { label: '📝 Informations (35-40)', tabs: [
       { id: 'parties', label: '35. Parties liées' },
       { id: 'effectifs', label: '36. Effectifs' },
       { id: 'evenements', label: '37. Événements' },
