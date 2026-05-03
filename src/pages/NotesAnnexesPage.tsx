@@ -368,7 +368,7 @@ export default function NotesAnnexesPage() {
       { id: 'plusmoins', label: '3D. +/- values' },
       { id: 'reeval', label: '3E. Réévaluations' },
     ]},
-    { label: '💼 Bilan (4-15A) — Plaquettes officielles', tabs: [
+    { label: '💼 Bilan (4-20) — Plaquettes officielles', tabs: [
       { id: 'participations', label: '4. Immo. financières' },
       { id: 'haoactif', label: '5A. Actifs HAO' },
       { id: 'haopassif', label: '5B. Dettes HAO' },
@@ -383,8 +383,14 @@ export default function NotesAnnexesPage() {
       { id: 'regul', label: '13. Capital' },
       { id: 'constatees', label: '14. Primes/Réserves' },
       { id: 'subvprov', label: '15A. Subv./Prov. régl.' },
+      { id: 'autresfp', label: '15B. Autres fonds propres' },
+      { id: 'dettesfin', label: '16A. Dettes financières' },
+      { id: 'fournisseurs', label: '17. Fournisseurs' },
+      { id: 'fiscsoc', label: '18. Dettes fisc./soc.' },
+      { id: 'autresdettes', label: '19. Autres dettes/prov.' },
+      { id: 'decouverts', label: '20. Banques/découverts' },
     ]},
-    { label: '📈 Compte de résultat (21-29)', tabs: [
+    { label: '📈 Compte de résultat (21-34)', tabs: [
       { id: 'ca', label: '21. CA' },
       { id: 'achats', label: '22. Achats' },
       { id: 'charges', label: '23. Autres charges' },
