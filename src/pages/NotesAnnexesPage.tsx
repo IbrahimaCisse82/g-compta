@@ -124,6 +124,85 @@ function SummaryCard({ label, value, sub }: { label: string; value: string; sub?
   );
 }
 
+// ─── Validation panel (mapping SYSCOHADA notes 22-40) ──────
+const NOTE_TAB_MAP: Record<string, string> = {
+  '22': 'achats', '23': 'charges', '24': 'personnel', '25': 'dotamort', '26': 'dotprov',
+  '27A': 'reprises', '28': 'transferts', '29A': 'produits', '29B': 'fincharges',
+  '30': 'finproduits', '32': 'haocharges', '33': 'haoproduits', '34': 'impots',
+  '35': 'parties', '36': 'effectifs', '37': 'evenements', '38': 'fiscalite',
+  '39': 'identification', '40': 'approbation',
+};
+
+function ValidationPanel({ balance, onJump }: { balance: any[]; onJump: (tab: string) => void }) {
+  const results = useMemo(() => validateNotes(balance), [balance]);
+  const orphans = useMemo(() => findOrphanAccounts(balance), [balance]);
+  const counts = useMemo(() => ({
+    ok: results.filter(r => r.status === 'ok').length,
+    warning: results.filter(r => r.status === 'warning').length,
+    empty: results.filter(r => r.status === 'empty').length,
+    info: results.filter(r => r.status === 'informative').length,
+  }), [results]);
+
+  const badge = (s: string) => {
+    if (s === 'ok') return 'bg-success/15 text-success border-success/30';
+    if (s === 'warning') return 'bg-amber-500/15 text-amber-500 border-amber-500/30';
+    if (s === 'empty') return 'bg-destructive/10 text-destructive border-destructive/30';
+    return 'bg-bg3 text-fg3 border-border';
+  };
+  const icon = (s: string) => s === 'ok' ? '✓' : s === 'warning' ? '⚠' : s === 'empty' ? '✕' : 'ℹ';
+
+  return (
+    <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+      <div className="px-3.5 py-2.5 border-b border-border flex items-center justify-between">
+        <span className="text-xs font-bold text-primary">🔎 Validation mapping SYSCOHADA — Notes 22 à 40</span>
+        <div className="flex items-center gap-1.5 text-[10px] font-mono">
+          <span className="text-success">✓ {counts.ok}</span>
+          <span className="text-amber-500">⚠ {counts.warning}</span>
+          <span className="text-destructive">✕ {counts.empty}</span>
+          <span className="text-fg3">ℹ {counts.info}</span>
+        </div>
+      </div>
+      <div className="p-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+        {results.map(r => {
+          const tab = NOTE_TAB_MAP[r.num];
+          return (
+            <button
+              key={r.num}
+              onClick={() => tab && onJump(tab)}
+              className={`text-left text-[10px] px-2 py-1.5 rounded border ${badge(r.status)} hover:brightness-110 transition-all`}
+              title={r.message}
+            >
+              <div className="flex items-center justify-between gap-1">
+                <span className="font-bold font-mono">{icon(r.status)} Note {r.num}</span>
+                <span className="text-[9px] opacity-70">{r.matched > 0 ? `${r.matched} cpte(s)` : ''}</span>
+              </div>
+              <div className="text-[9px] opacity-80 truncate">{r.label}</div>
+              {(r.status === 'warning' || r.status === 'empty') && (
+                <div className="text-[9px] mt-0.5 opacity-90">{r.message}</div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {orphans.length > 0 && (
+        <div className="px-3.5 py-2 border-t border-border bg-amber-500/5">
+          <div className="text-[10px] font-bold text-amber-500 mb-1">
+            ⚠ {orphans.length} compte(s) classe 6/7/8 non rattaché(s) à une note 22-34 :
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {orphans.slice(0, 30).map(o => (
+              <span key={o.compte} className="text-[9px] font-mono px-1.5 py-0.5 bg-bg3 border border-border rounded" title={o.intitule}>
+                {o.compte}
+              </span>
+            ))}
+            {orphans.length > 30 && <span className="text-[9px] text-fg3">… +{orphans.length - 30}</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────
 export default function NotesAnnexesPage() {
   const { balance, journal, entreprise, exercice, demo } = useApp();
