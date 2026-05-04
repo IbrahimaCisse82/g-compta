@@ -319,7 +319,7 @@ export default function NotesAnnexesPage() {
      { key: 'credit', getter: b => b.sfc || 0 },
      { key: 'solde', getter: b => (b.sfc || 0) - (b.sfd || 0) }]), [balance]);
 
-  // ─── Notes héritées (à remapper aux prochains lots 22+) ─────
+  // ─── Notes auxiliaires (synthèse / Note 36 effectifs) ──────
   const tresorerie = useMemo(() => buildNote(balance, /^(5[0-9])/,
     [{ key: 'debit', getter: b => b.sfd || 0 }, { key: 'credit', getter: b => b.sfc || 0 }, { key: 'solde', getter: b => (b.sfd || 0) - (b.sfc || 0) }]), [balance]);
 
@@ -327,20 +327,54 @@ export default function NotesAnnexesPage() {
     [{ key: 'debut', getter: b => b.sd || 0 }, { key: 'fin', getter: b => b.sfd || 0 }, { key: 'produits', getter: b => b.mc || 0 }],
     r => r.debut > 0 || r.fin > 0), [balance]);
 
-  const ca = useMemo(() => buildNote(balance, /^(70)/, [{ key: 'montant', getter: b => (b.sfc || 0) || (b.mc || 0) }]), [balance]);
-  const achats = useMemo(() => buildNote(balance, /^(60|61|62)/, [{ key: 'montant', getter: b => (b.sfd || 0) || (b.md || 0) }]), [balance]);
-  const autresCharges = useMemo(() => buildNote(balance, /^(63|64|65)/, [{ key: 'montant', getter: b => (b.sfd || 0) || (b.md || 0) }]), [balance]);
-  const personnel = useMemo(() => buildNote(balance, /^(66)/, [{ key: 'montant', getter: b => (b.sfd || 0) || (b.md || 0) }]), [balance]);
-  const dotationsAmort = useMemo(() => buildNote(balance, /^(681|691)/, [{ key: 'montant', getter: b => (b.sfd || 0) || (b.md || 0) }]), [balance]);
-  const dotationsProv = useMemo(() => buildNote(balance, /^(689|699|659)/, [{ key: 'montant', getter: b => (b.sfd || 0) || (b.md || 0) }]), [balance]);
-  const reprisesAll = useMemo(() => buildNote(balance, /^(791|797|799|759)/, [{ key: 'montant', getter: b => (b.sfc || 0) || (b.mc || 0) }]), [balance]);
-  const transfertsCharges = useMemo(() => buildNote(balance, /^(78|79)/, [{ key: 'montant', getter: b => (b.sfc || 0) || (b.mc || 0) }]), [balance]);
-  const autresProduits = useMemo(() => buildNote(balance, /^(71|72|73|74|75|78)/, [{ key: 'montant', getter: b => (b.sfc || 0) || (b.mc || 0) }]), [balance]);
-  const financierCharges = useMemo(() => buildNote(balance, /^(67)/, [{ key: 'montant', getter: b => (b.sfd || 0) || (b.md || 0) }]), [balance]);
-  const financierProduits = useMemo(() => buildNote(balance, /^(77)/, [{ key: 'montant', getter: b => (b.sfc || 0) || (b.mc || 0) }]), [balance]);
-  const haoCharges = useMemo(() => buildNote(balance, /^(81|83|85)/, [{ key: 'montant', getter: b => (b.sfd || 0) || (b.md || 0) }]), [balance]);
-  const haoProduits = useMemo(() => buildNote(balance, /^(82|84|86)/, [{ key: 'montant', getter: b => (b.sfc || 0) || (b.mc || 0) }]), [balance]);
-  const impots = useMemo(() => buildNote(balance, /^(64|69)/, [{ key: 'montant', getter: b => (b.sfd || 0) || (b.md || 0) }]), [balance]);
+  const ca = useMemo(() => buildNote(balance, /^70/, [{ key: 'montant', getter: b => (b.sfc || 0) || (b.mc || 0) }]), [balance]);
+
+  // ─── Notes officielles 22-29 (plaquettes SYSCOHADA — Lot 5) ────
+  // Convention charges (classes 6/8) : montant net = mouvement débit - mouvement crédit (rabais, RRR obtenus)
+  const chargeMt = (b: any) => (b.md || 0) - (b.mc || 0);
+  const produitMt = (b: any) => (b.mc || 0) - (b.md || 0);
+
+  // Note 22 — Achats consommés (60 : matières premières 601, autres approvisionnements 602, marchandises 603, emballages 608, variations stocks 6031/6032/6033, achats groupe 6019/6029)
+  const note22Achats = useMemo(() => buildNote(balance, /^60/, [{ key: 'montant', getter: chargeMt }]), [balance]);
+
+  // Note 23 — Transports (61 : sur ventes 611, pour compte de tiers 612, du personnel 613, plis 614, déplacements 616, autres 618)
+  const note23Transports = useMemo(() => buildNote(balance, /^61/, [{ key: 'montant', getter: chargeMt }]), [balance]);
+
+  // Note 24 — Services extérieurs A & B (62 + 63 : sous-traitance 621, locations 622, entretien 624, assurances 625, études 626, pub 627, télécom 628, honoraires 632, formation 633, missions 638...)
+  const note24Services = useMemo(() => buildNote(balance, /^(62|63)/, [{ key: 'montant', getter: chargeMt }]), [balance]);
+
+  // Note 25 — Impôts et taxes (64 hors IS — directs 641, indirects 642, enregistrement 645, autres 646)
+  const note25Impots = useMemo(() => buildNote(balance, /^64/, [{ key: 'montant', getter: chargeMt }]), [balance]);
+
+  // Note 26 — Autres charges (65 : pertes créances 651, quote-part GIE 654, charges diverses 658 — provisions exploitation : voir note 28)
+  const note26Autres = useMemo(() => buildNote(balance, /^65/, [{ key: 'montant', getter: chargeMt }]), [balance]);
+
+  // Note 27A — Charges de personnel (66 : salaires 661, primes 662, indemnités 663, charges sociales 664, exploitant individuel 663, autres 668 ; personnel extérieur via 637)
+  const note27APersonnel = useMemo(() => buildNote(balance, /^66/, [{ key: 'montant', getter: chargeMt }]), [balance]);
+
+  // Note 28 — Provisions et dépréciations inscrites au bilan
+  // (Prov. risques 19, Dépréc. immo 29, stocks 39, tiers 49, trésorerie 59, prov. réglementées 151)
+  const note28Prov = useMemo(() => buildNote(balance, /^(19|29|39|49|59|151)/,
+    [{ key: 'debut', getter: b => b.sc || 0 },
+     { key: 'dotation', getter: b => b.mc || 0 },
+     { key: 'reprise', getter: b => b.md || 0 },
+     { key: 'fin', getter: b => b.sfc || 0 }],
+    r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
+
+  // Note 29 — Charges (67) et revenus (77) financiers
+  const note29FraisFin = useMemo(() => buildNote(balance, /^67/, [{ key: 'montant', getter: chargeMt }]), [balance]);
+  const note29ProdFin = useMemo(() => buildNote(balance, /^77/, [{ key: 'montant', getter: produitMt }]), [balance]);
+
+  // ─── Notes 30-34 (à finaliser au lot 6) ─────────────────────
+  const dotationsAmort = useMemo(() => buildNote(balance, /^(681|691)/, [{ key: 'montant', getter: chargeMt }]), [balance]);
+  const autresProduits = useMemo(() => buildNote(balance, /^(71|72|73|74|75|78)/, [{ key: 'montant', getter: produitMt }]), [balance]);
+  const haoCharges = useMemo(() => buildNote(balance, /^(81|83|85)/, [{ key: 'montant', getter: chargeMt }]), [balance]);
+  const haoProduits = useMemo(() => buildNote(balance, /^(82|84|86)/, [{ key: 'montant', getter: produitMt }]), [balance]);
+  const impots = useMemo(() => buildNote(balance, /^(891|895|699)/, [{ key: 'montant', getter: chargeMt }]), [balance]);
+  // Compat synthèse
+  const achats = note22Achats;
+  const personnel = note27APersonnel;
+  const autresCharges = useMemo(() => buildNote(balance, /^(63|64|65)/, [{ key: 'montant', getter: chargeMt }]), [balance]);
 
   const totalActif = balance.filter(b => /^[2-5]/.test(b.compte)).reduce((s, b) => s + (b.sfd || 0), 0);
   const totalPassif = balance.filter(b => /^[1-5]/.test(b.compte)).reduce((s, b) => s + (b.sfc || 0), 0);
