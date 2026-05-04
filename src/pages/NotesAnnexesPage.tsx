@@ -4,6 +4,7 @@ import { fmt } from '@/lib/accounting';
 import { exportCsv } from '@/lib/csv-export';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useNotesData } from '@/hooks/use-notes-data';
+import { validateNotes, findOrphanAccounts } from '@/lib/notes-validation';
 
 // ─── Types ─────────────────────────────────────────────
 interface NoteLine {
