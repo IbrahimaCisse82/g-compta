@@ -486,6 +486,9 @@ export default function NotesAnnexesPage() {
                 <SummaryCard label="Trésorerie Nette" value={fmt(totalTreso)} />
                 <SummaryCard label="Écritures" value={String(nbEcritures)} sub={`Exercice ${exercice?.annee}`} />
               </div>
+
+              <ValidationPanel balance={balance} onJump={setTab} />
+
               <div className="bg-bg2 border border-border rounded-lg p-4">
                 <h3 className="text-xs font-bold text-primary mb-2">Sommaire des Notes Annexes</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0.5">
