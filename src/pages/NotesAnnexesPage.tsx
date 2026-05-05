@@ -696,10 +696,238 @@ export default function NotesAnnexesPage() {
           <TabsContent value="transferts"><NoteTable noteNum={28} title="Provisions et dépréciations inscrites au bilan (provisions risques 19, dépréciations 29/39/49/59, prov. réglementées 151)" headers={['Compte', 'Intitulé', 'Début', 'Dotation', 'Reprise', 'Fin']} rows={note28Prov} colKeys={['debut', 'dotation', 'reprise', 'fin']} colStyles={{ dotation: 'text-destructive', reprise: 'text-success' }} /></TabsContent>
           <TabsContent value="produits"><NoteTable noteNum="29A" title="Frais financiers (intérêts emprunts, escomptes accordés, pertes de change, malis sur actions — compte 67)" headers={['Compte', 'Intitulé', 'Montant net']} rows={note29FraisFin} colKeys={['montant']} colStyles={{ montant: 'text-destructive' }} /></TabsContent>
           <TabsContent value="fincharges"><NoteTable noteNum="29B" title="Revenus financiers (intérêts prêts, escomptes obtenus, gains de change, dividendes — compte 77)" headers={['Compte', 'Intitulé', 'Montant net']} rows={note29ProdFin} colKeys={['montant']} colStyles={{ montant: 'text-success' }} /></TabsContent>
-          <TabsContent value="finproduits"><NoteTable noteNum={30} title="Dotations aux amortissements (681 exploitation, 691 HAO) — à finaliser au lot 6" headers={['Compte', 'Intitulé', 'Montant']} rows={dotationsAmort} colKeys={['montant']} /></TabsContent>
-          <TabsContent value="haocharges"><NoteTable noteNum={32} title="Charges HAO (valeurs comptables cessions 81, charges HAO 83, dotations HAO 85)" headers={['Compte', 'Intitulé', 'Montant']} rows={haoCharges} colKeys={['montant']} colStyles={{ montant: 'text-destructive' }} /></TabsContent>
-          <TabsContent value="haoproduits"><NoteTable noteNum={33} title="Produits HAO (produits cessions 82, produits HAO 84, reprises HAO 86)" headers={['Compte', 'Intitulé', 'Montant']} rows={haoProduits} colKeys={['montant']} colStyles={{ montant: 'text-success' }} /></TabsContent>
-          <TabsContent value="impots"><NoteTable noteNum={34} title="Impôts sur le résultat (IS 891, IRPP 895, autres 699)" headers={['Compte', 'Intitulé', 'Montant']} rows={impots} colKeys={['montant']} /></TabsContent>
+          {/* Note 30 — Autres charges et produits HAO (plaquette officielle) */}
+          <TabsContent value="note30">
+            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+              <div className="px-3.5 py-2.5 border-b border-border">
+                <span className="text-xs font-bold text-primary">📋 Note 30 — Autres charges et produits HAO</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead><tr><th className="bg-bg3 px-3 py-1.5 text-left text-[9px] font-bold text-fg3 uppercase border-b border-border">Libellé</th><th className="bg-bg3 px-3 py-1.5 text-right text-[9px] font-bold text-fg3 uppercase border-b border-border">Montant N</th></tr></thead>
+                  <tbody>
+                    {note30.charges.map(r => <tr key={r.label}><td className="px-3 py-1 text-[10px] border-b border-border/30">{r.label}</td><td className="px-3 py-1 text-[10px] font-mono text-right text-destructive border-b border-border/30">{r.mt ? fmt(r.mt) : '—'}</td></tr>)}
+                    <tr className="bg-bg3 font-bold"><td className="px-3 py-1.5 text-[10px] border-y border-border">SOUS-TOTAL : AUTRES CHARGES HAO</td><td className="px-3 py-1.5 text-[10px] font-mono text-right text-destructive border-y border-border">{fmt(note30.charges.reduce((s,r)=>s+r.mt,0))}</td></tr>
+                    {note30.produits.map(r => <tr key={r.label}><td className="px-3 py-1 text-[10px] border-b border-border/30">{r.label}</td><td className="px-3 py-1 text-[10px] font-mono text-right text-success border-b border-border/30">{r.mt ? fmt(r.mt) : '—'}</td></tr>)}
+                    <tr className="bg-bg3 font-bold"><td className="px-3 py-1.5 text-[10px] border-y border-border">SOUS-TOTAL : AUTRES PRODUITS HAO</td><td className="px-3 py-1.5 text-[10px] font-mono text-right text-success border-y border-border">{fmt(note30.produits.reduce((s,r)=>s+r.mt,0))}</td></tr>
+                    <tr className="bg-bg3 font-bold"><td className="px-3 py-2 text-[11px] border-t-2 border-primary">TOTAL NET HAO</td><td className="px-3 py-2 text-[11px] font-mono text-right border-t-2 border-primary">{fmt(note30.produits.reduce((s,r)=>s+r.mt,0) - note30.charges.reduce((s,r)=>s+r.mt,0))}</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Note 31 — Répartition du résultat & 5 derniers exercices */}
+          <TabsContent value="note31">
+            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+              <div className="px-3.5 py-2.5 border-b border-border">
+                <span className="text-xs font-bold text-primary">📋 Note 31 — Répartition du résultat et autres éléments caractéristiques des cinq derniers exercices</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-[10px]">
+                  <thead><tr><th className="bg-bg3 px-3 py-1.5 text-left font-bold text-fg3 uppercase border-b border-border">Indicateur</th>{[0,1,2,3,4].map(i => <th key={i} className="bg-bg3 px-3 py-1.5 text-right font-bold text-fg3 border-b border-border">N-{4-i}</th>)}</tr></thead>
+                  <tbody>
+                    {([
+                      ['STRUCTURE DU CAPITAL', null],
+                      ['Capital social','cap_social'],
+                      ['Actions ordinaires','cap_ord'],
+                      ['Actions à dividendes prioritaires (ADP) sans droit de vote','cap_adp'],
+                      ["Actions nouvelles à émettre — par conversion d'obligations",'cap_conv'],
+                      ['Actions nouvelles à émettre — par exercice de droits de souscription','cap_souscr'],
+                      ['OPÉRATIONS ET RÉSULTAT', null],
+                      ["Chiffre d'affaires hors taxes",'op_ca'],
+                      ['Résultat des activités ordinaires (RAO) hors dot./reprises','op_rao'],
+                      ['Participations des travailleurs aux bénéfices','op_partic'],
+                      ['Impôt sur le résultat','op_is'],
+                      ['Résultat net','op_rn'],
+                      ['RÉSULTAT PAR ACTION', null],
+                      ['Résultat distribué','rpa_dist'],
+                      ['Dividende attribué à chaque action','rpa_div'],
+                      ['PERSONNEL ET POLITIQUE SALARIALE', null],
+                      ["Effectif moyen des travailleurs au cours de l'exercice",'pers_eff'],
+                      ['Effectif moyen de personnel extérieur','pers_eff_ext'],
+                      ['Masse salariale distribuée (comptes 661, 662, 663)','pers_masse'],
+                      ['Avantages sociaux versés (comptes 664, 668)','pers_avantages'],
+                      ['Personnel extérieur facturé (compte 667)','pers_facture'],
+                    ] as Array<[string, string|null]>).map(([label, key]) => key === null ? (
+                      <tr key={label} className="bg-bg3 font-bold"><td colSpan={6} className="px-3 py-1 text-primary">{label}</td></tr>
+                    ) : (
+                      <tr key={key}><td className="px-3 py-1 border-b border-border/30">{label}</td>{[0,1,2,3,4].map(i => (
+                        <td key={i} className="px-2 py-0.5 text-right border-b border-border/30">
+                          <input className="w-full bg-transparent border-b border-border/30 text-right font-mono text-[10px] focus:outline-none focus:border-primary"
+                            defaultValue={notesData[`n31_${key}_${i}`] || ''}
+                            onBlur={e => saveNote(`n31_${key}_${i}`, e.target.value)} placeholder="—" />
+                        </td>
+                      ))}</tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-4 py-2 text-[9px] text-fg3 italic border-t border-border">
+                Y compris l'exercice dont les états financiers sont soumis à l'approbation. Le résultat négatif est entre parenthèses. L'exercice N correspond au dividende proposé du dernier exercice.
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Note 32 — Production de l'exercice */}
+          <TabsContent value="note32">
+            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+              <div className="px-3.5 py-2.5 border-b border-border">
+                <span className="text-xs font-bold text-primary">📋 Note 32 — Production de l'exercice</span>
+              </div>
+              <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed">
+                <p className="mb-2">Ventilation par <strong>désignation de produit</strong> (qté + valeur) sur axes : production vendue dans le pays, autres États OHADA, hors OHADA, immobilisée, stocks ouverture/clôture.</p>
+                <p className="text-fg3 italic">Données extra-comptables — saisie manuelle (par produit) :</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+                  {['p1','p2','p3','p4','p5'].map(k => (
+                    <EditableField key={k} label={`Produit ${k.toUpperCase()} (désignation, qté, valeur)`} noteKey={`n32_${k}`} notesData={notesData} onSave={saveNote} />
+                  ))}
+                </div>
+                <div className="bg-bg3 rounded p-3 mt-3 text-[10px]">
+                  <p className="font-bold mb-1">Récap. comptable :</p>
+                  <p>Ventes (70) : <span className="font-mono">{fmt(note34.ventes)}</span> · Production immobilisée (72) : <span className="font-mono">{fmt(balance.filter(b=>/^72/.test(b.compte)).reduce((s,b)=>s+produitMt(b),0))}</span> · Variation stocks (73) : <span className="font-mono">{fmt(balance.filter(b=>/^73/.test(b.compte)).reduce((s,b)=>s+produitMt(b),0))}</span></p>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Note 33 — Achats destinés à la production */}
+          <TabsContent value="note33">
+            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+              <div className="px-3.5 py-2.5 border-b border-border">
+                <span className="text-xs font-bold text-primary">📋 Note 33 — Achats destinés à la production</span>
+              </div>
+              <div className="px-4 py-3 text-[11px] text-fg2 leading-relaxed">
+                <p className="mb-2">Ventilation par <strong>désignation de matière/marchandise</strong> (qté + valeur) — origine pays / autres OHADA / hors OHADA / variations stocks.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+                  {['m1','m2','m3','m4','m5'].map(k => (
+                    <EditableField key={k} label={`Matière ${k.toUpperCase()} (désignation, qté, valeur)`} noteKey={`n33_${k}`} notesData={notesData} onSave={saveNote} />
+                  ))}
+                </div>
+                <div className="bg-bg3 rounded p-3 mt-3 text-[10px]">
+                  <p className="font-bold mb-1">Récap. comptable (compte 60) :</p>
+                  <p>Total achats : <span className="font-mono">{fmt(totalOf(note22Achats,'montant'))}</span></p>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Note 34 — Fiche synthèse des indicateurs financiers */}
+          <TabsContent value="note34">
+            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+              <div className="px-3.5 py-2.5 border-b border-border">
+                <span className="text-xs font-bold text-primary">📋 Note 34 — Fiche de synthèse des principaux indicateurs financiers (en milliers de {entreprise?.monnaie || 'FCFA'})</span>
+              </div>
+              <div className="px-4 py-3 text-[11px]">
+                <table className="w-full text-[10px]">
+                  <tbody>
+                    <tr className="bg-bg3"><td colSpan={2} className="px-3 py-1 font-bold text-primary">SOLDES INTERMÉDIAIRES DE GESTION</td></tr>
+                    {([
+                      ["Chiffre d'affaires", note34.ventes],
+                      ['Marge commerciale', note34.margeCom],
+                      ['Valeur ajoutée', note34.valeurAjoutee],
+                      ["Excédent brut d'exploitation (EBE)", note34.ebe],
+                      ["Résultat d'exploitation", note34.resultatExpl],
+                      ['Résultat financier', note34.resultatFin],
+                      ['Résultat des activités ordinaires (RAO)', note34.rao],
+                      ['Résultat hors activités ordinaires', note34.resultatHAO],
+                      ['Résultat net', note34.resultatNet],
+                    ] as Array<[string, number]>).map(([l,v]) => <tr key={l} className="border-b border-border/30"><td className="px-3 py-1">{l}</td><td className="px-3 py-1 text-right font-mono">{fmt(v)}</td></tr>)}
+
+                    <tr className="bg-bg3"><td colSpan={2} className="px-3 py-1 font-bold text-primary">CAPACITÉ D'AUTOFINANCEMENT</td></tr>
+                    <tr className="border-b border-border/30"><td className="px-3 py-1">Capacité d'autofinancement globale (CAFG)</td><td className="px-3 py-1 text-right font-mono">{fmt(note34.cafg)}</td></tr>
+
+                    <tr className="bg-bg3"><td colSpan={2} className="px-3 py-1 font-bold text-primary">STRUCTURE FINANCIÈRE</td></tr>
+                    {([
+                      ['Capitaux propres et ressources assimilées', note34.capPropres],
+                      ['+ Dettes financières et autres ressources assimilées', note34.dettesFin],
+                      ['= Ressources stables', note34.ressourcesStables],
+                      ['− Actif immobilisé', note34.actifImmo],
+                      ['= Fonds de roulement (1)', note34.fondsRoulement],
+                      ['Trésorerie nette (5)', note34.tresoNette],
+                      ['Besoin de financement global (4)', note34.bfg],
+                    ] as Array<[string, number]>).map(([l,v]) => <tr key={l} className="border-b border-border/30"><td className="px-3 py-1">{l}</td><td className="px-3 py-1 text-right font-mono">{fmt(v)}</td></tr>)}
+
+                    <tr className="bg-bg3"><td colSpan={2} className="px-3 py-1 font-bold text-primary">RENTABILITÉ</td></tr>
+                    <tr className="border-b border-border/30"><td className="px-3 py-1">Rentabilité économique (Rés. exploit. / Cap. propres + Dettes fin.)</td><td className="px-3 py-1 text-right font-mono">{note34.rentabEco.toFixed(2)} %</td></tr>
+                    <tr className="border-b border-border/30"><td className="px-3 py-1">Rentabilité financière (Rés. net / Cap. propres)</td><td className="px-3 py-1 text-right font-mono">{note34.rentabFin.toFixed(2)} %</td></tr>
+
+                    <tr className="bg-bg3"><td colSpan={2} className="px-3 py-1 font-bold text-primary">ENDETTEMENT</td></tr>
+                    <tr className="border-b border-border/30"><td className="px-3 py-1">Endettement financier brut (Dettes fin. + Trésorerie passif)</td><td className="px-3 py-1 text-right font-mono">{fmt(note34.endettementBrut)}</td></tr>
+                    <tr className="border-b border-border/30"><td className="px-3 py-1">Endettement financier net (− Trésorerie actif)</td><td className="px-3 py-1 text-right font-mono">{fmt(note34.endettementNet)}</td></tr>
+                  </tbody>
+                </table>
+                <p className="text-[9px] text-fg3 italic mt-3">Les écarts de conversion sont éliminés afin de ramener créances/dettes à leur valeur initiale. Résultat d'exploitation après impôt théorique pour la rentabilité économique.</p>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Note 35 — Informations sociales et environnementales (>250 salariés) */}
+          <TabsContent value="note35">
+            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+              <div className="px-3.5 py-2.5 border-b border-border">
+                <span className="text-xs font-bold text-primary">📋 Note 35 — Liste des informations sociales, environnementales et sociétales</span>
+              </div>
+              <div className="px-4 py-3 text-[11px] space-y-3">
+                <p className="text-fg3 italic">Note obligatoire pour les entités ayant un effectif de plus de 250 salariés.</p>
+                <div>
+                  <p className="font-bold text-primary mb-1">Informations sociales</p>
+                  <EditableField label="Emploi et politique salariale" noteKey="n35_soc_emploi" notesData={notesData} onSave={saveNote} />
+                  <EditableField label="Organisation du travail / Relations sociales" noteKey="n35_soc_orga" notesData={notesData} onSave={saveNote} />
+                  <EditableField label="Santé, sécurité, formation" noteKey="n35_soc_sante" notesData={notesData} onSave={saveNote} />
+                  <EditableField label="Égalité de traitement, lutte discriminations" noteKey="n35_soc_egalite" notesData={notesData} onSave={saveNote} />
+                </div>
+                <div>
+                  <p className="font-bold text-primary mb-1">Informations environnementales</p>
+                  <EditableField label="Politique générale environnement" noteKey="n35_env_politique" notesData={notesData} onSave={saveNote} />
+                  <EditableField label="Pollutions, déchets, gestion ressources" noteKey="n35_env_pollution" notesData={notesData} onSave={saveNote} />
+                  <EditableField label="Changement climatique, biodiversité" noteKey="n35_env_climat" notesData={notesData} onSave={saveNote} />
+                </div>
+                <div>
+                  <p className="font-bold text-primary mb-1">Engagements sociétaux pour le développement durable</p>
+                  <EditableField label="Impact territorial, économique et social" noteKey="n35_soct_impact" notesData={notesData} onSave={saveNote} />
+                  <EditableField label="Relations parties prenantes" noteKey="n35_soct_parties" notesData={notesData} onSave={saveNote} />
+                  <EditableField label="Sous-traitance, droits humains, lutte corruption" noteKey="n35_soct_ethique" notesData={notesData} onSave={saveNote} />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Note 36 — Tables des codes (forme juridique, régime fiscal, pays) */}
+          <TabsContent value="note36">
+            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+              <div className="px-3.5 py-2.5 border-b border-border">
+                <span className="text-xs font-bold text-primary">📋 Note 36 — Tables des codes</span>
+              </div>
+              <div className="px-4 py-3 text-[11px] grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="font-bold text-primary mb-2">1 — Forme juridique</p>
+                  <ul className="space-y-0.5 text-[10px] font-mono">
+                    {[['1','SA à participation publique'],['2','Société Anonyme (SA)'],['3','SARL'],['4','Société en Commandite Simple (SCS)'],['5','Société en Nom Collectif (SNC)'],['6','Société en Participation (SP)'],['7','Groupement d\'Intérêt Économique (GIE)'],['8','Association'],['9','Autre forme juridique']].map(([c,l]) => (
+                      <li key={c}><span className="text-primary font-bold w-6 inline-block">{c}</span> {l}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-bold text-primary mb-2">2 — Régime fiscal</p>
+                  <ul className="space-y-0.5 text-[10px] font-mono">
+                    {[['1','Réel normal'],['2','Réel simplifié'],['3','Synthétique'],['4','Forfait']].map(([c,l]) => (
+                      <li key={c}><span className="text-primary font-bold w-6 inline-block">{c}</span> {l}</li>
+                    ))}
+                  </ul>
+                  <p className="text-[9px] text-fg3 italic mt-2">Remplacer le premier 0 par 1 si l'entreprise bénéficie d'un agrément prioritaire.</p>
+                </div>
+                <div>
+                  <p className="font-bold text-primary mb-2">3 — Pays du siège social</p>
+                  <ul className="space-y-0.5 text-[10px] font-mono">
+                    {[['UEMOA','Bénin 01, Burkina 02, Côte d\'Ivoire 03, Guinée Bissau 04, Mali 05, Niger 06, Sénégal 07, Togo 08'],['CEMAC','Cameroun 09, Centrafrique 10, Congo 11, Gabon 12, Guinée Eq. 13, Tchad 14'],['OHADA','Comores 15, Guinée Conakry 16'],['Autres','Autres pays africains, France, UE, USA, Canada, Suisse, Asie, etc.']].map(([z,l]) => (
+                      <li key={z}><span className="text-primary font-bold">{z}</span> — <span className="text-fg2">{l}</span></li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
 
           {/* Note 1 — Dettes garanties par des sûretés réelles (officielle SYSCOHADA) */}
           <TabsContent value="engagements">
