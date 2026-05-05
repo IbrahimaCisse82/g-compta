@@ -445,13 +445,82 @@ export default function NotesAnnexesPage() {
   const note29FraisFin = useMemo(() => buildNote(balance, /^67/, [{ key: 'montant', getter: chargeMt }]), [balance]);
   const note29ProdFin = useMemo(() => buildNote(balance, /^77/, [{ key: 'montant', getter: produitMt }]), [balance]);
 
-  // ─── Notes 30-34 (à finaliser au lot 6) ─────────────────────
+  // ─── Notes 30-34 (Lot 6 — plaquettes officielles SYSCOHADA) ──────────
+  // Note 30 — Autres charges et produits HAO (structurée selon plaquette)
+  // Charges HAO : 831 charges HAO, 832 pertes créances HAO, 833 dons & libéralités, 834 abandons créances/liquidation,
+  //               839 charges provisionnées HAO, 853 dot. HAO, 87 participation travailleurs
+  // Produits HAO : 88 subv. équilibre, 841 produits HAO, 843 dons obtenus, 844 abandons obtenus,
+  //                849 produits provisionnés HAO, 848 transferts charges HAO, 863 reprises HAO
+  const sumChargeMt = (rx: RegExp) => balance.filter(b => rx.test(b.compte)).reduce((s, b) => s + chargeMt(b), 0);
+  const sumProduitMt = (rx: RegExp) => balance.filter(b => rx.test(b.compte)).reduce((s, b) => s + produitMt(b), 0);
+  const note30 = useMemo(() => ({
+    charges: [
+      { label: 'Charges HAO constatées', mt: sumChargeMt(/^831/) },
+      { label: 'Pertes sur créances HAO', mt: sumChargeMt(/^832/) },
+      { label: 'Dons et libéralités accordés', mt: sumChargeMt(/^833/) },
+      { label: 'Abandon de créances consentis et charges liées aux opérations de liquidation', mt: sumChargeMt(/^834/) },
+      { label: 'Charges provisionnées HAO', mt: sumChargeMt(/^839/) },
+      { label: 'Dotations hors activités ordinaires', mt: sumChargeMt(/^85/) },
+      { label: 'Participation des travailleurs', mt: sumChargeMt(/^87/) },
+    ],
+    produits: [
+      { label: "Subventions d'équilibre", mt: sumProduitMt(/^88/) },
+      { label: 'Produits HAO constatés', mt: sumProduitMt(/^841/) },
+      { label: 'Dons et libéralités obtenus', mt: sumProduitMt(/^843/) },
+      { label: 'Abandons de créances obtenus et produits liés aux opérations de liquidation', mt: sumProduitMt(/^844/) },
+      { label: 'Transfert de charges HAO', mt: sumProduitMt(/^848/) },
+      { label: 'Reprise de charges pour dépréciations et provisions à court terme HAO', mt: sumProduitMt(/^849/) },
+      { label: 'Reprises hors activités ordinaires', mt: sumProduitMt(/^86/) },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [balance]);
+
+  // Note 32 / 33 — Production & Achats par produit/matière (saisie manuelle, données par produit hors balance)
+  // Note 34 — Fiche de synthèse des principaux indicateurs financiers (calculs SIG/CAFG/ratios)
+  const note34 = useMemo(() => {
+    const sum = (rx: RegExp, mode: 'charge' | 'produit') => balance.filter(b => rx.test(b.compte))
+      .reduce((s, b) => s + (mode === 'charge' ? chargeMt(b) : produitMt(b)), 0);
+    const ventes = sum(/^70/, 'produit');
+    const achatsMarch = sum(/^601|^603/, 'charge');
+    const margeCom = ventes - achatsMarch;
+    const consoExt = sum(/^60/, 'charge') + sum(/^61/, 'charge') + sum(/^62/, 'charge') + sum(/^63/, 'charge');
+    const productionExo = sum(/^70|^72|^73/, 'produit');
+    const valeurAjoutee = productionExo - consoExt + sum(/^71/, 'produit');
+    const chargesPersonnel = sum(/^66/, 'charge');
+    const ebe = valeurAjoutee + sum(/^74/, 'produit') - sum(/^64/, 'charge') - chargesPersonnel;
+    const dotExpl = sum(/^681/, 'charge');
+    const repExpl = sum(/^791|^798/, 'produit');
+    const resultatExpl = ebe + repExpl - dotExpl - sum(/^65/, 'charge') + sum(/^75/, 'produit');
+    const resultatFin = sum(/^77/, 'produit') - sum(/^67/, 'charge');
+    const rao = resultatExpl + resultatFin;
+    const resultatHAO = sum(/^82|^84|^86|^88/, 'produit') - sum(/^81|^83|^85|^87/, 'charge');
+    const is = sum(/^891|^895|^699/, 'charge');
+    const resultatNet = rao + resultatHAO - is;
+    // CAFG simplifié
+    const cafg = resultatNet + dotExpl + sum(/^691/, 'charge') - repExpl - sum(/^791|^796/, 'produit');
+    const capPropres = balance.filter(b => /^1[01-4]/.test(b.compte)).reduce((s, b) => s + (b.sfc || 0) - (b.sfd || 0), 0);
+    const dettesFin = balance.filter(b => /^(16|17|18)/.test(b.compte)).reduce((s, b) => s + (b.sfc || 0), 0);
+    const actifImmo = balance.filter(b => /^2/.test(b.compte)).reduce((s, b) => s + (b.sfd || 0) - (b.sfc || 0), 0);
+    const ressourcesStables = capPropres + dettesFin;
+    const fondsRoulement = ressourcesStables - actifImmo;
+    const tresoActif = balance.filter(b => /^5[0-58]/.test(b.compte)).reduce((s, b) => s + (b.sfd || 0), 0);
+    const tresoPassif = balance.filter(b => /^56/.test(b.compte)).reduce((s, b) => s + (b.sfc || 0), 0);
+    const tresoNette = tresoActif - tresoPassif;
+    const bfg = fondsRoulement - tresoNette;
+    const rentabEco = capPropres + dettesFin > 0 ? (resultatExpl / (capPropres + dettesFin)) * 100 : 0;
+    const rentabFin = capPropres > 0 ? (resultatNet / capPropres) * 100 : 0;
+    const endettementBrut = dettesFin + tresoPassif;
+    const endettementNet = endettementBrut - tresoActif;
+    return { ventes, margeCom, valeurAjoutee, ebe, resultatExpl, resultatFin, rao, resultatHAO, resultatNet, cafg,
+             capPropres, dettesFin, ressourcesStables, actifImmo, fondsRoulement, tresoActif, tresoPassif, tresoNette,
+             bfg, rentabEco, rentabFin, endettementBrut, endettementNet };
+  }, [balance]);
+
+  // Compat synthèse / accès legacy
   const dotationsAmort = useMemo(() => buildNote(balance, /^(681|691)/, [{ key: 'montant', getter: chargeMt }]), [balance]);
-  const autresProduits = useMemo(() => buildNote(balance, /^(71|72|73|74|75|78)/, [{ key: 'montant', getter: produitMt }]), [balance]);
-  const haoCharges = useMemo(() => buildNote(balance, /^(81|83|85)/, [{ key: 'montant', getter: chargeMt }]), [balance]);
-  const haoProduits = useMemo(() => buildNote(balance, /^(82|84|86)/, [{ key: 'montant', getter: produitMt }]), [balance]);
+  const haoCharges = useMemo(() => buildNote(balance, /^(81|83|85|87)/, [{ key: 'montant', getter: chargeMt }]), [balance]);
+  const haoProduits = useMemo(() => buildNote(balance, /^(82|84|86|88)/, [{ key: 'montant', getter: produitMt }]), [balance]);
   const impots = useMemo(() => buildNote(balance, /^(891|895|699)/, [{ key: 'montant', getter: chargeMt }]), [balance]);
-  // Compat synthèse
   const achats = note22Achats;
   const personnel = note27APersonnel;
   const autresCharges = useMemo(() => buildNote(balance, /^(63|64|65)/, [{ key: 'montant', getter: chargeMt }]), [balance]);
