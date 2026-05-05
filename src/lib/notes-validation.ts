@@ -24,15 +24,16 @@ export const NOTES_SPEC: NoteSpec[] = [
   { num: '29A', label: 'Frais financiers',                 type: 'resultat', expectedPrefixes: /^67/,                       expectedRanges: ['67 — Frais financiers'] },
   { num: '29B', label: 'Revenus financiers',               type: 'resultat', expectedPrefixes: /^77/,                       expectedRanges: ['77 — Revenus financiers'] },
   // Notes 30-34
-  { num: '30',  label: 'Dotations aux amortissements',     type: 'resultat', expectedPrefixes: /^(681|691)/,                expectedRanges: ['681 — Dot. amort. exploitation', '691 — Dot. amort. HAO'] },
-  { num: '32',  label: 'Charges HAO',                      type: 'resultat', expectedPrefixes: /^(81|83|85)/,               expectedRanges: ['81 — VC cessions', '83 — Charges HAO', '85 — Dot. HAO'] },
-  { num: '33',  label: 'Produits HAO',                     type: 'resultat', expectedPrefixes: /^(82|84|86)/,               expectedRanges: ['82 — Produits cessions', '84 — Produits HAO', '86 — Reprises HAO'] },
-  { num: '34',  label: 'Impôts sur le résultat',           type: 'resultat', expectedPrefixes: /^(891|895|699)/,            expectedRanges: ['891 — IS', '895 — IRPP', '699 — Autres impôts s/résultat'] },
+  { num: '30',  label: 'Autres charges et produits HAO',  type: 'resultat', expectedPrefixes: /^(83|84|85|86|87|88)/, expectedRanges: ['83/85/87 — Charges HAO', '84/86/88 — Produits HAO'] },
+  { num: '31',  label: '5 derniers exercices',            type: 'informative', expectedPrefixes: /(?!)/, expectedRanges: ['Saisie manuelle (5 années capital, RAO, IS, RN, effectif…)'] },
+  { num: '32',  label: 'Production de l\'exercice',       type: 'informative', expectedPrefixes: /(?!)/, expectedRanges: ['Saisie manuelle par produit (qté/valeur) + récap. comptes 70/72/73'] },
+  { num: '33',  label: 'Achats destinés à la production', type: 'informative', expectedPrefixes: /(?!)/, expectedRanges: ['Saisie manuelle par matière + récap. compte 60'] },
+  { num: '34',  label: 'Synthèse indicateurs financiers', type: 'resultat', expectedPrefixes: /^[6789]/, expectedRanges: ['SIG, CAFG, ratios — calculs sur classes 6/7/8'] },
   // Notes informatives (35-40)
-  { num: '35',  label: 'Parties liées',                    type: 'informative', expectedPrefixes: /(?!)/, expectedRanges: ['Saisie manuelle (rémunérations dirigeants, intragroupe…)'] },
-  { num: '36',  label: 'Effectifs',                        type: 'informative', expectedPrefixes: /(?!)/, expectedRanges: ['Saisie manuelle + masse salariale (note 27A)'] },
+  { num: '35',  label: 'Informations soc./envir./sociétales', type: 'informative', expectedPrefixes: /(?!)/, expectedRanges: ['Saisie manuelle (>250 salariés)'] },
+  { num: '36',  label: 'Tables des codes',                type: 'informative', expectedPrefixes: /(?!)/, expectedRanges: ['Référentiels (forme juridique, régime fiscal, pays)'] },
   { num: '37',  label: 'Événements postérieurs',           type: 'informative', expectedPrefixes: /(?!)/, expectedRanges: ['Saisie manuelle'] },
-  { num: '38',  label: 'Régime fiscal',                    type: 'informative', expectedPrefixes: /(?!)/, expectedRanges: ['Saisie manuelle + charge IS (note 34)'] },
+  { num: '38',  label: 'Régime fiscal',                    type: 'informative', expectedPrefixes: /(?!)/, expectedRanges: ['Saisie manuelle + charge IS'] },
   { num: '39',  label: 'Identification',                   type: 'informative', expectedPrefixes: /(?!)/, expectedRanges: ['Fiche signalétique entreprise (NINEA, RCCM)'] },
   { num: '40',  label: 'Approbation',                      type: 'informative', expectedPrefixes: /(?!)/, expectedRanges: ['Saisie manuelle (date AGO, signataires)'] },
 ];
