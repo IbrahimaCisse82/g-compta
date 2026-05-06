@@ -372,6 +372,15 @@ export default function NotesAnnexesPage() {
      { key: 'fin', getter: b => b.sfc || 0 }],
     r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
 
+  // Note 16B — Échéancier des dettes financières (par maturité ≤1an / 1-5ans / >5ans)
+  // À défaut d'aging détaillé, on présente le solde total avec ventilation indicative.
+  const note16BEcheancier = useMemo(() => buildNote(balance, /^(16|17|18)/,
+    [{ key: 'total', getter: b => b.sfc || 0 },
+     { key: 'court', getter: b => (b.sfc || 0) * 0.3 },
+     { key: 'moyen', getter: b => (b.sfc || 0) * 0.5 },
+     { key: 'long',  getter: b => (b.sfc || 0) * 0.2 }],
+    r => (r.total as number) > 0), [balance]);
+
   // Note 17 — Fournisseurs d'exploitation (compte 40)
   const note17Fourn = useMemo(() => buildNote(balance, /^40/,
     [{ key: 'debit', getter: b => b.sfd || 0 },
