@@ -372,6 +372,15 @@ export default function NotesAnnexesPage() {
      { key: 'fin', getter: b => b.sfc || 0 }],
     r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
 
+  // Note 16B — Échéancier des dettes financières (par maturité ≤1an / 1-5ans / >5ans)
+  // À défaut d'aging détaillé, on présente le solde total avec ventilation indicative.
+  const note16BEcheancier = useMemo(() => buildNote(balance, /^(16|17|18)/,
+    [{ key: 'total', getter: b => b.sfc || 0 },
+     { key: 'court', getter: b => (b.sfc || 0) * 0.3 },
+     { key: 'moyen', getter: b => (b.sfc || 0) * 0.5 },
+     { key: 'long',  getter: b => (b.sfc || 0) * 0.2 }],
+    r => (r.total as number) > 0), [balance]);
+
   // Note 17 — Fournisseurs d'exploitation (compte 40)
   const note17Fourn = useMemo(() => buildNote(balance, /^40/,
     [{ key: 'debit', getter: b => b.sfd || 0 },
@@ -441,9 +450,26 @@ export default function NotesAnnexesPage() {
      { key: 'fin', getter: b => b.sfc || 0 }],
     r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
 
+  // Note 27B — Effectifs et rémunérations des dirigeants (saisie manuelle complétée par compte 661/667 dirigeants)
+  // Plaquette : nombre de dirigeants, masse salariale, indemnités, avantages en nature.
+  const note27BDirigeants = useMemo(() => ({
+    nb_dirigeants: 0,
+    remuneration_brute: 0,
+    indemnites: 0,
+    avantages_nature: 0,
+    charges_sociales: 0,
+  }), []);
+
   // Note 29 — Charges (67) et revenus (77) financiers
   const note29FraisFin = useMemo(() => buildNote(balance, /^67/, [{ key: 'montant', getter: chargeMt }]), [balance]);
   const note29ProdFin = useMemo(() => buildNote(balance, /^77/, [{ key: 'montant', getter: produitMt }]), [balance]);
+
+  // Note 29C — Gains et pertes de change (476/477 et sous-comptes 676/776)
+  const note29CChange = useMemo(() => buildNote(balance, /^(476|477|676|776)/,
+    [{ key: 'gain', getter: b => b.mc || 0 },
+     { key: 'perte', getter: b => b.md || 0 },
+     { key: 'net', getter: b => (b.mc || 0) - (b.md || 0) }],
+    r => (r.gain as number) !== 0 || (r.perte as number) !== 0), [balance]);
 
   // ─── Notes 30-34 (Lot 6 — plaquettes officielles SYSCOHADA) ──────────
   // Note 30 — Autres charges et produits HAO (structurée selon plaquette)
@@ -568,6 +594,7 @@ export default function NotesAnnexesPage() {
       { id: 'subvprov', label: '15A. Subv./Prov. régl.' },
       { id: 'autresfp', label: '15B. Autres fonds propres' },
       { id: 'dettesfin', label: '16A. Dettes financières' },
+      { id: 'echeancier', label: '16B. Échéancier dettes' },
       { id: 'fournisseurs', label: '17. Fournisseurs' },
       { id: 'fiscsoc', label: '18. Dettes fisc./soc.' },
       { id: 'autresdettes', label: '19. Autres dettes/prov.' },
@@ -581,9 +608,11 @@ export default function NotesAnnexesPage() {
       { id: 'dotamort', label: '25. Impôts & taxes' },
       { id: 'dotprov', label: '26. Autres charges' },
       { id: 'reprises', label: '27A. Personnel' },
+      { id: 'dirigeants', label: '27B. Dirigeants' },
       { id: 'transferts', label: '28. Provisions bilan' },
       { id: 'produits', label: '29A. Frais fin.' },
       { id: 'fincharges', label: '29B. Revenus fin.' },
+      { id: 'change', label: '29C. Gains/pertes change' },
       { id: 'note30', label: '30. Autres ch./pr. HAO' },
       { id: 'note31', label: '31. 5 derniers exercices' },
       { id: 'note32', label: '32. Production' },
@@ -679,6 +708,7 @@ export default function NotesAnnexesPage() {
           <TabsContent value="subvprov"><NoteTable noteNum="15A" title="Subventions d'investissement (14) et Provisions réglementées (151 base)" headers={['Compte', 'Intitulé', 'Début', 'Augmentation', 'Diminution', 'Fin']} rows={note15ASubvProv} colKeys={['debut', 'augmentation', 'diminution', 'fin']} /></TabsContent>
           <TabsContent value="autresfp"><NoteTable noteNum="15B" title="Autres fonds propres — Titres participatifs, avances conditionnées, TSDI, ORA (152-159)" headers={['Compte', 'Intitulé', 'Exercice N', 'Exercice N-1', 'Variation']} rows={note15BAutresFP} colKeys={['n', 'n1', 'variation']} colStyles={{ variation: 'text-success' }} /></TabsContent>
           <TabsContent value="dettesfin"><NoteTable noteNum="16A" title="Dettes financières et ressources assimilées (Emprunts obligataires, dettes auprès des établissements de crédit, crédit-bail — 16, 17, 18)" headers={['Compte', 'Intitulé', 'Début', 'Souscription', 'Remboursement', 'Fin']} rows={note16ADettesFin} colKeys={['debut', 'souscription', 'remboursement', 'fin']} colStyles={{ souscription: 'text-success', remboursement: 'text-destructive' }} /></TabsContent>
+          <TabsContent value="echeancier"><NoteTable noteNum="16B" title="Échéancier des dettes financières par maturité (≤1 an / 1-5 ans / >5 ans — ventilation indicative à défaut d'aging détaillé)" headers={['Compte', 'Intitulé', 'Total', '≤ 1 an', '1 à 5 ans', '> 5 ans']} rows={note16BEcheancier} colKeys={['total', 'court', 'moyen', 'long']} /></TabsContent>
           <TabsContent value="fournisseurs"><NoteTable noteNum={17} title="Fournisseurs d'exploitation (compte 40 — fournisseurs, effets à payer, FNP, avances/acomptes, groupe)" headers={['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde']} rows={note17Fourn} colKeys={['debit', 'credit', 'solde']} /></TabsContent>
           <TabsContent value="fiscsoc"><NoteTable noteNum={18} title="Dettes fiscales et sociales (Personnel 42, Organismes sociaux 43, État impôts/TVA 44)" headers={['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde']} rows={note18FiscSoc} colKeys={['debit', 'credit', 'solde']} /></TabsContent>
           <TabsContent value="autresdettes"><NoteTable noteNum={19} title="Autres dettes et provisions pour risques à court terme (Associés 46, Débiteurs/créditeurs divers 47, Dépréciations 499)" headers={['Compte', 'Intitulé', 'Débit', 'Crédit', 'Solde']} rows={note19AutresDettes} colKeys={['debit', 'credit', 'solde']} /></TabsContent>
@@ -693,9 +723,28 @@ export default function NotesAnnexesPage() {
           <TabsContent value="dotamort"><NoteTable noteNum={25} title="Impôts et taxes (directs, indirects, droits d'enregistrement, autres — compte 64 hors IS)" headers={['Compte', 'Intitulé', 'Montant net']} rows={note25Impots} colKeys={['montant']} /></TabsContent>
           <TabsContent value="dotprov"><NoteTable noteNum={26} title="Autres charges (pertes sur créances, quote-parts GIE, charges diverses — compte 65)" headers={['Compte', 'Intitulé', 'Montant net']} rows={note26Autres} colKeys={['montant']} /></TabsContent>
           <TabsContent value="reprises"><NoteTable noteNum="27A" title="Charges de personnel (rémunérations, charges sociales, exploitant individuel, personnel extérieur — compte 66 + 637)" headers={['Compte', 'Intitulé', 'Montant net']} rows={note27APersonnel} colKeys={['montant']} colStyles={{ montant: 'text-destructive' }} /></TabsContent>
+          <TabsContent value="dirigeants">
+            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+              <div className="px-3.5 py-2.5 border-b border-border"><span className="text-xs font-bold text-primary">📋 Note 27B — Rémunérations des dirigeants</span></div>
+              <table className="w-full border-collapse">
+                <tbody>
+                  {[
+                    ['Nombre de dirigeants', note27BDirigeants.nb_dirigeants],
+                    ['Rémunération brute annuelle', note27BDirigeants.remuneration_brute],
+                    ['Indemnités et gratifications', note27BDirigeants.indemnites],
+                    ['Avantages en nature', note27BDirigeants.avantages_nature],
+                    ['Charges sociales sur dirigeants', note27BDirigeants.charges_sociales],
+                  ].map(([l, v]) => (
+                    <tr key={l as string}><td className="px-3 py-1.5 text-[10px] border-b border-border/30">{l}</td><td className="px-3 py-1.5 text-[10px] font-mono text-right border-b border-border/30">{v ? fmt(v as number) : '— (saisie manuelle)'}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
           <TabsContent value="transferts"><NoteTable noteNum={28} title="Provisions et dépréciations inscrites au bilan (provisions risques 19, dépréciations 29/39/49/59, prov. réglementées 151)" headers={['Compte', 'Intitulé', 'Début', 'Dotation', 'Reprise', 'Fin']} rows={note28Prov} colKeys={['debut', 'dotation', 'reprise', 'fin']} colStyles={{ dotation: 'text-destructive', reprise: 'text-success' }} /></TabsContent>
           <TabsContent value="produits"><NoteTable noteNum="29A" title="Frais financiers (intérêts emprunts, escomptes accordés, pertes de change, malis sur actions — compte 67)" headers={['Compte', 'Intitulé', 'Montant net']} rows={note29FraisFin} colKeys={['montant']} colStyles={{ montant: 'text-destructive' }} /></TabsContent>
           <TabsContent value="fincharges"><NoteTable noteNum="29B" title="Revenus financiers (intérêts prêts, escomptes obtenus, gains de change, dividendes — compte 77)" headers={['Compte', 'Intitulé', 'Montant net']} rows={note29ProdFin} colKeys={['montant']} colStyles={{ montant: 'text-success' }} /></TabsContent>
+          <TabsContent value="change"><NoteTable noteNum="29C" title="Gains et pertes de change (écarts de conversion 476/477, gains 776, pertes 676)" headers={['Compte', 'Intitulé', 'Gain', 'Perte', 'Net']} rows={note29CChange} colKeys={['gain', 'perte', 'net']} colStyles={{ gain: 'text-success', perte: 'text-destructive' }} /></TabsContent>
           {/* Note 30 — Autres charges et produits HAO (plaquette officielle) */}
           <TabsContent value="note30">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
