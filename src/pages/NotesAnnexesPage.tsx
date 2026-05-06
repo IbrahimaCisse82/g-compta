@@ -450,9 +450,26 @@ export default function NotesAnnexesPage() {
      { key: 'fin', getter: b => b.sfc || 0 }],
     r => (r.debut as number) > 0 || (r.fin as number) > 0), [balance]);
 
+  // Note 27B — Effectifs et rémunérations des dirigeants (saisie manuelle complétée par compte 661/667 dirigeants)
+  // Plaquette : nombre de dirigeants, masse salariale, indemnités, avantages en nature.
+  const note27BDirigeants = useMemo(() => ({
+    nb_dirigeants: 0,
+    remuneration_brute: 0,
+    indemnites: 0,
+    avantages_nature: 0,
+    charges_sociales: 0,
+  }), []);
+
   // Note 29 — Charges (67) et revenus (77) financiers
   const note29FraisFin = useMemo(() => buildNote(balance, /^67/, [{ key: 'montant', getter: chargeMt }]), [balance]);
   const note29ProdFin = useMemo(() => buildNote(balance, /^77/, [{ key: 'montant', getter: produitMt }]), [balance]);
+
+  // Note 29C — Gains et pertes de change (476/477 et sous-comptes 676/776)
+  const note29CChange = useMemo(() => buildNote(balance, /^(476|477|676|776)/,
+    [{ key: 'gain', getter: b => b.mc || 0 },
+     { key: 'perte', getter: b => b.md || 0 },
+     { key: 'net', getter: b => (b.mc || 0) - (b.md || 0) }],
+    r => (r.gain as number) !== 0 || (r.perte as number) !== 0), [balance]);
 
   // ─── Notes 30-34 (Lot 6 — plaquettes officielles SYSCOHADA) ──────────
   // Note 30 — Autres charges et produits HAO (structurée selon plaquette)
