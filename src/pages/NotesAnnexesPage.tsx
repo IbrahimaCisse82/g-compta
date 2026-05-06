@@ -723,9 +723,28 @@ export default function NotesAnnexesPage() {
           <TabsContent value="dotamort"><NoteTable noteNum={25} title="Impôts et taxes (directs, indirects, droits d'enregistrement, autres — compte 64 hors IS)" headers={['Compte', 'Intitulé', 'Montant net']} rows={note25Impots} colKeys={['montant']} /></TabsContent>
           <TabsContent value="dotprov"><NoteTable noteNum={26} title="Autres charges (pertes sur créances, quote-parts GIE, charges diverses — compte 65)" headers={['Compte', 'Intitulé', 'Montant net']} rows={note26Autres} colKeys={['montant']} /></TabsContent>
           <TabsContent value="reprises"><NoteTable noteNum="27A" title="Charges de personnel (rémunérations, charges sociales, exploitant individuel, personnel extérieur — compte 66 + 637)" headers={['Compte', 'Intitulé', 'Montant net']} rows={note27APersonnel} colKeys={['montant']} colStyles={{ montant: 'text-destructive' }} /></TabsContent>
+          <TabsContent value="dirigeants">
+            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
+              <div className="px-3.5 py-2.5 border-b border-border"><span className="text-xs font-bold text-primary">📋 Note 27B — Rémunérations des dirigeants</span></div>
+              <table className="w-full border-collapse">
+                <tbody>
+                  {[
+                    ['Nombre de dirigeants', note27BDirigeants.nb_dirigeants],
+                    ['Rémunération brute annuelle', note27BDirigeants.remuneration_brute],
+                    ['Indemnités et gratifications', note27BDirigeants.indemnites],
+                    ['Avantages en nature', note27BDirigeants.avantages_nature],
+                    ['Charges sociales sur dirigeants', note27BDirigeants.charges_sociales],
+                  ].map(([l, v]) => (
+                    <tr key={l as string}><td className="px-3 py-1.5 text-[10px] border-b border-border/30">{l}</td><td className="px-3 py-1.5 text-[10px] font-mono text-right border-b border-border/30">{v ? fmt(v as number) : '— (saisie manuelle)'}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
           <TabsContent value="transferts"><NoteTable noteNum={28} title="Provisions et dépréciations inscrites au bilan (provisions risques 19, dépréciations 29/39/49/59, prov. réglementées 151)" headers={['Compte', 'Intitulé', 'Début', 'Dotation', 'Reprise', 'Fin']} rows={note28Prov} colKeys={['debut', 'dotation', 'reprise', 'fin']} colStyles={{ dotation: 'text-destructive', reprise: 'text-success' }} /></TabsContent>
           <TabsContent value="produits"><NoteTable noteNum="29A" title="Frais financiers (intérêts emprunts, escomptes accordés, pertes de change, malis sur actions — compte 67)" headers={['Compte', 'Intitulé', 'Montant net']} rows={note29FraisFin} colKeys={['montant']} colStyles={{ montant: 'text-destructive' }} /></TabsContent>
           <TabsContent value="fincharges"><NoteTable noteNum="29B" title="Revenus financiers (intérêts prêts, escomptes obtenus, gains de change, dividendes — compte 77)" headers={['Compte', 'Intitulé', 'Montant net']} rows={note29ProdFin} colKeys={['montant']} colStyles={{ montant: 'text-success' }} /></TabsContent>
+          <TabsContent value="change"><NoteTable noteNum="29C" title="Gains et pertes de change (écarts de conversion 476/477, gains 776, pertes 676)" headers={['Compte', 'Intitulé', 'Gain', 'Perte', 'Net']} rows={note29CChange} colKeys={['gain', 'perte', 'net']} colStyles={{ gain: 'text-success', perte: 'text-destructive' }} /></TabsContent>
           {/* Note 30 — Autres charges et produits HAO (plaquette officielle) */}
           <TabsContent value="note30">
             <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
