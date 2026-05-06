@@ -594,6 +594,7 @@ export default function NotesAnnexesPage() {
       { id: 'subvprov', label: '15A. Subv./Prov. régl.' },
       { id: 'autresfp', label: '15B. Autres fonds propres' },
       { id: 'dettesfin', label: '16A. Dettes financières' },
+      { id: 'echeancier', label: '16B. Échéancier dettes' },
       { id: 'fournisseurs', label: '17. Fournisseurs' },
       { id: 'fiscsoc', label: '18. Dettes fisc./soc.' },
       { id: 'autresdettes', label: '19. Autres dettes/prov.' },
