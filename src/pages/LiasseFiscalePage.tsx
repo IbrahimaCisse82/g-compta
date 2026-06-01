@@ -273,11 +273,16 @@ export default function LiasseFiscalePage() {
           </div>
         </div>
 
-        <div className="text-center">
-          <button onClick={handleExportDSF} className="px-6 py-2.5 rounded-lg text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
-            📄 Générer la Liasse Fiscale DSF complète
-          </button>
-          <p className="text-[10px] text-fg3 mt-2">Le document s'ouvrira dans une nouvelle fenêtre pour impression / enregistrement PDF.</p>
+        <div className="text-center space-y-2">
+          <div className="flex flex-wrap justify-center gap-3">
+            <button onClick={handleExportDSF} className="px-6 py-2.5 rounded-lg text-sm font-bold border border-primary/40 text-primary hover:bg-primary/10 transition-all">
+              📄 DSF seule (Bilan + CR + TFT)
+            </button>
+            <button onClick={handleExportDSFComplete} className="px-6 py-2.5 rounded-lg text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+              📚 DSF + 54 Notes Annexes (dossier complet)
+            </button>
+          </div>
+          <p className="text-[10px] text-fg3 mt-2">Le document s'ouvrira dans une nouvelle fenêtre pour impression / enregistrement PDF (A4).</p>
         </div>
       </div>
     </div>
