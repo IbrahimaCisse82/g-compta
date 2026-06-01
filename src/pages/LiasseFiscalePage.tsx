@@ -49,6 +49,7 @@ function buildTable(title: string, def: MapLine[], vals: Record<string, number>,
 
 export default function LiasseFiscalePage() {
   const { balance, balanceN1, entreprise, exercice } = useApp();
+  const { data: notesData } = useNotesData(entreprise?.id, exercice?.id);
 
   const vA = calc(balance, ACTIF);
   const vP = calc(balance, PASSIF);
