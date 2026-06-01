@@ -1,5 +1,7 @@
 import { useApp } from '@/stores/app-store';
 import { calc, CR, ACTIF, PASSIF, TFT, fmt, fmtSigned, type MapLine } from '@/lib/accounting';
+import { useNotesData } from '@/hooks/use-notes-data';
+import { buildAnnexesHtml } from '@/lib/dsf-annexes-export';
 
 function buildHeader(entreprise: any, exercice: any): string {
   return `
