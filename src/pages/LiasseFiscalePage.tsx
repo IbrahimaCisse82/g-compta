@@ -226,7 +226,10 @@ export default function LiasseFiscalePage() {
           <div className="font-serif text-[17px]">Liasse Fiscale (DSF)</div>
           <div className="text-[10px] text-fg3 font-mono">Déclaration Statistique et Fiscale — {entreprise?.nom} — {exercice?.annee}</div>
         </div>
-        <button onClick={handleExportDSF} className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-primary/30 text-primary hover:bg-primary/10">📄 Générer DSF PDF</button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleExportDSF} className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-primary/30 text-primary hover:bg-primary/10">📄 DSF seul</button>
+          <button onClick={handleExportDSFComplete} className="px-3 py-1.5 rounded-md text-[11px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90">📚 DSF + Notes Annexes</button>
+        </div>
       </div>
       <div className="p-5 space-y-4">
         <div className="bg-bg2 border border-border rounded-lg p-4 space-y-3">
