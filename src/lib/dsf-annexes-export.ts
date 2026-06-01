@@ -72,15 +72,37 @@ export const NOTES_CATALOG: NoteCat[] = [
 ];
 
 export function buildAnnexesHtml(balance: BalanceLine[], notesData: Record<string, string>): string {
-  let html = `<div style="page-break-before: always;"></div>
+  const total = NOTES_CATALOG.length;
+
+  // ─── Sommaire cliquable ────────────────────────────
+  let toc = `<div style="page-break-before: always;"></div>
     <h2 style="font-size:14px;font-weight:bold;color:#0B1F3A;text-transform:uppercase;letter-spacing:2px;margin:14px 0 10px;text-align:center;border-bottom:2px solid #0B1F3A;padding-bottom:6px;">
-      NOTES ANNEXES — 54 NOTES OFFICIELLES SYSCOHADA
+      SOMMAIRE — NOTES ANNEXES (${total} NOTES SYSCOHADA)
+    </h2>
+    <table style="font-size:9px;"><tbody>`;
+  NOTES_CATALOG.forEach((n, i) => {
+    const isManual = !!n.manualPrefix;
+    toc += `<tr>
+      <td style="width:50px;font-weight:bold;color:#0B1F3A;">N° ${n.num}</td>
+      <td><a href="#note-${n.num}" style="color:#0B1F3A;text-decoration:none;">${n.label}</a></td>
+      <td style="width:90px;text-align:right;color:#888;font-size:8px;">${isManual ? 'Saisie manuelle' : 'Balance auto'}</td>
+      <td style="width:50px;text-align:right;color:#888;font-size:8px;">${i + 1}/${total}</td>
+    </tr>`;
+  });
+  toc += `</tbody></table>`;
+
+  // ─── Contenu des 54 notes ───────────────────────────
+  let html = toc + `<div style="page-break-before: always;"></div>
+    <h2 style="font-size:14px;font-weight:bold;color:#0B1F3A;text-transform:uppercase;letter-spacing:2px;margin:14px 0 10px;text-align:center;border-bottom:2px solid #0B1F3A;padding-bottom:6px;">
+      NOTES ANNEXES — ${total} NOTES OFFICIELLES SYSCOHADA
     </h2>`;
 
-  for (const note of NOTES_CATALOG) {
-    html += `<div style="margin:14px 0 6px;page-break-inside:avoid;">
-      <div style="background:#0B1F3A;color:#fff;padding:5px 8px;font-size:10px;font-weight:bold;letter-spacing:0.5px;">
-        NOTE ${note.num} — ${note.label}
+  NOTES_CATALOG.forEach((note, i) => {
+    const pageInfo = `Note ${i + 1} / ${total}`;
+    html += `<div id="note-${note.num}" style="margin:14px 0 6px;page-break-inside:avoid;">
+      <div style="background:#0B1F3A;color:#fff;padding:5px 8px;font-size:10px;font-weight:bold;letter-spacing:0.5px;display:flex;justify-content:space-between;align-items:center;">
+        <span>NOTE ${note.num} — ${note.label}</span>
+        <span style="font-size:8px;opacity:0.8;font-weight:normal;">${pageInfo}</span>
       </div>`;
 
     if (note.regex) {
@@ -93,7 +115,7 @@ export function buildAnnexesHtml(balance: BalanceLine[], notesData: Record<strin
       if (rows.length === 0) {
         html += `<div style="padding:6px 8px;font-size:9px;color:#888;font-style:italic;background:#f9f9f9;">Aucun compte mouvementé sur cette note.</div>`;
       } else {
-        const total = rows.reduce((s, r) => s + r.solde, 0);
+        const totalSolde = rows.reduce((s, r) => s + r.solde, 0);
         html += `<table style="margin:0;"><thead><tr>
           <th style="width:80px">Compte</th><th>Intitulé</th>
           <th class="r" style="width:90px">Débit</th>
@@ -107,7 +129,7 @@ export function buildAnnexesHtml(balance: BalanceLine[], notesData: Record<strin
             <td class="r ${r.solde < 0 ? 'neg' : ''}">${fmt(r.solde)}</td></tr>`;
         }
         html += `<tr class="tot"><td colspan="4">TOTAL NOTE ${note.num}</td>
-          <td class="r ${total < 0 ? 'neg' : ''}">${fmt(total)}</td></tr></tbody></table>`;
+          <td class="r ${totalSolde < 0 ? 'neg' : ''}">${fmt(totalSolde)}</td></tr></tbody></table>`;
       }
     } else if (note.manualPrefix) {
       const entries = Object.entries(notesData)
@@ -128,7 +150,8 @@ export function buildAnnexesHtml(balance: BalanceLine[], notesData: Record<strin
       }
     }
     html += `</div>`;
-  }
+  });
 
   return html;
 }
+
