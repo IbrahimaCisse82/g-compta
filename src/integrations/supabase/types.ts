@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      amortissements: {
+        Row: {
+          annee: number
+          comptabilise: boolean
+          created_at: string
+          cumul: number
+          dotation: number
+          entreprise_id: string
+          exercice_id: string | null
+          id: string
+          immobilisation_id: string
+          vnc: number
+        }
+        Insert: {
+          annee: number
+          comptabilise?: boolean
+          created_at?: string
+          cumul?: number
+          dotation?: number
+          entreprise_id: string
+          exercice_id?: string | null
+          id?: string
+          immobilisation_id: string
+          vnc?: number
+        }
+        Update: {
+          annee?: number
+          comptabilise?: boolean
+          created_at?: string
+          cumul?: number
+          dotation?: number
+          entreprise_id?: string
+          exercice_id?: string | null
+          id?: string
+          immobilisation_id?: string
+          vnc?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amortissements_immobilisation_id_fkey"
+            columns: ["immobilisation_id"]
+            isOneToOne: false
+            referencedRelation: "immobilisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       axes_analytiques: {
         Row: {
           actif: boolean
@@ -398,6 +445,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      immobilisations: {
+        Row: {
+          categorie: string
+          code: string
+          compte_amort: string | null
+          compte_dotation: string | null
+          compte_immo: string
+          created_at: string
+          date_acquisition: string
+          date_cession: string | null
+          date_mise_service: string | null
+          duree_annees: number
+          entreprise_id: string
+          id: string
+          libelle: string
+          mode_amortissement: string
+          notes: string | null
+          prix_cession: number | null
+          statut: string
+          taux: number | null
+          updated_at: string
+          valeur_origine: number
+          valeur_residuelle: number
+        }
+        Insert: {
+          categorie?: string
+          code: string
+          compte_amort?: string | null
+          compte_dotation?: string | null
+          compte_immo: string
+          created_at?: string
+          date_acquisition: string
+          date_cession?: string | null
+          date_mise_service?: string | null
+          duree_annees?: number
+          entreprise_id: string
+          id?: string
+          libelle: string
+          mode_amortissement?: string
+          notes?: string | null
+          prix_cession?: number | null
+          statut?: string
+          taux?: number | null
+          updated_at?: string
+          valeur_origine?: number
+          valeur_residuelle?: number
+        }
+        Update: {
+          categorie?: string
+          code?: string
+          compte_amort?: string | null
+          compte_dotation?: string | null
+          compte_immo?: string
+          created_at?: string
+          date_acquisition?: string
+          date_cession?: string | null
+          date_mise_service?: string | null
+          duree_annees?: number
+          entreprise_id?: string
+          id?: string
+          libelle?: string
+          mode_amortissement?: string
+          notes?: string | null
+          prix_cession?: number | null
+          statut?: string
+          taux?: number | null
+          updated_at?: string
+          valeur_origine?: number
+          valeur_residuelle?: number
+        }
+        Relationships: []
       }
       invitations: {
         Row: {
