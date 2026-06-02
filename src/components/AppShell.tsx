@@ -27,6 +27,7 @@ import BudgetPage from '@/pages/BudgetPage';
 import TvaPage from '@/pages/TvaPage';
 import AbonnementPage from '@/pages/AbonnementPage';
 import CloturePage from '@/pages/CloturePage';
+import ImmobilisationsPage from '@/pages/ImmobilisationsPage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -42,6 +43,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'lettrage', icon: '🔗', label: 'Lettrage' },
     { id: 'rapprochement', icon: '🏦', label: 'Rapprochement' },
     { id: 'import', icon: '📥', label: 'Import FEC/CSV' },
+    { id: 'immobilisations', icon: '🏭', label: 'Immobilisations' },
   ]},
   { section: 'États Financiers', items: [
     { id: 'bilan', icon: '🏛️', label: 'Bilan', shortcut: 'Alt+I' },
@@ -76,6 +78,7 @@ const PAGES: Record<string, React.ComponentType> = {
   import: ImportPage, cabinet_mgmt: CabinetPage,
   lettrage: LettragePage, analytique: AnalytiquePage, budget: BudgetPage,
   tva: TvaPage, abonnement: AbonnementPage, cloture: CloturePage,
+  immobilisations: ImmobilisationsPage,
 };
 
 function ClientsPage() {
