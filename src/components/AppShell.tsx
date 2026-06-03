@@ -45,6 +45,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'rapprochement', icon: '🏦', label: 'Rapprochement' },
     { id: 'import', icon: '📥', label: 'Import FEC/CSV' },
     { id: 'immobilisations', icon: '🏭', label: 'Immobilisations' },
+    { id: 'facturation', icon: '🧾', label: 'Facturation Client' },
   ]},
   { section: 'États Financiers', items: [
     { id: 'bilan', icon: '🏛️', label: 'Bilan', shortcut: 'Alt+I' },
