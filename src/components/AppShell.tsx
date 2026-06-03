@@ -81,6 +81,7 @@ const PAGES: Record<string, React.ComponentType> = {
   lettrage: LettragePage, analytique: AnalytiquePage, budget: BudgetPage,
   tva: TvaPage, abonnement: AbonnementPage, cloture: CloturePage,
   immobilisations: ImmobilisationsPage,
+  facturation: FacturationPage,
 };
 
 function ClientsPage() {
