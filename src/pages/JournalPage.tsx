@@ -1,23 +1,39 @@
 import { useApp } from '@/stores/app-store';
 import { fmt } from '@/lib/accounting';
 import { exportJournalCsv } from '@/lib/csv-export';
+import { buildFec, downloadFec } from '@/lib/fec-export';
 import { useState } from 'react';
 
 export default function JournalPage() {
-  const { journal, deleteJournalEntry, isExerciceCloture } = useApp();
+  const { journal, deleteJournalEntry, isExerciceCloture, entreprise, exercice } = useApp();
   const [filter, setFilter] = useState('');
   const locked = isExerciceCloture();
   const rows = journal.filter(r => !filter || r.libelle?.toLowerCase().includes(filter.toLowerCase()) || r.compte?.includes(filter));
   const td = rows.reduce((s, r) => s + (r.debit || 0), 0);
   const tc = rows.reduce((s, r) => s + (r.credit || 0), 0);
 
+  const handleExportFec = () => {
+    if (!entreprise || !exercice) return;
+    const content = buildFec(journal as any, {
+      entrepriseNom: entreprise.nom,
+      ninea: entreprise.ninea || '',
+      exerciceAnnee: exercice.annee,
+    });
+    downloadFec(content, entreprise.ninea || 'FEC', exercice.annee, exercice.date_fin);
+  };
+
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
         <div><div className="font-serif text-[17px]">Journal des Opérations</div><div className="text-[10px] text-fg3 font-mono">Partie double — Débit = Crédit</div></div>
-        <button onClick={() => exportJournalCsv(rows, `journal_${new Date().getFullYear()}`)} className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-border text-fg2 hover:bg-bg3">
-          📥 Export CSV
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportJournalCsv(rows, `journal_${new Date().getFullYear()}`)} className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-border text-fg2 hover:bg-bg3">
+            📥 Export CSV
+          </button>
+          <button onClick={handleExportFec} title="Fichier des Écritures Comptables — format officiel OHADA/fiscal" className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-primary/40 text-primary hover:bg-primary/10">
+            📋 Export FEC officiel
+          </button>
+        </div>
       </div>
       <div className="p-5">
         <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
