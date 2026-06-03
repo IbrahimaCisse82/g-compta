@@ -234,6 +234,57 @@ export type Database = {
         }
         Relationships: []
       }
+      clients: {
+        Row: {
+          actif: boolean
+          adresse: string | null
+          code: string
+          compte_tiers: string
+          created_at: string
+          email: string | null
+          entreprise_id: string
+          id: string
+          ninea: string | null
+          nom: string
+          notes: string | null
+          rccm: string | null
+          tel: string | null
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          adresse?: string | null
+          code: string
+          compte_tiers?: string
+          created_at?: string
+          email?: string | null
+          entreprise_id: string
+          id?: string
+          ninea?: string | null
+          nom: string
+          notes?: string | null
+          rccm?: string | null
+          tel?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          adresse?: string | null
+          code?: string
+          compte_tiers?: string
+          created_at?: string
+          email?: string | null
+          entreprise_id?: string
+          id?: string
+          ninea?: string | null
+          nom?: string
+          notes?: string | null
+          rccm?: string | null
+          tel?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cloture_logs: {
         Row: {
           action: string
@@ -445,6 +496,113 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      facture_lignes: {
+        Row: {
+          created_at: string
+          designation: string
+          facture_id: string
+          id: string
+          montant_ht: number
+          ordre: number
+          prix_unitaire: number
+          quantite: number
+          remise_pct: number
+        }
+        Insert: {
+          created_at?: string
+          designation: string
+          facture_id: string
+          id?: string
+          montant_ht?: number
+          ordre?: number
+          prix_unitaire?: number
+          quantite?: number
+          remise_pct?: number
+        }
+        Update: {
+          created_at?: string
+          designation?: string
+          facture_id?: string
+          id?: string
+          montant_ht?: number
+          ordre?: number
+          prix_unitaire?: number
+          quantite?: number
+          remise_pct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facture_lignes_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factures: {
+        Row: {
+          client_id: string
+          comptabilisee: boolean
+          compte_vente: string
+          created_at: string
+          date_echeance: string | null
+          date_facture: string
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          notes: string | null
+          numero: string
+          objet: string | null
+          statut: string
+          taux_tva: number
+          total_ht: number
+          total_ttc: number
+          total_tva: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          comptabilisee?: boolean
+          compte_vente?: string
+          created_at?: string
+          date_echeance?: string | null
+          date_facture?: string
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          notes?: string | null
+          numero: string
+          objet?: string | null
+          statut?: string
+          taux_tva?: number
+          total_ht?: number
+          total_ttc?: number
+          total_tva?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          comptabilisee?: boolean
+          compte_vente?: string
+          created_at?: string
+          date_echeance?: string | null
+          date_facture?: string
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          notes?: string | null
+          numero?: string
+          objet?: string | null
+          statut?: string
+          taux_tva?: number
+          total_ht?: number
+          total_ttc?: number
+          total_tva?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       immobilisations: {
         Row: {
