@@ -28,6 +28,7 @@ import TvaPage from '@/pages/TvaPage';
 import AbonnementPage from '@/pages/AbonnementPage';
 import CloturePage from '@/pages/CloturePage';
 import ImmobilisationsPage from '@/pages/ImmobilisationsPage';
+import FacturationPage from '@/pages/FacturationPage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
