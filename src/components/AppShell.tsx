@@ -29,6 +29,7 @@ import AbonnementPage from '@/pages/AbonnementPage';
 import CloturePage from '@/pages/CloturePage';
 import ImmobilisationsPage from '@/pages/ImmobilisationsPage';
 import FacturationPage from '@/pages/FacturationPage';
+import FournisseursPage from '@/pages/FournisseursPage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -46,6 +47,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'import', icon: '📥', label: 'Import FEC/CSV' },
     { id: 'immobilisations', icon: '🏭', label: 'Immobilisations' },
     { id: 'facturation', icon: '🧾', label: 'Facturation Client' },
+    { id: 'fournisseurs', icon: '📦', label: 'Facturation Fournisseur' },
   ]},
   { section: 'États Financiers', items: [
     { id: 'bilan', icon: '🏛️', label: 'Bilan', shortcut: 'Alt+I' },
@@ -82,6 +84,7 @@ const PAGES: Record<string, React.ComponentType> = {
   tva: TvaPage, abonnement: AbonnementPage, cloture: CloturePage,
   immobilisations: ImmobilisationsPage,
   facturation: FacturationPage,
+  fournisseurs: FournisseursPage,
 };
 
 function ClientsPage() {
