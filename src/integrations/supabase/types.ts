@@ -604,6 +604,209 @@ export type Database = {
         }
         Relationships: []
       }
+      factures_achat: {
+        Row: {
+          comptabilisee: boolean
+          created_at: string
+          date_echeance: string | null
+          date_facture: string
+          date_reception: string | null
+          entreprise_id: string
+          exercice_id: string
+          fournisseur_id: string
+          id: string
+          montant_paye: number
+          notes: string | null
+          numero_fournisseur: string | null
+          numero_interne: string
+          objet: string | null
+          piece_journal: string | null
+          statut: string
+          total_ht: number
+          total_ttc: number
+          total_tva: number
+          updated_at: string
+        }
+        Insert: {
+          comptabilisee?: boolean
+          created_at?: string
+          date_echeance?: string | null
+          date_facture: string
+          date_reception?: string | null
+          entreprise_id: string
+          exercice_id: string
+          fournisseur_id: string
+          id?: string
+          montant_paye?: number
+          notes?: string | null
+          numero_fournisseur?: string | null
+          numero_interne: string
+          objet?: string | null
+          piece_journal?: string | null
+          statut?: string
+          total_ht?: number
+          total_ttc?: number
+          total_tva?: number
+          updated_at?: string
+        }
+        Update: {
+          comptabilisee?: boolean
+          created_at?: string
+          date_echeance?: string | null
+          date_facture?: string
+          date_reception?: string | null
+          entreprise_id?: string
+          exercice_id?: string
+          fournisseur_id?: string
+          id?: string
+          montant_paye?: number
+          notes?: string | null
+          numero_fournisseur?: string | null
+          numero_interne?: string
+          objet?: string | null
+          piece_journal?: string | null
+          statut?: string
+          total_ht?: number
+          total_ttc?: number
+          total_tva?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factures_achat_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_achat_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_achat_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factures_achat_lignes: {
+        Row: {
+          compte_charge: string
+          created_at: string
+          designation: string
+          facture_id: string
+          id: string
+          montant_ht: number
+          ordre: number
+          prix_unitaire: number
+          quantite: number
+          taux_tva: number
+        }
+        Insert: {
+          compte_charge?: string
+          created_at?: string
+          designation: string
+          facture_id: string
+          id?: string
+          montant_ht?: number
+          ordre?: number
+          prix_unitaire?: number
+          quantite?: number
+          taux_tva?: number
+        }
+        Update: {
+          compte_charge?: string
+          created_at?: string
+          designation?: string
+          facture_id?: string
+          id?: string
+          montant_ht?: number
+          ordre?: number
+          prix_unitaire?: number
+          quantite?: number
+          taux_tva?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factures_achat_lignes_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures_achat"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fournisseurs: {
+        Row: {
+          actif: boolean
+          adresse: string | null
+          code: string
+          compte_tiers: string
+          conditions_reglement: string | null
+          created_at: string
+          delai_paiement_jours: number | null
+          email: string | null
+          entreprise_id: string
+          id: string
+          ninea: string | null
+          notes: string | null
+          raison_sociale: string
+          rccm: string | null
+          telephone: string | null
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          adresse?: string | null
+          code: string
+          compte_tiers?: string
+          conditions_reglement?: string | null
+          created_at?: string
+          delai_paiement_jours?: number | null
+          email?: string | null
+          entreprise_id: string
+          id?: string
+          ninea?: string | null
+          notes?: string | null
+          raison_sociale: string
+          rccm?: string | null
+          telephone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          adresse?: string | null
+          code?: string
+          compte_tiers?: string
+          conditions_reglement?: string | null
+          created_at?: string
+          delai_paiement_jours?: number | null
+          email?: string | null
+          entreprise_id?: string
+          id?: string
+          ninea?: string | null
+          notes?: string | null
+          raison_sociale?: string
+          rccm?: string | null
+          telephone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fournisseurs_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       immobilisations: {
         Row: {
           categorie: string
