@@ -49,6 +49,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'immobilisations', icon: '🏭', label: 'Immobilisations' },
     { id: 'facturation', icon: '🧾', label: 'Facturation Client' },
     { id: 'fournisseurs', icon: '📦', label: 'Facturation Fournisseur' },
+    { id: 'paie', icon: '💼', label: 'Paie & Bulletins' },
   ]},
   { section: 'États Financiers', items: [
     { id: 'bilan', icon: '🏛️', label: 'Bilan', shortcut: 'Alt+I' },
