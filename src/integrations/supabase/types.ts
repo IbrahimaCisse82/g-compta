@@ -181,6 +181,124 @@ export type Database = {
         }
         Relationships: []
       }
+      bulletins_paie: {
+        Row: {
+          annee: number
+          brut: number | null
+          cfce: number | null
+          charges_patronales: number | null
+          comptabilise: boolean
+          created_at: string
+          css_af: number | null
+          css_at: number | null
+          employee_id: string
+          entreprise_id: string
+          exercice_id: string | null
+          id: string
+          ipm_p: number | null
+          ipm_s: number | null
+          ipres_rc_p: number | null
+          ipres_rc_s: number | null
+          ipres_rg_p: number | null
+          ipres_rg_s: number | null
+          ir: number | null
+          mois: number
+          net_payer: number | null
+          periode: string
+          prime_anciennete: number | null
+          salaire_base: number | null
+          sursalaire: number | null
+          total_retenues: number | null
+          transport: number | null
+          trimf: number | null
+          updated_at: string
+        }
+        Insert: {
+          annee: number
+          brut?: number | null
+          cfce?: number | null
+          charges_patronales?: number | null
+          comptabilise?: boolean
+          created_at?: string
+          css_af?: number | null
+          css_at?: number | null
+          employee_id: string
+          entreprise_id: string
+          exercice_id?: string | null
+          id?: string
+          ipm_p?: number | null
+          ipm_s?: number | null
+          ipres_rc_p?: number | null
+          ipres_rc_s?: number | null
+          ipres_rg_p?: number | null
+          ipres_rg_s?: number | null
+          ir?: number | null
+          mois: number
+          net_payer?: number | null
+          periode: string
+          prime_anciennete?: number | null
+          salaire_base?: number | null
+          sursalaire?: number | null
+          total_retenues?: number | null
+          transport?: number | null
+          trimf?: number | null
+          updated_at?: string
+        }
+        Update: {
+          annee?: number
+          brut?: number | null
+          cfce?: number | null
+          charges_patronales?: number | null
+          comptabilise?: boolean
+          created_at?: string
+          css_af?: number | null
+          css_at?: number | null
+          employee_id?: string
+          entreprise_id?: string
+          exercice_id?: string | null
+          id?: string
+          ipm_p?: number | null
+          ipm_s?: number | null
+          ipres_rc_p?: number | null
+          ipres_rc_s?: number | null
+          ipres_rg_p?: number | null
+          ipres_rg_s?: number | null
+          ir?: number | null
+          mois?: number
+          net_payer?: number | null
+          periode?: string
+          prime_anciennete?: number | null
+          salaire_base?: number | null
+          sursalaire?: number | null
+          total_retenues?: number | null
+          transport?: number | null
+          trimf?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulletins_paie_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulletins_paie_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulletins_paie_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cabinet_members: {
         Row: {
           cabinet_id: string
@@ -410,6 +528,101 @@ export type Database = {
           periodicite?: string
         }
         Relationships: []
+      }
+      employees: {
+        Row: {
+          actif: boolean
+          adresse: string | null
+          categorie: string | null
+          contrat: string | null
+          convention: string | null
+          created_at: string
+          date_entree: string | null
+          date_naissance: string | null
+          date_sortie: string | null
+          enfants: number | null
+          entreprise_id: string
+          femmes: number | null
+          fonction: string | null
+          id: string
+          lieu_naissance: string | null
+          matricule: string
+          nationalite: string | null
+          nom: string
+          prenom: string
+          salaire_base: number
+          sexe: string | null
+          situation_famille: string | null
+          statut: string | null
+          sursalaire: number
+          telephone: string | null
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          adresse?: string | null
+          categorie?: string | null
+          contrat?: string | null
+          convention?: string | null
+          created_at?: string
+          date_entree?: string | null
+          date_naissance?: string | null
+          date_sortie?: string | null
+          enfants?: number | null
+          entreprise_id: string
+          femmes?: number | null
+          fonction?: string | null
+          id?: string
+          lieu_naissance?: string | null
+          matricule: string
+          nationalite?: string | null
+          nom: string
+          prenom: string
+          salaire_base?: number
+          sexe?: string | null
+          situation_famille?: string | null
+          statut?: string | null
+          sursalaire?: number
+          telephone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          adresse?: string | null
+          categorie?: string | null
+          contrat?: string | null
+          convention?: string | null
+          created_at?: string
+          date_entree?: string | null
+          date_naissance?: string | null
+          date_sortie?: string | null
+          enfants?: number | null
+          entreprise_id?: string
+          femmes?: number | null
+          fonction?: string | null
+          id?: string
+          lieu_naissance?: string | null
+          matricule?: string
+          nationalite?: string | null
+          nom?: string
+          prenom?: string
+          salaire_base?: number
+          sexe?: string | null
+          situation_famille?: string | null
+          statut?: string | null
+          sursalaire?: number
+          telephone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       entreprises: {
         Row: {
@@ -1105,6 +1318,38 @@ export type Database = {
             columns: ["exercice_id"]
             isOneToOne: false
             referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paie_parametres: {
+        Row: {
+          created_at: string
+          entreprise_id: string
+          id: string
+          parametres: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entreprise_id: string
+          id?: string
+          parametres?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entreprise_id?: string
+          id?: string
+          parametres?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paie_parametres_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: true
+            referencedRelation: "entreprises"
             referencedColumns: ["id"]
           },
         ]
