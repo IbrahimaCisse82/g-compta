@@ -87,6 +87,7 @@ const PAGES: Record<string, React.ComponentType> = {
   immobilisations: ImmobilisationsPage,
   facturation: FacturationPage,
   fournisseurs: FournisseursPage,
+  paie: PaiePage,
 };
 
 function ClientsPage() {
