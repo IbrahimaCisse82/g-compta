@@ -30,6 +30,7 @@ import CloturePage from '@/pages/CloturePage';
 import ImmobilisationsPage from '@/pages/ImmobilisationsPage';
 import FacturationPage from '@/pages/FacturationPage';
 import FournisseursPage from '@/pages/FournisseursPage';
+import PaiePage from '@/pages/PaiePage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
