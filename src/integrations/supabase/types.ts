@@ -61,6 +61,74 @@ export type Database = {
           },
         ]
       }
+      articles: {
+        Row: {
+          actif: boolean
+          code: string
+          compte_achat: string
+          compte_stock: string
+          compte_variation: string
+          compte_vente: string
+          created_at: string
+          designation: string
+          entreprise_id: string
+          id: string
+          methode_valorisation: string
+          notes: string | null
+          prix_achat_moyen: number
+          quantite_stock: number
+          stock_minimum: number
+          unite: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          code: string
+          compte_achat?: string
+          compte_stock?: string
+          compte_variation?: string
+          compte_vente?: string
+          created_at?: string
+          designation: string
+          entreprise_id: string
+          id?: string
+          methode_valorisation?: string
+          notes?: string | null
+          prix_achat_moyen?: number
+          quantite_stock?: number
+          stock_minimum?: number
+          unite?: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          code?: string
+          compte_achat?: string
+          compte_stock?: string
+          compte_variation?: string
+          compte_vente?: string
+          created_at?: string
+          designation?: string
+          entreprise_id?: string
+          id?: string
+          methode_valorisation?: string
+          notes?: string | null
+          prix_achat_moyen?: number
+          quantite_stock?: number
+          stock_minimum?: number
+          unite?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "articles_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       axes_analytiques: {
         Row: {
           actif: boolean
@@ -1393,6 +1461,79 @@ export type Database = {
         }
         Relationships: []
       }
+      mouvements_stock: {
+        Row: {
+          article_id: string
+          created_at: string
+          cump_apres: number
+          date_mvt: string
+          entreprise_id: string
+          exercice_id: string | null
+          id: string
+          montant: number
+          notes: string | null
+          prix_unitaire: number
+          qte_apres: number
+          quantite: number
+          reference: string | null
+          type_mvt: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          cump_apres?: number
+          date_mvt: string
+          entreprise_id: string
+          exercice_id?: string | null
+          id?: string
+          montant?: number
+          notes?: string | null
+          prix_unitaire?: number
+          qte_apres?: number
+          quantite: number
+          reference?: string | null
+          type_mvt: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          cump_apres?: number
+          date_mvt?: string
+          entreprise_id?: string
+          exercice_id?: string | null
+          id?: string
+          montant?: number
+          notes?: string | null
+          prix_unitaire?: number
+          qte_apres?: number
+          quantite?: number
+          reference?: string | null
+          type_mvt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mouvements_stock_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mouvements_stock_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mouvements_stock_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes_annexes_data: {
         Row: {
           created_at: string
@@ -1534,6 +1675,81 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      provisions: {
+        Row: {
+          code: string
+          compte_dotation: string
+          compte_provision: string
+          compte_reprise: string
+          created_at: string
+          date_constitution: string
+          date_reprise: string | null
+          entreprise_id: string
+          exercice_id: string | null
+          id: string
+          libelle: string
+          montant_actuel: number
+          montant_initial: number
+          nature: string
+          notes: string | null
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          compte_dotation: string
+          compte_provision: string
+          compte_reprise: string
+          created_at?: string
+          date_constitution: string
+          date_reprise?: string | null
+          entreprise_id: string
+          exercice_id?: string | null
+          id?: string
+          libelle: string
+          montant_actuel?: number
+          montant_initial?: number
+          nature: string
+          notes?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          compte_dotation?: string
+          compte_provision?: string
+          compte_reprise?: string
+          created_at?: string
+          date_constitution?: string
+          date_reprise?: string | null
+          entreprise_id?: string
+          exercice_id?: string | null
+          id?: string
+          libelle?: string
+          montant_actuel?: number
+          montant_initial?: number
+          nature?: string
+          notes?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provisions_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provisions_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tva_parametrage: {
         Row: {
