@@ -32,6 +32,8 @@ import FacturationPage from '@/pages/FacturationPage';
 import FournisseursPage from '@/pages/FournisseursPage';
 import PaiePage from '@/pages/PaiePage';
 import EcheancierPage from '@/pages/EcheancierPage';
+import StocksPage from '@/pages/StocksPage';
+import ProvisionsPage from '@/pages/ProvisionsPage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -48,8 +50,10 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'rapprochement', icon: '🏦', label: 'Rapprochement' },
     { id: 'import', icon: '📥', label: 'Import FEC/CSV' },
     { id: 'immobilisations', icon: '🏭', label: 'Immobilisations' },
+    { id: 'stocks', icon: '📦', label: 'Stocks & Inventaire' },
+    { id: 'provisions', icon: '🛡️', label: 'Provisions & Dépréc.' },
     { id: 'facturation', icon: '🧾', label: 'Facturation Client' },
-    { id: 'fournisseurs', icon: '📦', label: 'Facturation Fournisseur' },
+    { id: 'fournisseurs', icon: '📥', label: 'Facturation Fournisseur' },
     { id: 'paie', icon: '💼', label: 'Paie & Bulletins' },
   ]},
   { section: 'États Financiers', items: [
@@ -91,6 +95,8 @@ const PAGES: Record<string, React.ComponentType> = {
   fournisseurs: FournisseursPage,
   paie: PaiePage,
   echeancier: EcheancierPage,
+  stocks: StocksPage,
+  provisions: ProvisionsPage,
 };
 
 function ClientsPage() {
