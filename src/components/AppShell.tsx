@@ -31,6 +31,7 @@ import ImmobilisationsPage from '@/pages/ImmobilisationsPage';
 import FacturationPage from '@/pages/FacturationPage';
 import FournisseursPage from '@/pages/FournisseursPage';
 import PaiePage from '@/pages/PaiePage';
+import EcheancierPage from '@/pages/EcheancierPage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -62,6 +63,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'analytique', icon: '📊', label: 'Comptabilité Analytique' },
     { id: 'budget', icon: '💰', label: 'Gestion Budgétaire' },
     { id: 'tva', icon: '🧾', label: 'TVA & Fiscalité' },
+    { id: 'echeancier', icon: '📅', label: 'Échéancier Fiscal' },
     { id: 'balance_agee', icon: '⏳', label: 'Balance Âgée' },
     { id: 'audit', icon: '🔍', label: "Piste d'Audit" },
   ]},
@@ -88,6 +90,7 @@ const PAGES: Record<string, React.ComponentType> = {
   facturation: FacturationPage,
   fournisseurs: FournisseursPage,
   paie: PaiePage,
+  echeancier: EcheancierPage,
 };
 
 function ClientsPage() {
