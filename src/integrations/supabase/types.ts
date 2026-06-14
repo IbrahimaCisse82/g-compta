@@ -481,6 +481,122 @@ export type Database = {
         }
         Relationships: []
       }
+      echeances_fiscales: {
+        Row: {
+          created_at: string
+          date_declaration: string | null
+          date_limite: string
+          date_paiement: string | null
+          entreprise_id: string
+          exercice_id: string | null
+          id: string
+          libelle: string
+          montant_du: number | null
+          montant_paye: number | null
+          notes: string | null
+          periode: string
+          reference_paiement: string | null
+          statut: string
+          type_declaration: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_declaration?: string | null
+          date_limite: string
+          date_paiement?: string | null
+          entreprise_id: string
+          exercice_id?: string | null
+          id?: string
+          libelle: string
+          montant_du?: number | null
+          montant_paye?: number | null
+          notes?: string | null
+          periode: string
+          reference_paiement?: string | null
+          statut?: string
+          type_declaration: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_declaration?: string | null
+          date_limite?: string
+          date_paiement?: string | null
+          entreprise_id?: string
+          exercice_id?: string | null
+          id?: string
+          libelle?: string
+          montant_du?: number | null
+          montant_paye?: number | null
+          notes?: string | null
+          periode?: string
+          reference_paiement?: string | null
+          statut?: string
+          type_declaration?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "echeances_fiscales_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "echeances_fiscales_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      echeances_modeles: {
+        Row: {
+          actif: boolean
+          created_at: string
+          entreprise_id: string
+          id: string
+          jour_limite: number
+          libelle: string
+          periodicite: string
+          type_declaration: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          entreprise_id: string
+          id?: string
+          jour_limite?: number
+          libelle: string
+          periodicite: string
+          type_declaration: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          entreprise_id?: string
+          id?: string
+          jour_limite?: number
+          libelle?: string
+          periodicite?: string
+          type_declaration?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "echeances_modeles_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ecritures_abonnement: {
         Row: {
           actif: boolean
