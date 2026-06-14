@@ -119,6 +119,54 @@ export default function ImmobilisationsPage() {
     else toast.success(`Dotation ${fmt(row.dotation)} comptabilisée (pièce ${piece})`);
   };
 
+  // Comptabiliser CESSION d'immobilisation (SYSCOHADA HAO)
+  const comptabiliserCession = async (it: ImmoRow) => {
+    if (!exercice || !entreprise || !canWrite) return;
+    if (!it.date_cession || it.prix_cession == null) {
+      toast.error('Renseignez date et prix de cession dans la fiche'); return;
+    }
+    const prix = Number(it.prix_cession);
+    const vo = Number(it.valeur_origine);
+    // cumul amortissements à la date de cession (jusqu'à année de cession incluse)
+    const anneeCession = new Date(it.date_cession).getFullYear();
+    const plan = calcPlan(it);
+    const cumul = plan.filter(p => p.annee <= anneeCession).reduce((s, p) => s + p.dotation, 0);
+    const vnc = vo - cumul;
+    const compteAmort = it.compte_amort || compteAmortFrom(it.compte_immo);
+    const piece = `CES-${it.code}-${anneeCession}`;
+    const lines: any[] = [
+      // 1. Sortie de l'immobilisation : 81X DEBIT VNC + 28XX DEBIT cumul = 2XX CREDIT valeur origine
+      { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: it.date_cession,
+        piece, journal_code: 'OD', libelle: `Sortie immo ${it.code} (VCEAC)`,
+        compte: '812', intitule: 'Valeurs comptables des cessions d\'immo corporelles',
+        debit: Math.round(vnc), credit: 0 },
+      { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: it.date_cession,
+        piece, journal_code: 'OD', libelle: `Annulation amortissements ${it.code}`,
+        compte: compteAmort, intitule: 'Amortissements cumulés',
+        debit: Math.round(cumul), credit: 0 },
+      { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: it.date_cession,
+        piece, journal_code: 'OD', libelle: `Sortie ${it.code} ${it.libelle}`,
+        compte: it.compte_immo, intitule: 'Immobilisation cédée',
+        debit: 0, credit: Math.round(vo) },
+      // 2. Encaissement / créance sur cession : 485 DEBIT prix = 82X CREDIT prix
+      { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: it.date_cession,
+        piece, journal_code: 'OD', libelle: `Créance sur cession ${it.code}`,
+        compte: '485', intitule: 'Créances sur cessions d\'immobilisations',
+        debit: Math.round(prix), credit: 0 },
+      { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: it.date_cession,
+        piece, journal_code: 'OD', libelle: `Produit cession ${it.code}`,
+        compte: '822', intitule: 'Produits de cessions d\'immobilisations corporelles',
+        debit: 0, credit: Math.round(prix) },
+    ];
+    const { error } = await supabase.from('journal').insert(lines);
+    if (error) { toast.error(error.message); return; }
+    await supabase.from('immobilisations').update({ statut: 'cede' }).eq('id', it.id);
+    const pmv = prix - vnc;
+    toast.success(`Cession comptabilisée (${piece}). ${pmv >= 0 ? 'Plus' : 'Moins'}-value HAO : ${fmt(Math.abs(pmv))} FCFA`);
+    load();
+  };
+
+
   const totals = useMemo(() => {
     const annee = exercice?.annee || new Date().getFullYear();
     let vo = 0, dot = 0, cumul = 0, vnc = 0;
@@ -200,6 +248,10 @@ export default function ImmobilisationsPage() {
                         className="text-[10px] px-2 py-1 rounded border border-border hover:bg-bg3">📊</button>
                       {canWrite && <button onClick={() => comptabiliserDotation(it)} title="Comptabiliser dotation"
                         className="text-[10px] px-2 py-1 rounded border border-border hover:bg-bg3">💾</button>}
+                      {canWrite && it.statut !== 'cede' && it.date_cession && (
+                        <button onClick={() => comptabiliserCession(it)} title="Comptabiliser cession HAO"
+                          className="text-[10px] px-2 py-1 rounded border border-purple-500/40 text-purple-500 hover:bg-purple-500/10">💸</button>
+                      )}
                       {canWrite && <button onClick={() => edit(it)}
                         className="text-[10px] px-2 py-1 rounded border border-border hover:bg-bg3">✏️</button>}
                       {canDelete && <button onClick={() => remove(it.id)}
