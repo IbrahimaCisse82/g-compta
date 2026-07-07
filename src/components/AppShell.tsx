@@ -34,6 +34,9 @@ import PaiePage from '@/pages/PaiePage';
 import EcheancierPage from '@/pages/EcheancierPage';
 import StocksPage from '@/pages/StocksPage';
 import ProvisionsPage from '@/pages/ProvisionsPage';
+import DocumentsPage from '@/pages/DocumentsPage';
+import ValidationPage from '@/pages/ValidationPage';
+import PortailPage from '@/pages/PortailPage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
