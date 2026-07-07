@@ -63,6 +63,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
   { section: 'GED & Collaboration', items: [
     { id: 'documents', icon: '📁', label: 'Documents (GED)' },
     { id: 'portail', icon: '🌐', label: 'Portail Client' },
+  ]},
   { section: 'États Financiers', items: [
     { id: 'bilan', icon: '🏛️', label: 'Bilan', shortcut: 'Alt+I' },
     { id: 'resultat', icon: '📊', label: 'Compte de Résultat', shortcut: 'Alt+R' },
