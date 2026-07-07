@@ -56,7 +56,8 @@ export default function PortailPage() {
 
   const togglePerm = async (a: Acces, field: keyof Acces) => {
     if (demo) return;
-    await supabase.from('portail_acces').update({ [field]: !a[field] }).eq('id', a.id);
+    const patch: Record<string, boolean> = { [field]: !a[field] };
+    await supabase.from('portail_acces').update(patch as never).eq('id', a.id);
     load();
   };
 
