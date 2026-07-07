@@ -105,6 +105,9 @@ const PAGES: Record<string, React.ComponentType> = {
   echeancier: EcheancierPage,
   stocks: StocksPage,
   provisions: ProvisionsPage,
+  documents: DocumentsPage,
+  validation: ValidationPage,
+  portail: PortailPage,
 };
 
 function ClientsPage() {
