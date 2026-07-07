@@ -34,6 +34,9 @@ import PaiePage from '@/pages/PaiePage';
 import EcheancierPage from '@/pages/EcheancierPage';
 import StocksPage from '@/pages/StocksPage';
 import ProvisionsPage from '@/pages/ProvisionsPage';
+import DocumentsPage from '@/pages/DocumentsPage';
+import ValidationPage from '@/pages/ValidationPage';
+import PortailPage from '@/pages/PortailPage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -55,6 +58,11 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'facturation', icon: '🧾', label: 'Facturation Client' },
     { id: 'fournisseurs', icon: '📥', label: 'Facturation Fournisseur' },
     { id: 'paie', icon: '💼', label: 'Paie & Bulletins' },
+    { id: 'validation', icon: '✅', label: 'Validation Écritures' },
+  ]},
+  { section: 'GED & Collaboration', items: [
+    { id: 'documents', icon: '📁', label: 'Documents (GED)' },
+    { id: 'portail', icon: '🌐', label: 'Portail Client' },
   ]},
   { section: 'États Financiers', items: [
     { id: 'bilan', icon: '🏛️', label: 'Bilan', shortcut: 'Alt+I' },
@@ -97,6 +105,9 @@ const PAGES: Record<string, React.ComponentType> = {
   echeancier: EcheancierPage,
   stocks: StocksPage,
   provisions: ProvisionsPage,
+  documents: DocumentsPage,
+  validation: ValidationPage,
+  portail: PortailPage,
 };
 
 function ClientsPage() {
