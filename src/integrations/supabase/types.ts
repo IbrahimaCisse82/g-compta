@@ -549,6 +549,75 @@ export type Database = {
         }
         Relationships: []
       }
+      documents: {
+        Row: {
+          categorie: string | null
+          created_at: string
+          description: string | null
+          entreprise_id: string
+          exercice_id: string | null
+          id: string
+          mime_type: string | null
+          nom: string
+          ref_id: string | null
+          ref_type: string
+          storage_path: string
+          tags: string[] | null
+          taille_octets: number | null
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          categorie?: string | null
+          created_at?: string
+          description?: string | null
+          entreprise_id: string
+          exercice_id?: string | null
+          id?: string
+          mime_type?: string | null
+          nom: string
+          ref_id?: string | null
+          ref_type: string
+          storage_path: string
+          tags?: string[] | null
+          taille_octets?: number | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          categorie?: string | null
+          created_at?: string
+          description?: string | null
+          entreprise_id?: string
+          exercice_id?: string | null
+          id?: string
+          mime_type?: string | null
+          nom?: string
+          ref_id?: string | null
+          ref_type?: string
+          storage_path?: string
+          tags?: string[] | null
+          taille_octets?: number | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       echeances_fiscales: {
         Row: {
           created_at: string
@@ -1327,7 +1396,13 @@ export type Database = {
           intitule: string
           journal_code: string
           libelle: string
+          motif_refus: string | null
           piece: string
+          soumis_le: string | null
+          soumis_par: string | null
+          statut_validation: string
+          valide_le: string | null
+          valide_par: string | null
         }
         Insert: {
           compte: string
@@ -1341,7 +1416,13 @@ export type Database = {
           intitule: string
           journal_code: string
           libelle: string
+          motif_refus?: string | null
           piece: string
+          soumis_le?: string | null
+          soumis_par?: string | null
+          statut_validation?: string
+          valide_le?: string | null
+          valide_par?: string | null
         }
         Update: {
           compte?: string
@@ -1355,7 +1436,13 @@ export type Database = {
           intitule?: string
           journal_code?: string
           libelle?: string
+          motif_refus?: string | null
           piece?: string
+          soumis_le?: string | null
+          soumis_par?: string | null
+          statut_validation?: string
+          valide_le?: string | null
+          valide_par?: string | null
         }
         Relationships: [
           {
@@ -1648,6 +1735,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "plan_comptable_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portail_acces: {
+        Row: {
+          actif: boolean
+          created_at: string
+          derniere_connexion: string | null
+          email: string
+          entreprise_id: string
+          id: string
+          nom: string | null
+          peut_deposer_documents: boolean
+          peut_voir_bilan: boolean
+          peut_voir_documents: boolean
+          peut_voir_factures: boolean
+          peut_voir_resultat: boolean
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          derniere_connexion?: string | null
+          email: string
+          entreprise_id: string
+          id?: string
+          nom?: string | null
+          peut_deposer_documents?: boolean
+          peut_voir_bilan?: boolean
+          peut_voir_documents?: boolean
+          peut_voir_factures?: boolean
+          peut_voir_resultat?: boolean
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          derniere_connexion?: string | null
+          email?: string
+          entreprise_id?: string
+          id?: string
+          nom?: string | null
+          peut_deposer_documents?: boolean
+          peut_voir_bilan?: boolean
+          peut_voir_documents?: boolean
+          peut_voir_factures?: boolean
+          peut_voir_resultat?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portail_acces_entreprise_id_fkey"
             columns: ["entreprise_id"]
             isOneToOne: false
             referencedRelation: "entreprises"
