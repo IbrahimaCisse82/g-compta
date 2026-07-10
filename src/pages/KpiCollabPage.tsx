@@ -18,8 +18,8 @@ interface JournalRow {
   valide_par: string | null;
   statut_validation: string;
   created_at: string;
-  soumis_at: string | null;
-  valide_at: string | null;
+  soumis_le: string | null;
+  valide_le: string | null;
 }
 
 export default function KpiCollabPage() {
@@ -43,7 +43,7 @@ export default function KpiCollabPage() {
     setLoading(true);
 
     let q = supabase.from('journal')
-      .select('soumis_par,valide_par,statut_validation,created_at,soumis_at,valide_at')
+      .select('soumis_par,valide_par,statut_validation,created_at,soumis_le,valide_le')
       .eq('entreprise_id', entreprise.id);
     if (cutoff) q = q.gte('created_at', cutoff);
     const { data: journal } = await q;
@@ -64,8 +64,8 @@ export default function KpiCollabPage() {
         if (j.statut_validation === 'soumis') r.soumises += 1;
         if (j.statut_validation === 'valide') r.validees += 1;
         if (j.statut_validation === 'refuse') r.refusees += 1;
-        if (j.soumis_at && j.valide_at) {
-          const h = (new Date(j.valide_at).getTime() - new Date(j.soumis_at).getTime()) / 3600000;
+        if (j.soumis_le && j.valide_le) {
+          const h = (new Date(j.valide_le).getTime() - new Date(j.soumis_le).getTime()) / 3600000;
           delais[author] = delais[author] || [];
           delais[author].push(h);
         }
