@@ -37,6 +37,7 @@ import ProvisionsPage from '@/pages/ProvisionsPage';
 import DocumentsPage from '@/pages/DocumentsPage';
 import ValidationPage from '@/pages/ValidationPage';
 import PortailPage from '@/pages/PortailPage';
+import KpiCollabPage from '@/pages/KpiCollabPage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
