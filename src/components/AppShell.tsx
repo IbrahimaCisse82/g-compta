@@ -37,12 +37,14 @@ import ProvisionsPage from '@/pages/ProvisionsPage';
 import DocumentsPage from '@/pages/DocumentsPage';
 import ValidationPage from '@/pages/ValidationPage';
 import PortailPage from '@/pages/PortailPage';
+import KpiCollabPage from '@/pages/KpiCollabPage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
     { id: 'dashboard', icon: '◈', label: 'Tableau de bord', shortcut: 'Alt+D' },
     { id: 'clients', icon: '👥', label: 'Mes Clients', cabinet: true },
     { id: 'cabinet_mgmt', icon: '🏛️', label: 'Gestion Cabinet', cabinet: true },
+    { id: 'kpi_collab', icon: '📊', label: 'KPI Collaborateurs', cabinet: true },
   ]},
   { section: 'Comptabilité', items: [
     { id: 'saisie', icon: '✏️', label: "Saisie d'écritures", shortcut: 'Alt+S' },
@@ -108,6 +110,7 @@ const PAGES: Record<string, React.ComponentType> = {
   documents: DocumentsPage,
   validation: ValidationPage,
   portail: PortailPage,
+  kpi_collab: KpiCollabPage,
 };
 
 function ClientsPage() {

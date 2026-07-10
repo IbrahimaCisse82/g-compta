@@ -5,7 +5,7 @@ import { DEMO_ENTREPRISE, DEMO_EXERCICE, DEMO_LBH_BALANCE, DEMO_LBH_JOURNAL, bui
 import { toast } from 'sonner';
 
 export type EnvMode = 'entreprise' | 'cabinet';
-export type PageId = 'dashboard' | 'clients' | 'cabinet_mgmt' | 'journal' | 'balance' | 'grandlivre' | 'bilan' | 'resultat' | 'tft' | 'note34' | 'liasse' | 'rapprochement' | 'saisie' | 'plan' | 'exercices' | 'parametres' | 'balance_agee' | 'audit' | 'import' | 'lettrage' | 'analytique' | 'budget' | 'tva' | 'abonnement' | 'cloture' | 'immobilisations' | 'facturation' | 'fournisseurs' | 'paie' | 'echeancier' | 'stocks' | 'provisions' | 'documents' | 'validation' | 'portail';
+export type PageId = 'dashboard' | 'clients' | 'cabinet_mgmt' | 'kpi_collab' | 'journal' | 'balance' | 'grandlivre' | 'bilan' | 'resultat' | 'tft' | 'note34' | 'liasse' | 'rapprochement' | 'saisie' | 'plan' | 'exercices' | 'parametres' | 'balance_agee' | 'audit' | 'import' | 'lettrage' | 'analytique' | 'budget' | 'tva' | 'abonnement' | 'cloture' | 'immobilisations' | 'facturation' | 'fournisseurs' | 'paie' | 'echeancier' | 'stocks' | 'provisions' | 'documents' | 'validation' | 'portail';
 
 interface AppState {
   env: EnvMode;
