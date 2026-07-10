@@ -44,6 +44,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'dashboard', icon: '◈', label: 'Tableau de bord', shortcut: 'Alt+D' },
     { id: 'clients', icon: '👥', label: 'Mes Clients', cabinet: true },
     { id: 'cabinet_mgmt', icon: '🏛️', label: 'Gestion Cabinet', cabinet: true },
+    { id: 'kpi_collab', icon: '📊', label: 'KPI Collaborateurs', cabinet: true },
   ]},
   { section: 'Comptabilité', items: [
     { id: 'saisie', icon: '✏️', label: "Saisie d'écritures", shortcut: 'Alt+S' },
