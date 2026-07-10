@@ -9,6 +9,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import CguPage from "./pages/CguPage";
 import ConfidentialitePage from "./pages/ConfidentialitePage";
 import ProtectionDonneesPage from "./pages/ProtectionDonneesPage";
+import PortailPublicPage from "./pages/PortailPublicPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
