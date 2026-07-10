@@ -110,6 +110,7 @@ const PAGES: Record<string, React.ComponentType> = {
   documents: DocumentsPage,
   validation: ValidationPage,
   portail: PortailPage,
+  kpi_collab: KpiCollabPage,
 };
 
 function ClientsPage() {
