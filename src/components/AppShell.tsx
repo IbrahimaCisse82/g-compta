@@ -54,6 +54,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'grandlivre', icon: '📖', label: 'Grand Livre', shortcut: 'Alt+G' },
     { id: 'lettrage', icon: '🔗', label: 'Lettrage' },
     { id: 'rapprochement', icon: '🏦', label: 'Rapprochement' },
+    { id: 'mobile_money', icon: '📱', label: 'Mobile Money' },
     { id: 'import', icon: '📥', label: 'Import FEC/CSV' },
     { id: 'immobilisations', icon: '🏭', label: 'Immobilisations' },
     { id: 'stocks', icon: '📦', label: 'Stocks & Inventaire' },
