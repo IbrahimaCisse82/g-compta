@@ -1621,6 +1621,53 @@ export type Database = {
           },
         ]
       }
+      moyens_paiement: {
+        Row: {
+          actif: boolean
+          compte_associe: string
+          created_at: string
+          devise: string
+          entreprise_id: string
+          id: string
+          libelle: string
+          numero: string | null
+          operateur: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          compte_associe: string
+          created_at?: string
+          devise?: string
+          entreprise_id: string
+          id?: string
+          libelle: string
+          numero?: string | null
+          operateur: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          compte_associe?: string
+          created_at?: string
+          devise?: string
+          entreprise_id?: string
+          id?: string
+          libelle?: string
+          numero?: string | null
+          operateur?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moyens_paiement_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes_annexes_data: {
         Row: {
           created_at: string
@@ -1890,6 +1937,85 @@ export type Database = {
             columns: ["exercice_id"]
             isOneToOne: false
             referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions_mm: {
+        Row: {
+          contrepartie: string | null
+          created_at: string
+          date_operation: string
+          entreprise_id: string
+          frais: number
+          id: string
+          journal_id: string | null
+          libelle: string | null
+          montant: number
+          moyen_id: string
+          raw_json: Json | null
+          reference: string | null
+          sens: string
+          statut: string
+          telephone: string | null
+          updated_at: string
+        }
+        Insert: {
+          contrepartie?: string | null
+          created_at?: string
+          date_operation: string
+          entreprise_id: string
+          frais?: number
+          id?: string
+          journal_id?: string | null
+          libelle?: string | null
+          montant: number
+          moyen_id: string
+          raw_json?: Json | null
+          reference?: string | null
+          sens: string
+          statut?: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contrepartie?: string | null
+          created_at?: string
+          date_operation?: string
+          entreprise_id?: string
+          frais?: number
+          id?: string
+          journal_id?: string | null
+          libelle?: string | null
+          montant?: number
+          moyen_id?: string
+          raw_json?: Json | null
+          reference?: string | null
+          sens?: string
+          statut?: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_mm_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_mm_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_mm_moyen_id_fkey"
+            columns: ["moyen_id"]
+            isOneToOne: false
+            referencedRelation: "moyens_paiement"
             referencedColumns: ["id"]
           },
         ]
