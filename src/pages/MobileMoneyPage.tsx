@@ -151,7 +151,12 @@ export default function MobileMoneyPage() {
     const compteContrepartie = t.sens === 'entree' ? '411' : '401';
     const piece = `MM-${(t.reference || t.id).slice(0, 8)}`;
     const lib = `${opInfo(moyen.operateur).label} — ${t.libelle || t.contrepartie || (t.sens === 'entree' ? 'Encaissement' : 'Paiement')}`;
-    const lines: Array<Record<string, unknown>> = [];
+    type JLine = {
+      entreprise_id: string; exercice_id: string; date_ecriture: string;
+      piece: string; journal_code: string; libelle: string;
+      compte: string; intitule: string; debit: number; credit: number;
+    };
+    const lines: JLine[] = [];
     if (t.sens === 'entree') {
       // Débit MM (521), Crédit 411
       lines.push({
