@@ -38,6 +38,7 @@ import DocumentsPage from '@/pages/DocumentsPage';
 import ValidationPage from '@/pages/ValidationPage';
 import PortailPage from '@/pages/PortailPage';
 import KpiCollabPage from '@/pages/KpiCollabPage';
+import MobileMoneyPage from '@/pages/MobileMoneyPage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -53,6 +54,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'grandlivre', icon: '📖', label: 'Grand Livre', shortcut: 'Alt+G' },
     { id: 'lettrage', icon: '🔗', label: 'Lettrage' },
     { id: 'rapprochement', icon: '🏦', label: 'Rapprochement' },
+    { id: 'mobile_money', icon: '📱', label: 'Mobile Money' },
     { id: 'import', icon: '📥', label: 'Import FEC/CSV' },
     { id: 'immobilisations', icon: '🏭', label: 'Immobilisations' },
     { id: 'stocks', icon: '📦', label: 'Stocks & Inventaire' },
@@ -111,6 +113,7 @@ const PAGES: Record<string, React.ComponentType> = {
   validation: ValidationPage,
   portail: PortailPage,
   kpi_collab: KpiCollabPage,
+  mobile_money: MobileMoneyPage,
 };
 
 function ClientsPage() {
