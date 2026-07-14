@@ -10,6 +10,7 @@ import CguPage from "./pages/CguPage";
 import ConfidentialitePage from "./pages/ConfidentialitePage";
 import ProtectionDonneesPage from "./pages/ProtectionDonneesPage";
 import PortailPublicPage from "./pages/PortailPublicPage";
+import TarifsPage from "./pages/TarifsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
