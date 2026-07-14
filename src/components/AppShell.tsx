@@ -39,6 +39,7 @@ import ValidationPage from '@/pages/ValidationPage';
 import PortailPage from '@/pages/PortailPage';
 import KpiCollabPage from '@/pages/KpiCollabPage';
 import MobileMoneyPage from '@/pages/MobileMoneyPage';
+import FacturesDgidPage from '@/pages/FacturesDgidPage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -60,6 +61,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'stocks', icon: '📦', label: 'Stocks & Inventaire' },
     { id: 'provisions', icon: '🛡️', label: 'Provisions & Dépréc.' },
     { id: 'facturation', icon: '🧾', label: 'Facturation Client' },
+    { id: 'factures_dgid', icon: '📄', label: 'e-Facturation DGID' },
     { id: 'fournisseurs', icon: '📥', label: 'Facturation Fournisseur' },
     { id: 'paie', icon: '💼', label: 'Paie & Bulletins' },
     { id: 'validation', icon: '✅', label: 'Validation Écritures' },
@@ -114,6 +116,7 @@ const PAGES: Record<string, React.ComponentType> = {
   portail: PortailPage,
   kpi_collab: KpiCollabPage,
   mobile_money: MobileMoneyPage,
+  factures_dgid: FacturesDgidPage,
 };
 
 function ClientsPage() {
