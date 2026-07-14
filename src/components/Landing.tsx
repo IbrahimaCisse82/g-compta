@@ -38,7 +38,8 @@ export default function Landing() {
         {/* Nav */}
         <nav className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-4">
           <span className="font-serif text-xl text-primary">G-Compta</span>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 text-xs">
+            <Link to="/tarifs" className="text-fg2 hover:text-primary transition-colors">Tarifs</Link>
             <span className="text-[10px] text-fg3 font-mono hidden sm:inline">par GROW HUB SARL</span>
           </div>
         </nav>
@@ -118,6 +119,39 @@ export default function Landing() {
                 </button>
               </>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING PREVIEW */}
+      <section className="px-5 py-16 border-t border-border">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold font-mono tracking-wider uppercase border border-primary/30 text-primary bg-primary/5 mb-3">Tarifs transparents · FCFA</span>
+            <h2 className="font-serif text-2xl sm:text-3xl text-foreground mb-2">3 formules, essai 14 jours gratuit</h2>
+            <p className="text-sm text-fg3">Aucun concurrent local n'affiche des prix aussi clairs. Sans engagement, sans carte bancaire.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { code: 'starter', nom: 'Starter', prix: '15 000', pop: false, desc: 'TPE / auto-entrepreneur' },
+              { code: 'pro', nom: 'Pro', prix: '35 000', pop: true, desc: 'PME (paie, immo, e-facture)' },
+              { code: 'cabinet', nom: 'Cabinet', prix: '75 000', pop: false, desc: 'Experts-comptables illimités' },
+            ].map(p => (
+              <div key={p.code} className={`rounded-xl border p-5 ${p.pop ? 'border-primary bg-primary/5' : 'border-border bg-bg2'}`}>
+                <div className="font-serif text-lg text-foreground">{p.nom}</div>
+                <div className="text-[10px] text-fg3 mb-3">{p.desc}</div>
+                <div className="mb-3">
+                  <span className="font-serif text-2xl text-primary">{p.prix}</span>
+                  <span className="text-xs text-fg3 ml-1">F/mois</span>
+                </div>
+                <Link to="/tarifs" className={`block text-center text-xs py-2 rounded-lg font-semibold ${p.pop ? 'bg-primary text-primary-foreground' : 'bg-bg3 border border-border'}`}>
+                  Voir le détail
+                </Link>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-6">
+            <Link to="/tarifs" className="text-xs text-primary hover:underline font-semibold">→ Comparatif complet & FAQ</Link>
           </div>
         </div>
       </section>

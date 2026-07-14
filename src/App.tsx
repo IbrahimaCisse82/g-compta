@@ -10,6 +10,7 @@ import CguPage from "./pages/CguPage";
 import ConfidentialitePage from "./pages/ConfidentialitePage";
 import ProtectionDonneesPage from "./pages/ProtectionDonneesPage";
 import PortailPublicPage from "./pages/PortailPublicPage";
+import TarifsPage from "./pages/TarifsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/confidentialite" element={<ConfidentialitePage />} />
             <Route path="/protection-donnees" element={<ProtectionDonneesPage />} />
             <Route path="/portail" element={<PortailPublicPage />} />
+            <Route path="/tarifs" element={<TarifsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
