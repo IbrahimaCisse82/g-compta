@@ -116,6 +116,7 @@ const PAGES: Record<string, React.ComponentType> = {
   portail: PortailPage,
   kpi_collab: KpiCollabPage,
   mobile_money: MobileMoneyPage,
+  factures_dgid: FacturesDgidPage,
 };
 
 function ClientsPage() {
