@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      abonnements: {
+        Row: {
+          created_at: string
+          date_debut: string
+          date_fin: string | null
+          entreprise_id: string
+          essai_fin: string | null
+          id: string
+          plan_id: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_debut?: string
+          date_fin?: string | null
+          entreprise_id: string
+          essai_fin?: string | null
+          id?: string
+          plan_id: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_debut?: string
+          date_fin?: string | null
+          entreprise_id?: string
+          essai_fin?: string | null
+          id?: string
+          plan_id?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "abonnements_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abonnements_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans_abonnement"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       amortissements: {
         Row: {
           annee: number
@@ -1901,6 +1952,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plans_abonnement: {
+        Row: {
+          actif: boolean
+          code: string
+          created_at: string
+          description: string | null
+          features: Json
+          id: string
+          limites: Json
+          nom: string
+          ordre: number
+          periodicite: string
+          populaire: boolean
+          prix_fcfa: number
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          code: string
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          limites?: Json
+          nom: string
+          ordre?: number
+          periodicite?: string
+          populaire?: boolean
+          prix_fcfa: number
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          code?: string
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          limites?: Json
+          nom?: string
+          ordre?: number
+          periodicite?: string
+          populaire?: boolean
+          prix_fcfa?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       portail_acces: {
         Row: {
