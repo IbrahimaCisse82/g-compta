@@ -61,6 +61,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'stocks', icon: '📦', label: 'Stocks & Inventaire' },
     { id: 'provisions', icon: '🛡️', label: 'Provisions & Dépréc.' },
     { id: 'facturation', icon: '🧾', label: 'Facturation Client' },
+    { id: 'factures_dgid', icon: '📄', label: 'e-Facturation DGID' },
     { id: 'fournisseurs', icon: '📥', label: 'Facturation Fournisseur' },
     { id: 'paie', icon: '💼', label: 'Paie & Bulletins' },
     { id: 'validation', icon: '✅', label: 'Validation Écritures' },
