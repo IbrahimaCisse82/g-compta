@@ -549,6 +549,98 @@ export type Database = {
         }
         Relationships: []
       }
+      dgid_config: {
+        Row: {
+          actif: boolean
+          certificat: string | null
+          created_at: string
+          endpoint: string | null
+          entreprise_id: string
+          id: string
+          mode: string
+          ninea_transmetteur: string | null
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          certificat?: string | null
+          created_at?: string
+          endpoint?: string | null
+          entreprise_id: string
+          id?: string
+          mode?: string
+          ninea_transmetteur?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          certificat?: string | null
+          created_at?: string
+          endpoint?: string | null
+          entreprise_id?: string
+          id?: string
+          mode?: string
+          ninea_transmetteur?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dgid_config_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: true
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dgid_transmissions: {
+        Row: {
+          action: string
+          created_at: string
+          entreprise_id: string
+          facture_id: string
+          id: string
+          payload: Json | null
+          response: Json | null
+          statut: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entreprise_id: string
+          facture_id: string
+          id?: string
+          payload?: Json | null
+          response?: Json | null
+          statut: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entreprise_id?: string
+          facture_id?: string
+          id?: string
+          payload?: Json | null
+          response?: Json | null
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dgid_transmissions_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dgid_transmissions_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           categorie: string | null
@@ -1015,18 +1107,25 @@ export type Database = {
           created_at: string
           date_echeance: string | null
           date_facture: string
+          date_transmission: string | null
+          dgid_error: string | null
+          dgid_mode: string
           entreprise_id: string
           exercice_id: string
+          hash_certif: string | null
           id: string
           notes: string | null
           numero: string
           objet: string | null
+          qr_code: string | null
           statut: string
+          statut_dgid: string
           taux_tva: number
           total_ht: number
           total_ttc: number
           total_tva: number
           updated_at: string
+          uuid_dgid: string | null
         }
         Insert: {
           client_id: string
@@ -1035,18 +1134,25 @@ export type Database = {
           created_at?: string
           date_echeance?: string | null
           date_facture?: string
+          date_transmission?: string | null
+          dgid_error?: string | null
+          dgid_mode?: string
           entreprise_id: string
           exercice_id: string
+          hash_certif?: string | null
           id?: string
           notes?: string | null
           numero: string
           objet?: string | null
+          qr_code?: string | null
           statut?: string
+          statut_dgid?: string
           taux_tva?: number
           total_ht?: number
           total_ttc?: number
           total_tva?: number
           updated_at?: string
+          uuid_dgid?: string | null
         }
         Update: {
           client_id?: string
@@ -1055,18 +1161,25 @@ export type Database = {
           created_at?: string
           date_echeance?: string | null
           date_facture?: string
+          date_transmission?: string | null
+          dgid_error?: string | null
+          dgid_mode?: string
           entreprise_id?: string
           exercice_id?: string
+          hash_certif?: string | null
           id?: string
           notes?: string | null
           numero?: string
           objet?: string | null
+          qr_code?: string | null
           statut?: string
+          statut_dgid?: string
           taux_tva?: number
           total_ht?: number
           total_ttc?: number
           total_tva?: number
           updated_at?: string
+          uuid_dgid?: string | null
         }
         Relationships: []
       }
