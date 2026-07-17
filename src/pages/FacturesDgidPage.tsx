@@ -90,6 +90,13 @@ export default function FacturesDgidPage() {
     }
   };
 
+  const openHistory = async (f: Facture) => {
+    setHistoryFor(f);
+    const { data } = await supabase.from('dgid_transmissions').select('*')
+      .eq('facture_id', f.id).order('created_at', { ascending: false });
+    setHistoryRows((data as DgidTx[]) || []);
+  };
+
   const stats = {
     total: factures.length,
     non_transmise: factures.filter(f => f.statut_dgid === 'non_transmise').length,
