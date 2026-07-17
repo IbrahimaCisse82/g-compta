@@ -81,8 +81,8 @@ Deno.serve(async (req) => {
 
     if (section === 'factures' && acces.peut_voir_factures) {
       const { data: factures } = await supabase.from('factures')
-        .select('id,numero,date_emission,date_echeance,statut,total_ttc,total_ht,client_nom')
-        .eq('entreprise_id', entreprise_id).order('date_emission', { ascending: false }).limit(200);
+        .select('id,numero,date_facture,date_echeance,statut,total_ttc,total_ht,client:clients(nom,ninea)')
+        .eq('entreprise_id', entreprise_id).order('date_facture', { ascending: false }).limit(200);
       payload.factures = factures || [];
     }
 
