@@ -36,6 +36,11 @@ const STATUT_LABEL: Record<string, { label: string; color: string }> = {
   rejetee: { label: '✕ Rejetée', color: 'text-destructive' },
 };
 
+interface DgidTx {
+  id: string; facture_id: string; action: string; statut: string;
+  payload: any; response: any; created_at: string;
+}
+
 export default function FacturesDgidPage() {
   const { entreprise } = useApp();
   const [factures, setFactures] = useState<Facture[]>([]);
@@ -43,6 +48,8 @@ export default function FacturesDgidPage() {
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [showConfig, setShowConfig] = useState(false);
+  const [historyFor, setHistoryFor] = useState<Facture | null>(null);
+  const [historyRows, setHistoryRows] = useState<DgidTx[]>([]);
 
   const load = useCallback(async () => {
     if (!entreprise) return;
@@ -81,6 +88,13 @@ export default function FacturesDgidPage() {
     } finally {
       setBusy(null);
     }
+  };
+
+  const openHistory = async (f: Facture) => {
+    setHistoryFor(f);
+    const { data } = await supabase.from('dgid_transmissions').select('*')
+      .eq('facture_id', f.id).order('created_at', { ascending: false });
+    setHistoryRows((data as DgidTx[]) || []);
   };
 
   const stats = {
@@ -152,7 +166,10 @@ export default function FacturesDgidPage() {
                       <td className={`px-3 py-2 font-semibold ${s.color}`}>{s.label}</td>
                       <td className="px-3 py-2 font-mono text-[10px] text-fg3">{f.uuid_dgid ? f.uuid_dgid.slice(0, 8) + '…' : '—'}</td>
                       <td className="px-3 py-2 text-[10px] text-fg3">{f.date_transmission ? new Date(f.date_transmission).toLocaleString() : '—'}</td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-3 py-2 text-right whitespace-nowrap">
+                        <button onClick={() => openHistory(f)} className="text-[10px] mr-2 text-fg2 hover:text-primary underline">
+                          Historique
+                        </button>
                         {f.statut_dgid === 'acceptee' ? (
                           <span className="text-[10px] text-accent">✓ conforme</span>
                         ) : (
@@ -211,6 +228,43 @@ export default function FacturesDgidPage() {
               <button onClick={() => setShowConfig(false)} className="text-xs px-3 py-1.5 border border-border rounded">Annuler</button>
               <button onClick={saveConfig} className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded">Enregistrer</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {historyFor && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setHistoryFor(null)}>
+          <div className="bg-bg2 border border-border rounded-xl p-5 w-[720px] max-w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-serif text-base">📜 Historique DGID — {historyFor.numero}</h3>
+              <button onClick={() => setHistoryFor(null)} className="text-fg3 hover:text-foreground">✕</button>
+            </div>
+            {historyRows.length === 0 ? (
+              <div className="text-center py-8 text-fg3 text-xs">Aucune transmission enregistrée</div>
+            ) : (
+              <table className="w-full text-xs">
+                <thead className="bg-bg3 text-[10px] uppercase font-mono text-fg3">
+                  <tr>
+                    <th className="text-left px-2 py-1.5">Date</th>
+                    <th className="text-left px-2 py-1.5">Action</th>
+                    <th className="text-left px-2 py-1.5">Statut</th>
+                    <th className="text-left px-2 py-1.5">Réponse</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyRows.map(h => (
+                    <tr key={h.id} className="border-t border-border align-top">
+                      <td className="px-2 py-1.5 font-mono text-[10px]">{new Date(h.created_at).toLocaleString()}</td>
+                      <td className="px-2 py-1.5">{h.action}</td>
+                      <td className={`px-2 py-1.5 font-semibold ${h.statut === 'acceptee' ? 'text-accent' : h.statut === 'rejetee' ? 'text-destructive' : 'text-primary'}`}>{h.statut}</td>
+                      <td className="px-2 py-1.5 font-mono text-[9px] text-fg3 max-w-[300px] truncate" title={JSON.stringify(h.response)}>
+                        {JSON.stringify(h.response)?.slice(0, 100)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
