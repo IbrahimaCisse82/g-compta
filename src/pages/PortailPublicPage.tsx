@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-type Section = 'accueil' | 'bilan' | 'resultat' | 'documents' | 'factures';
+type Section = 'accueil' | 'bilan' | 'resultat' | 'documents' | 'factures' | 'depot';
 
 interface PortailData {
   permissions: {
@@ -13,8 +13,8 @@ interface PortailData {
   entreprise: { nom: string; sigle?: string; ninea?: string; rccm?: string; adresse?: string; tel?: string; monnaie?: string } | null;
   exercice: { annee: number; date_debut: string; date_fin: string; statut: string } | null;
   balance?: Array<{ compte: string; intitule: string; sfd: number; sfc: number }>;
-  documents?: Array<{ id: string; nom: string; categorie: string; created_at: string; signed_url: string | null; file_size: number }>;
-  factures?: Array<{ id: string; numero: string; date_emission: string; date_echeance: string; statut: string; total_ttc: number; client_nom: string }>;
+  documents?: Array<{ id: string; nom: string; categorie: string; created_at: string; signed_url: string | null; taille_octets: number; source?: string; statut_validation?: string }>;
+  factures?: Array<{ id: string; numero: string; date_facture: string; date_echeance: string; statut: string; total_ttc: number; client: { nom: string; ninea?: string } | null }>;
 }
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n));
@@ -29,22 +29,35 @@ export default function PortailPublicPage() {
   const [section, setSection] = useState<Section>('accueil');
   const [data, setData] = useState<PortailData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadCat, setUploadCat] = useState('Justificatif');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const invoke = useCallback(async (payload: Record<string, unknown>) => {
+    const { data: res, error } = await supabase.functions.invoke('portail-public', {
+      body: { entreprise_id: entrepriseId, email, ...payload },
+    });
+    if (error || (res && (res as { error?: string }).error)) {
+      const msg = (res as { error?: string })?.error || error?.message || 'Accès refusé';
+      throw new Error(msg);
+    }
+    return res as any;
+  }, [entrepriseId, email]);
 
   const fetchSection = useCallback(async (sec: Section) => {
     if (!entrepriseId || !email) return;
     setLoading(true);
-    const { data: res, error } = await supabase.functions.invoke('portail-public', {
-      body: { entreprise_id: entrepriseId, email, section: sec === 'accueil' ? null : sec },
-    });
-    setLoading(false);
-    if (error || (res && (res as { error?: string }).error)) {
-      toast.error((res as { error?: string })?.error || error?.message || 'Accès refusé');
+    try {
+      const res = await invoke({ section: (sec === 'accueil' || sec === 'depot') ? null : sec });
+      setData(res as PortailData);
+      setAuthed(true);
+    } catch (e: any) {
+      toast.error(e.message);
       setAuthed(false);
-      return;
+    } finally {
+      setLoading(false);
     }
-    setData(res as PortailData);
-    setAuthed(true);
-  }, [entrepriseId, email]);
+  }, [entrepriseId, email, invoke]);
 
   useEffect(() => {
     if (emailQ && entrepriseId) fetchSection('accueil');
@@ -57,7 +70,37 @@ export default function PortailPublicPage() {
 
   const changeSection = (sec: Section) => {
     setSection(sec);
-    if (sec !== 'accueil') fetchSection(sec);
+    if (sec === 'bilan' || sec === 'resultat' || sec === 'documents' || sec === 'factures') fetchSection(sec);
+  };
+
+  const handleUpload = async (file: File) => {
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) { toast.error('Fichier > 20 Mo'); return; }
+    setUploading(true);
+    try {
+      const step1 = await invoke({
+        action: 'upload_document_url',
+        filename: file.name, mime_type: file.type, size: file.size, categorie: uploadCat,
+      });
+      // Upload direct au storage via signed URL
+      const putRes = await fetch(step1.upload_url, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,
+      });
+      if (!putRes.ok) throw new Error(`Upload échoué (${putRes.status})`);
+      await invoke({
+        action: 'finalize_upload',
+        path: step1.path, filename: file.name,
+        mime_type: file.type, size: file.size, categorie: uploadCat,
+      });
+      toast.success('Document déposé — votre cabinet a été notifié');
+      if (fileRef.current) fileRef.current.value = '';
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur upload');
+    } finally {
+      setUploading(false);
+    }
   };
 
   if (!entrepriseId) {
@@ -99,17 +142,16 @@ export default function PortailPublicPage() {
     { id: 'resultat', label: 'Résultat', icon: '📊', show: !!perms?.resultat },
     { id: 'documents', label: 'Documents', icon: '📁', show: !!perms?.documents },
     { id: 'factures', label: 'Factures', icon: '🧾', show: !!perms?.factures },
+    { id: 'depot', label: 'Déposer', icon: '⬆️', show: !!perms?.depot },
   ];
 
-  // Compute simple bilan/resultat totals from balance
-  const bilanRows = (data?.balance || []).filter(b => b.compte.startsWith('1') || b.compte.startsWith('2') || b.compte.startsWith('3') || b.compte.startsWith('4') || b.compte.startsWith('5'));
-  const resultatRows = (data?.balance || []).filter(b => b.compte.startsWith('6') || b.compte.startsWith('7'));
+  const bilanRows = (data?.balance || []).filter(b => /^[1-5]/.test(b.compte));
+  const resultatRows = (data?.balance || []).filter(b => /^[67]/.test(b.compte));
   const totalCharges = resultatRows.filter(r => r.compte.startsWith('6')).reduce((s, r) => s + (r.sfd - r.sfc), 0);
   const totalProduits = resultatRows.filter(r => r.compte.startsWith('7')).reduce((s, r) => s + (r.sfc - r.sfd), 0);
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-bg2 border-b border-border">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div>
@@ -204,25 +246,6 @@ export default function PortailPublicPage() {
                 </div>
               </div>
             </div>
-            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
-              <table className="w-full text-xs">
-                <thead className="bg-bg3 text-fg3 text-[10px] uppercase font-mono">
-                  <tr><th className="p-2 text-left">Compte</th><th className="p-2 text-left">Intitulé</th><th className="p-2 text-right">Montant</th></tr>
-                </thead>
-                <tbody>
-                  {resultatRows.map(r => {
-                    const mnt = r.compte.startsWith('6') ? r.sfd - r.sfc : r.sfc - r.sfd;
-                    return (
-                      <tr key={r.compte} className="border-t border-border">
-                        <td className="p-2 font-mono">{r.compte}</td>
-                        <td className="p-2">{r.intitule}</td>
-                        <td className="p-2 text-right font-mono">{fmt(mnt)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
           </div>
         )}
 
@@ -235,10 +258,14 @@ export default function PortailPublicPage() {
               <tbody>
                 {(data?.documents || []).map(d => (
                   <tr key={d.id} className="border-t border-border">
-                    <td className="p-2">{d.nom}</td>
+                    <td className="p-2">
+                      {d.nom}
+                      {d.source === 'portail' && <span className="ml-2 text-[9px] text-fg3">(dépôt)</span>}
+                      {d.statut_validation === 'en_attente' && <span className="ml-2 text-[9px] text-primary">⏳</span>}
+                    </td>
                     <td className="p-2 text-fg3">{d.categorie}</td>
                     <td className="p-2 font-mono text-fg3">{new Date(d.created_at).toLocaleDateString('fr-FR')}</td>
-                    <td className="p-2 text-right font-mono text-fg3">{Math.round(d.file_size / 1024)} Ko</td>
+                    <td className="p-2 text-right font-mono text-fg3">{Math.round((d.taille_octets || 0) / 1024)} Ko</td>
                     <td className="p-2 text-right">
                       {d.signed_url && <a href={d.signed_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">⬇ Télécharger</a>}
                     </td>
@@ -254,14 +281,14 @@ export default function PortailPublicPage() {
           <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
             <table className="w-full text-xs">
               <thead className="bg-bg3 text-fg3 text-[10px] uppercase font-mono">
-                <tr><th className="p-2 text-left">N°</th><th className="p-2 text-left">Client</th><th className="p-2 text-left">Émission</th><th className="p-2 text-left">Échéance</th><th className="p-2 text-left">Statut</th><th className="p-2 text-right">Total TTC</th></tr>
+                <tr><th className="p-2 text-left">N°</th><th className="p-2 text-left">Client</th><th className="p-2 text-left">Date</th><th className="p-2 text-left">Échéance</th><th className="p-2 text-left">Statut</th><th className="p-2 text-right">Total TTC</th></tr>
               </thead>
               <tbody>
                 {(data?.factures || []).map(f => (
                   <tr key={f.id} className="border-t border-border">
                     <td className="p-2 font-mono">{f.numero}</td>
-                    <td className="p-2">{f.client_nom}</td>
-                    <td className="p-2 font-mono text-fg3">{f.date_emission}</td>
+                    <td className="p-2">{f.client?.nom || '—'}</td>
+                    <td className="p-2 font-mono text-fg3">{f.date_facture}</td>
                     <td className="p-2 font-mono text-fg3">{f.date_echeance}</td>
                     <td className="p-2"><span className="px-2 py-0.5 rounded text-[10px] bg-bg3 border border-border">{f.statut}</span></td>
                     <td className="p-2 text-right font-mono">{fmt(Number(f.total_ttc))}</td>
@@ -273,8 +300,34 @@ export default function PortailPublicPage() {
           </div>
         )}
 
+        {section === 'depot' && !loading && (
+          <div className="max-w-xl bg-bg2 border border-border rounded-lg p-5">
+            <div className="font-serif text-base mb-1">⬆️ Déposer un document</div>
+            <p className="text-[11px] text-fg3 mb-4">
+              Vos justificatifs (factures, RIB, contrats…) sont transmis directement à votre cabinet
+              qui recevra une notification. Formats acceptés : PDF, images, Office. Taille max : 20 Mo.
+            </p>
+            <label className="block text-[11px] text-fg2 mb-1">Catégorie</label>
+            <select value={uploadCat} onChange={e => setUploadCat(e.target.value)}
+              className="w-full bg-bg3 border border-border rounded px-2 py-1.5 text-xs mb-3">
+              <option>Justificatif</option>
+              <option>Facture d'achat</option>
+              <option>Facture de vente</option>
+              <option>Relevé bancaire</option>
+              <option>Contrat</option>
+              <option>Fiche de paie</option>
+              <option>Autre</option>
+            </select>
+            <label className="block text-[11px] text-fg2 mb-1">Fichier</label>
+            <input ref={fileRef} type="file" disabled={uploading}
+              onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0])}
+              className="w-full text-xs bg-bg3 border border-border rounded px-2 py-1.5" />
+            {uploading && <div className="text-[11px] text-primary mt-3">⏳ Envoi en cours…</div>}
+          </div>
+        )}
+
         <footer className="text-[10px] text-fg3 text-center mt-8 py-4 border-t border-border">
-          🔐 Portail sécurisé · Données en lecture seule · Généré par G-Compta
+          🔐 Portail sécurisé · Données protégées · Généré par G-Compta
         </footer>
       </main>
     </div>
