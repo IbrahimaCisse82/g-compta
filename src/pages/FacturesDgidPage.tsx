@@ -166,7 +166,10 @@ export default function FacturesDgidPage() {
                       <td className={`px-3 py-2 font-semibold ${s.color}`}>{s.label}</td>
                       <td className="px-3 py-2 font-mono text-[10px] text-fg3">{f.uuid_dgid ? f.uuid_dgid.slice(0, 8) + '…' : '—'}</td>
                       <td className="px-3 py-2 text-[10px] text-fg3">{f.date_transmission ? new Date(f.date_transmission).toLocaleString() : '—'}</td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-3 py-2 text-right whitespace-nowrap">
+                        <button onClick={() => openHistory(f)} className="text-[10px] mr-2 text-fg2 hover:text-primary underline">
+                          Historique
+                        </button>
                         {f.statut_dgid === 'acceptee' ? (
                           <span className="text-[10px] text-accent">✓ conforme</span>
                         ) : (
