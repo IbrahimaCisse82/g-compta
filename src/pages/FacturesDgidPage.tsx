@@ -36,6 +36,11 @@ const STATUT_LABEL: Record<string, { label: string; color: string }> = {
   rejetee: { label: '✕ Rejetée', color: 'text-destructive' },
 };
 
+interface DgidTx {
+  id: string; facture_id: string; action: string; statut: string;
+  payload: any; response: any; created_at: string;
+}
+
 export default function FacturesDgidPage() {
   const { entreprise } = useApp();
   const [factures, setFactures] = useState<Facture[]>([]);
@@ -43,6 +48,8 @@ export default function FacturesDgidPage() {
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [showConfig, setShowConfig] = useState(false);
+  const [historyFor, setHistoryFor] = useState<Facture | null>(null);
+  const [historyRows, setHistoryRows] = useState<DgidTx[]>([]);
 
   const load = useCallback(async () => {
     if (!entreprise) return;
