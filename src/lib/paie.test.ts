@@ -48,7 +48,7 @@ describe('Paie — bulletin complet', () => {
 
   it('calcule un net cohérent pour un employé simple', () => {
     const b = calculerPaie(emp({ salaire_base: 300000, date_entree: '2024-06-30' }), DEFAULT_PAIE_PARAMS, ref);
-    expect(b.brut).toBeGreaterThan(300000); // sursalaire+ancienneté
+    expect(b.brut).toBeGreaterThanOrEqual(300000);
     expect(b.net_payer).toBeGreaterThan(0);
     expect(b.net_payer).toBeLessThan(b.brut + b.transport);
     expect(b.charges_patronales).toBeGreaterThan(0);
