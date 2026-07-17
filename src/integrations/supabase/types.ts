@@ -696,6 +696,7 @@ export type Database = {
         Row: {
           categorie: string | null
           created_at: string
+          depose_par_email: string | null
           description: string | null
           entreprise_id: string
           exercice_id: string | null
@@ -704,6 +705,8 @@ export type Database = {
           nom: string
           ref_id: string | null
           ref_type: string
+          source: string
+          statut_validation: string
           storage_path: string
           tags: string[] | null
           taille_octets: number | null
@@ -713,6 +716,7 @@ export type Database = {
         Insert: {
           categorie?: string | null
           created_at?: string
+          depose_par_email?: string | null
           description?: string | null
           entreprise_id: string
           exercice_id?: string | null
@@ -721,6 +725,8 @@ export type Database = {
           nom: string
           ref_id?: string | null
           ref_type: string
+          source?: string
+          statut_validation?: string
           storage_path: string
           tags?: string[] | null
           taille_octets?: number | null
@@ -730,6 +736,7 @@ export type Database = {
         Update: {
           categorie?: string | null
           created_at?: string
+          depose_par_email?: string | null
           description?: string | null
           entreprise_id?: string
           exercice_id?: string | null
@@ -738,6 +745,8 @@ export type Database = {
           nom?: string
           ref_id?: string | null
           ref_type?: string
+          source?: string
+          statut_validation?: string
           storage_path?: string
           tags?: string[] | null
           taille_octets?: number | null
@@ -1873,6 +1882,53 @@ export type Database = {
             columns: ["exercice_id"]
             isOneToOne: false
             referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          entreprise_id: string
+          id: string
+          lien: string | null
+          message: string | null
+          meta: Json | null
+          read_at: string | null
+          titre: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entreprise_id: string
+          id?: string
+          lien?: string | null
+          message?: string | null
+          meta?: Json | null
+          read_at?: string | null
+          titre: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entreprise_id?: string
+          id?: string
+          lien?: string | null
+          message?: string | null
+          meta?: Json | null
+          read_at?: string | null
+          titre?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
             referencedColumns: ["id"]
           },
         ]
