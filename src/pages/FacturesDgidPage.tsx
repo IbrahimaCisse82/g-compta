@@ -231,6 +231,43 @@ export default function FacturesDgidPage() {
           </div>
         </div>
       )}
+
+      {historyFor && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setHistoryFor(null)}>
+          <div className="bg-bg2 border border-border rounded-xl p-5 w-[720px] max-w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-serif text-base">📜 Historique DGID — {historyFor.numero}</h3>
+              <button onClick={() => setHistoryFor(null)} className="text-fg3 hover:text-foreground">✕</button>
+            </div>
+            {historyRows.length === 0 ? (
+              <div className="text-center py-8 text-fg3 text-xs">Aucune transmission enregistrée</div>
+            ) : (
+              <table className="w-full text-xs">
+                <thead className="bg-bg3 text-[10px] uppercase font-mono text-fg3">
+                  <tr>
+                    <th className="text-left px-2 py-1.5">Date</th>
+                    <th className="text-left px-2 py-1.5">Action</th>
+                    <th className="text-left px-2 py-1.5">Statut</th>
+                    <th className="text-left px-2 py-1.5">Réponse</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyRows.map(h => (
+                    <tr key={h.id} className="border-t border-border align-top">
+                      <td className="px-2 py-1.5 font-mono text-[10px]">{new Date(h.created_at).toLocaleString()}</td>
+                      <td className="px-2 py-1.5">{h.action}</td>
+                      <td className={`px-2 py-1.5 font-semibold ${h.statut === 'acceptee' ? 'text-accent' : h.statut === 'rejetee' ? 'text-destructive' : 'text-primary'}`}>{h.statut}</td>
+                      <td className="px-2 py-1.5 font-mono text-[9px] text-fg3 max-w-[300px] truncate" title={JSON.stringify(h.response)}>
+                        {JSON.stringify(h.response)?.slice(0, 100)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
