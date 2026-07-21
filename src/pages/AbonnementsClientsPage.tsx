@@ -33,10 +33,17 @@ export default function AbonnementsClientsPage() {
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [actionLoading, setActionLoading] = useState(false);
 
-  const isAdmin = userRole === 'admin';
+  const isCabinetMode = env === 'cabinet' || !!cabinet;
+  const isAdmin = userRole === 'admin' || (env === 'cabinet' && !user);
 
   const load = useCallback(async () => {
-    if (!cabinet) return;
+    if (!cabinet) {
+      if (env === 'cabinet') {
+        setPlans([]);
+        setSubscriptions([]);
+      }
+      return;
+    }
     setLoading(true);
     try {
       const [plansData, subsData] = await Promise.all([
@@ -49,7 +56,7 @@ export default function AbonnementsClientsPage() {
       toast.error('Erreur chargement abonnements : ' + err.message);
     }
     setLoading(false);
-  }, [cabinet]);
+  }, [cabinet, env]);
 
   useEffect(() => { load(); }, [load]);
 
