@@ -26,6 +26,8 @@ import AnalytiquePage from '@/pages/AnalytiquePage';
 import BudgetPage from '@/pages/BudgetPage';
 import TvaPage from '@/pages/TvaPage';
 import AbonnementPage from '@/pages/AbonnementPage';
+import MonAbonnementPage from '@/pages/MonAbonnementPage';
+import AbonnementsClientsPage from '@/pages/AbonnementsClientsPage';
 import CloturePage from '@/pages/CloturePage';
 import ImmobilisationsPage from '@/pages/ImmobilisationsPage';
 import FacturationPage from '@/pages/FacturationPage';
