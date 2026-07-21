@@ -167,7 +167,7 @@ export default function AbonnementsClientsPage() {
           <div className="text-[10px] text-fg3 font-mono">Gestion des plans et des essais</div>
         </div>
         <div className="text-[10px] text-fg3 font-mono px-2 py-1 bg-bg3 border border-border rounded">
-          {cabinet.nom}
+          {cabinet?.nom || 'Mode démo cabinet'}
         </div>
       </div>
 
