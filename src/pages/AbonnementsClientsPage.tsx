@@ -143,7 +143,7 @@ export default function AbonnementsClientsPage() {
     setActionLoading(false);
   };
 
-  if (!cabinet) {
+  if (!isCabinetMode) {
     return (
       <div className="p-5 text-fg3 text-sm">
         Cette page est réservée aux cabinets. Veuillez passer en mode cabinet.
