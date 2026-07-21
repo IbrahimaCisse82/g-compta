@@ -1,5 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useCabinet } from '@/hooks/use-cabinet';
+import { useApp } from '@/stores/app-store';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -19,6 +20,7 @@ import { fmt } from '@/lib/accounting';
 
 export default function AbonnementsClientsPage() {
   const { user } = useAuth();
+  const { env } = useApp();
   const { cabinet, userRole } = useCabinet(user?.id);
   const [subscriptions, setSubscriptions] = useState<EntrepriseSubscription[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
