@@ -92,7 +92,8 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'plan', icon: '🗂️', label: 'Plan Comptable', shortcut: 'Alt+P' },
     { id: 'exercices', icon: '📅', label: 'Exercices', shortcut: 'Alt+E' },
     { id: 'cloture', icon: '🔒', label: 'Clôture / Réouverture' },
-    { id: 'abonnement', icon: '🔄', label: 'Écritures Abonnement' },
+    { id: 'abonnement', icon: '🔄', label: 'Écritures Récurrentes' },
+    { id: 'mon_abonnement', icon: '💳', label: 'Mon Abonnement' },
     { id: 'parametres', icon: '⚙️', label: 'Paramètres' },
   ]},
 ];
