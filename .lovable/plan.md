@@ -1,92 +1,91 @@
+# Backoffice de gestion des abonnements
 
-# Plan de mise à niveau — combler l'écart concurrentiel
-
-Objectif : passer d'un SaaS SYSCOHADA solide à un **leader différencié sur le marché sénégalais / UEMOA**, en attaquant les 4 gaps identifiés au benchmark (Mobile Money, e-facturation DGID, IA, Go-to-market).
+## Objectif
+Créer un backoffice complet pour gérer les abonnements commerciaux (Starter / Pro / Cabinet), sans paiement en ligne intégré pour l'instant.
 
 ---
 
-## Sprint 5 — Mobile Money (P1)
+## Vue d'ensemble
 
-Intégration native des paiements locaux, standard attendu au Sénégal.
+Deux niveaux de backoffice :
 
-- Nouvelle table `moyens_paiement` (Wave, Orange Money, Free Money, Wizall) + `transactions_mm` (ref, montant, sens, statut, rapproché_avec).
-- Import CSV/relevé Wave/OM (parseurs dédiés) + saisie manuelle.
-- Rapprochement automatique transactions ↔ écritures banque (compte 521/531 dédié par MM).
-- Écritures auto : encaissement client (411 → 521 Wave) / paiement fournisseur (401 → 521 OM).
-- Widget dashboard "Tréso Mobile Money" (solde par opérateur, top mouvements).
-- Page `/mobile-money` dans AppShell.
+1. **Mon abonnement** (vue entreprise) : dans les paramètres, l'utilisateur voit le plan actuel de son entreprise, les limites consommées et un bouton pour demander un changement de plan.
+2. **Abonnements clients** (vue cabinet) : le cabinet liste et gère les abonnements de toutes ses entreprises (activer un essai, changer de plan, suspendre, renouveler).
 
-## Sprint 6 — Facturation électronique DGID (P1)
+Le paiement en ligne est reporté ; les actions se font par workflow manuel (activation directe en base + notification).
 
-Préparer la conformité à la norme e-facture sénégalaise (déjà en vigueur pour grandes entreprises, extension PME annoncée).
+---
 
-- Extension `factures` : `uuid_dgid`, `qr_code`, `hash_certif`, `statut_dgid` (brouillon, transmise, acceptée, rejetée), `date_transmission`.
-- Génération XML/JSON conforme (schéma DGID) + QR code sur PDF.
-- Edge Function `emit-facture-dgid` (signature, transmission, polling statut).
-- Archivage légal 10 ans dans bucket GED dédié `factures-dgid` (immuable).
-- Écran "Factures DGID" : suivi transmission, relances, exports.
-- Configuration par entreprise (certificat, mode test/prod).
+## Fichiers à créer / modifier
 
-## Sprint 7 — Copilote IA (P2)
+### Pages
+- `src/pages/MonAbonnementPage.tsx` : plan actuel, limites utilisées, historique, demande d'upgrade/downgrade.
+- `src/pages/AbonnementsClientsPage.tsx` : tableau de bord cabinet avec filtres, actions rapides, activation d'essai.
+- `src/pages/AbonnementPage.tsx` : renommer en "Écritures récurrentes" dans le menu et la page pour lever l'ambiguïté avec les abonnements commerciaux.
 
-Différenciation face à SYGMA. Utilise le Gateway AI Lovable (aucune clé à gérer).
+### Navigation
+- `src/components/AppShell.tsx` :
+  - renommer l'entrée `abonnement` en `ecritures_recurrentes` avec le label "Écritures récurrentes" ;
+  - ajouter `mon_abonnement` dans la section Paramètres ;
+  - ajouter `abonnements_clients` dans la section Synthèse (visible uniquement en mode cabinet).
+- `src/stores/app-store.tsx` : ajouter les nouveaux `PageId`.
 
-- Edge Function `copilote-ia` (google/gemini-2.5-flash par défaut).
-- **Imputation auto** : à partir d'un libellé + montant, propose compte + journal + TVA (few-shot sur historique de l'entreprise).
-- **Détection d'anomalies** : écritures déséquilibrées, doublons probables, comptes inhabituels, ratios hors norme.
-- **Prévision trésorerie 90j** : basée sur échéancier + saisonnalité historique.
-- **Q&A comptable** : chatbot contextuel ("quel est mon EBE ? pourquoi baisse-t-il ?").
-- Widget "Copilote" flottant dans AppShell + panneau dédié.
+### Logique métier
+- `src/lib/subscription.ts` :
+  - calcul de l'utilisation des limites (dossiers, utilisateurs, stockage Go) ;
+  - helper pour déterminer si une entreprise dépasse son plan ;
+  - mapping statut / couleur.
 
-## Sprint 8 — Landing publique + Pricing + Onboarding (P2)
-
-Aucun concurrent local n'affiche des prix clairs. Opportunité marketing immédiate.
-
-- Landing `/` publique refondue : hero, features, screenshots, témoignages, comparatif vs CassKai/Sage/Odoo.
-- Page `/tarifs` : 3 plans FCFA transparents
-  - **Starter** — 15 000 F/mois — 1 dossier, 1 user, essentiels
-  - **Pro** — 35 000 F/mois — 3 dossiers, 5 users, paie + immo + GED
-  - **Cabinet** — 75 000 F/mois — illimité, portail client, KPI collab, IA
-- Onboarding guidé (wizard 5 étapes : entreprise, exercice, PC, journaux, 1re écriture).
-- Essai gratuit 14 j sans CB, upgrade in-app (préparer Stripe/Paddle FCFA).
-- SEO : title/meta/OG, JSON-LD SoftwareApplication, robots.txt, sitemap.
+### Base de données
+- Migration optionnelle : ajouter une politique RLS pour permettre au cabinet de créer un abonnement sur une entreprise qu'il gère, même si c'est sa première action.
+- Vérifier que `abonnements` a bien un index sur `entreprise_id` pour les performances du cabinet.
 
 ---
 
 ## Détails techniques
 
-### Nouvelles tables
-```text
-moyens_paiement   (id, entreprise_id, operateur, numero, compte_associe, actif)
-transactions_mm   (id, entreprise_id, moyen_id, date, sens, montant, ref_operateur,
-                   contrepartie, statut, rapproche_journal_id)
-factures (+cols)  uuid_dgid, qr_code, hash_certif, statut_dgid, date_transmission
-copilote_logs     (id, entreprise_id, user_id, type, prompt, response, tokens, created_at)
-plans_abonnement  (id, code, nom, prix_fcfa, limites_json, features_json)
-abonnements       (id, entreprise_id, plan_id, statut, date_debut, date_fin, essai)
-```
-Chaque table : GRANT + RLS scoped `entreprise_id`.
+### 1. Renommage de la page actuelle
 
-### Edge Functions
-- `emit-facture-dgid` — signature + transmission DGID
-- `copilote-ia` — proxy AI Gateway (imputation, anomalies, prévision, chat)
-- `import-mobile-money` — parseur CSV Wave/OM/Free
-- `stripe-webhook` (préparation Sprint 8+)
+La page actuelle `AbonnementPage.tsx` gère les `ecritures_abonnement` (écritures comptables récurrentes). Elle est mal nommée dans le menu. On la garde mais on la renomme en "Écritures récurrentes" pour libérer le terme "Abonnement" pour les plans commerciaux.
 
-### Ordre d'exécution recommandé
-1. **Sprint 5** (Mobile Money) — impact commercial immédiat, faible risque
-2. **Sprint 8** (Landing + Pricing) — en parallèle, débloque acquisition
-3. **Sprint 6** (DGID) — dépend de specs officielles, cadrer en amont
-4. **Sprint 7** (IA) — dernier car valeur ajoutée sur base déjà différenciée
+### 2. Page "Mon abonnement"
 
-### Hors scope (backlog ultérieur)
-- App mobile compagnon (React Native / PWA offline)
-- Multi-pays OHADA (paie Côte d'Ivoire, Cameroun, etc.)
-- Intégrations bancaires directes (API BCEAO / Ecobank / SGBS)
-- Marketplace de connecteurs (Zapier-like)
+Affichage pour l'entreprise courante :
+- Carte du plan actuel avec prix, périodicité, statut, dates.
+- Grille des limites : dossiers, utilisateurs, stockage Go, avec barres de progression.
+- Historique des changements de plan (lecture depuis `abonnements` + `plans_abonnement`).
+- Bouton "Changer de plan" : ouvre une modale avec les 3 plans et un bouton "Demander la modification" (envoie une notification au cabinet sans paiement).
+
+### 3. Page "Abonnements clients" (cabinet)
+
+Tableau avec :
+- Entreprise, plan, statut, date de début/fin, jours restants, limites, usage.
+- Filtres : statut (essai, actif, suspendu, résilié), plan (Starter/Pro/Cabinet), recherche par nom d'entreprise.
+- Actions rapides : activer essai 14 jours, changer de plan, suspendre, renouveler, marquer payé.
+- Un bouton "Nouvel abonnement" pour attribuer un plan à une entreprise existante du cabinet.
+
+### 4. Utilisation des limites
+
+Calcul côté client (ou via edge function plus tard) :
+- `dossiers` : `entreprises` liées au cabinet ou à l'utilisateur.
+- `utilisateurs` : `cabinet_members` pour le cabinet, ou `profiles` associés à l'entreprise.
+- `stockage_go` : agrégation des `taille_octets` de la table `documents` divisée par 1 Go.
+
+### 5. Workflow sans paiement
+
+Pour l'instant, les actions modifient directement la table `abonnements` via Supabase. Les futurs paiements seront branchés à la place de l'action manuelle.
+
+### 6. Sécurité
+
+- Lire `abonnements` via la RLS existante (`get_user_entreprise_ids`).
+- Vérifier côté client que l'utilisateur est `admin` du cabinet avant d'afficher la page "Abonnements clients".
+- Les actions d'admin cabinet utilisent la session authentifiée standard ; la RLS existante doit permettre l'INSERT/UPDATE sur les entreprises du cabinet. Si ce n'est pas le cas, on ajoute une policy.
 
 ---
 
-**Livrable de chaque sprint** : migration SQL + pages UI + edge functions + mise à jour navigation + doc courte.
+## Sortie attendue
 
-Dis-moi par lequel enchaîner — je propose **Sprint 5 (Mobile Money)** pour maximiser l'impact perçu client à court terme.
+- Menu clair sans ambiguïté entre "Écritures récurrentes" et "Mon abonnement".
+- Page "Mon abonnement" accessible depuis les paramètres.
+- Page "Abonnements clients" accessible en mode cabinet.
+- Aucune erreur TypeScript, navigation fonctionnelle, données affichées depuis `plans_abonnement` et `abonnements`.

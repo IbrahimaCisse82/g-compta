@@ -26,6 +26,8 @@ import AnalytiquePage from '@/pages/AnalytiquePage';
 import BudgetPage from '@/pages/BudgetPage';
 import TvaPage from '@/pages/TvaPage';
 import AbonnementPage from '@/pages/AbonnementPage';
+import MonAbonnementPage from '@/pages/MonAbonnementPage';
+import AbonnementsClientsPage from '@/pages/AbonnementsClientsPage';
 import CloturePage from '@/pages/CloturePage';
 import ImmobilisationsPage from '@/pages/ImmobilisationsPage';
 import FacturationPage from '@/pages/FacturationPage';
@@ -47,6 +49,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'clients', icon: '👥', label: 'Mes Clients', cabinet: true },
     { id: 'cabinet_mgmt', icon: '🏛️', label: 'Gestion Cabinet', cabinet: true },
     { id: 'kpi_collab', icon: '📊', label: 'KPI Collaborateurs', cabinet: true },
+    { id: 'abonnements_clients', icon: '🗂️', label: 'Abonnements Clients', cabinet: true },
   ]},
   { section: 'Comptabilité', items: [
     { id: 'saisie', icon: '✏️', label: "Saisie d'écritures", shortcut: 'Alt+S' },
@@ -89,7 +92,8 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'plan', icon: '🗂️', label: 'Plan Comptable', shortcut: 'Alt+P' },
     { id: 'exercices', icon: '📅', label: 'Exercices', shortcut: 'Alt+E' },
     { id: 'cloture', icon: '🔒', label: 'Clôture / Réouverture' },
-    { id: 'abonnement', icon: '🔄', label: 'Écritures Abonnement' },
+    { id: 'abonnement', icon: '🔄', label: 'Écritures Récurrentes' },
+    { id: 'mon_abonnement', icon: '💳', label: 'Mon Abonnement' },
     { id: 'parametres', icon: '⚙️', label: 'Paramètres' },
   ]},
 ];
@@ -103,7 +107,8 @@ const PAGES: Record<string, React.ComponentType> = {
   note34: NotesAnnexesPage, audit: AuditTrailPage, liasse: LiasseFiscalePage,
   import: ImportPage, cabinet_mgmt: CabinetPage,
   lettrage: LettragePage, analytique: AnalytiquePage, budget: BudgetPage,
-  tva: TvaPage, abonnement: AbonnementPage, cloture: CloturePage,
+  tva: TvaPage, abonnement: AbonnementPage, mon_abonnement: MonAbonnementPage,
+  abonnements_clients: AbonnementsClientsPage, cloture: CloturePage,
   immobilisations: ImmobilisationsPage,
   facturation: FacturationPage,
   fournisseurs: FournisseursPage,

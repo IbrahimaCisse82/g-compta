@@ -88,8 +88,8 @@ export default function AbonnementPage() {
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
-        <div><div className="font-serif text-[17px]">🔄 Écritures d'Abonnement</div>
-        <div className="text-[10px] text-fg3 font-mono">Écritures récurrentes automatisées</div></div>
+        <div><div className="font-serif text-[17px]">🔄 Écritures Récurrentes</div>
+        <div className="text-[10px] text-fg3 font-mono">Écritures comptables récurrentes automatisées</div></div>
         <button onClick={() => setShowForm(!showForm)} className="px-3 py-1.5 rounded text-[11px] font-bold border border-border text-fg2 hover:bg-bg3">
           {showForm ? '✕' : '+ Nouvel Abonnement'}
         </button>
