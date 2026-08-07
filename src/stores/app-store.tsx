@@ -316,35 +316,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // ─── JOURNAL ENTRIES ──────────────────────────────────
-  const addJournalEntry = useCallback(async (lines: JournalLine[]) => {
-    if (!exercice || !entreprise) return;
-    if (exercice.statut === 'cloture') { toast.error('Exercice clôturé — écritures verrouillées.'); return; }
-
-    const inserts = lines.map(l => ({
-      exercice_id: exercice.id, entreprise_id: entreprise.id,
-      date_ecriture: l.date_ecriture, piece: l.piece, journal_code: l.journal_code,
-      libelle: l.libelle, compte: l.compte, intitule: l.intitule,
-      debit: l.debit || 0, credit: l.credit || 0,
-    }));
-    const { data: savedLines, error: journalErr } = await supabase.from('journal').insert(inserts).select();
-    if (journalErr) { toast.error('Erreur enregistrement: ' + journalErr.message); return; }
-
-    const newLines = mapJournal(savedLines);
-    setJournal(prev => [...prev, ...newLines]);
-
-    // Update balance
+  // Double-tenue : la balance stockée reste maintenue le temps de la période de
+  // comparaison avec la balance dérivée (mv_balance). Elle n'est plus la source
+  // de vérité : voir fn_balance / fn_balance_ecarts.
+  const appliquerDeltaBalance = useCallback((newLines: JournalLine[], exId: string, entId: string) => {
     const balUpdates: Record<string, { debit: number; credit: number; intitule: string }> = {};
     for (const l of newLines) {
       if (!balUpdates[l.compte]) balUpdates[l.compte] = { debit: 0, credit: 0, intitule: l.intitule };
       balUpdates[l.compte].debit += l.debit || 0;
       balUpdates[l.compte].credit += l.credit || 0;
     }
-
     setBalance(prev => {
       const b = [...prev];
       const dbOps: Promise<any>[] = [];
       for (const [compte, delta] of Object.entries(balUpdates)) {
-        let existing = b.find(x => x.compte === compte);
+        const existing = b.find(x => x.compte === compte);
         if (existing) {
           existing.md += delta.debit;
           existing.mc += delta.credit;
@@ -354,7 +340,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           dbOps.push(supabase.from('balance').update({ md: existing.md, mc: existing.mc, sfd: existing.sfd, sfc: existing.sfc }).eq('id', existing.id).then() as Promise<any>);
         } else {
           const newBal: BalanceLine = {
-            id: `temp-${Date.now()}-${compte}`, exercice_id: exercice.id, entreprise_id: entreprise.id,
+            id: `temp-${Date.now()}-${compte}`, exercice_id: exId, entreprise_id: entId,
             compte, intitule: delta.intitule,
             sd: 0, sc: 0, md: delta.debit, mc: delta.credit,
             sfd: delta.debit > delta.credit ? delta.debit - delta.credit : 0,
@@ -363,7 +349,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           b.push(newBal);
           dbOps.push(
             supabase.from('balance').insert({
-              exercice_id: exercice.id, entreprise_id: entreprise.id,
+              exercice_id: exId, entreprise_id: entId,
               compte, intitule: delta.intitule,
               sd: 0, sc: 0, md: delta.debit, mc: delta.credit,
               sfd: newBal.sfd, sfc: newBal.sfc,
@@ -374,15 +360,80 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       Promise.all(dbOps).catch(e => toast.error('Erreur balance: ' + e.message));
       return b;
     });
+  }, []);
 
-    toast.success(`${newLines.length} ligne(s) enregistrée(s)`);
-  }, [exercice, entreprise]);
+  const addJournalEntry = useCallback(async (lines: JournalLine[]) => {
+    if (!exercice || !entreprise) return;
+    if (exercice.statut === 'cloture') { toast.error('Exercice clôturé — écritures verrouillées.'); return; }
+    if (!lines.length) return;
 
+    // Regroupement en écritures (en-tête) : date + journal + pièce
+    const groupes = new Map<string, JournalLine[]>();
+    for (const l of lines) {
+      const k = `${l.date_ecriture}|${l.journal_code}|${l.piece || ''}`;
+      if (!groupes.has(k)) groupes.set(k, []);
+      groupes.get(k)!.push(l);
+    }
+
+    const idsCrees: string[] = [];
+    try {
+      for (const grp of groupes.values()) {
+        const id = await creerEcriture({
+          entrepriseId: entreprise.id,
+          exerciceId: exercice.id,
+          journalCode: grp[0].journal_code,
+          date: grp[0].date_ecriture,
+          libelle: grp[0].libelle,
+          piece: grp[0].piece || null,
+          statut: 'validee',
+          lignes: grp.map(l => ({
+            compte: l.compte, intitule: l.intitule, libelle: l.libelle,
+            debit: l.debit || 0, credit: l.credit || 0,
+          })),
+        });
+        idsCrees.push(id);
+      }
+    } catch (e: any) {
+      toast.error('Écriture refusée : ' + e.message);
+      return;
+    }
+
+    // Les lignes de journal ont été créées côté serveur par fn_creer_ecriture
+    const { data: savedLines } = await supabase.from('journal').select('*').in('ecriture_id', idsCrees);
+    const newLines = mapJournal(savedLines || []);
+    setJournal(prev => [...prev, ...newLines]);
+    appliquerDeltaBalance(newLines, exercice.id, entreprise.id);
+
+    toast.success(`${newLines.length} ligne(s) enregistrée(s) — écriture équilibrée validée en base`);
+  }, [exercice, entreprise, appliquerDeltaBalance]);
+
+  /** Extourne (contre-passation) : seule façon d'annuler une écriture validée. */
+  const extournerEcriture = useCallback(async (journalLineId: string, motif: string) => {
+    if (!exercice || !entreprise) return;
+    const entry = journal.find(j => j.id === journalLineId);
+    if (!entry?.ecriture_id) { toast.error('Ligne historique : aucune écriture rattachée.'); return; }
+    try {
+      const newId = await contrepasserEcriture(entry.ecriture_id, motif);
+      const { data } = await supabase.from('journal').select('*').eq('ecriture_id', newId);
+      const newLines = mapJournal(data || []);
+      setJournal(prev => [...prev, ...newLines]);
+      appliquerDeltaBalance(newLines, exercice.id, entreprise.id);
+      toast.success('Écriture extournée — contre-passation enregistrée');
+    } catch (e: any) {
+      toast.error('Extourne refusée : ' + e.message);
+    }
+  }, [journal, exercice, entreprise, appliquerDeltaBalance]);
+
+  /** Suppression physique : uniquement pour les lignes historiques sans écriture. */
   const deleteJournalEntry = useCallback(async (id: string) => {
     if (exercice?.statut === 'cloture') { toast.error('Exercice clôturé — suppression impossible.'); return; }
 
     const entry = journal.find(j => j.id === id);
     if (!entry) return;
+    if (entry.ecriture_id) {
+      toast.error('Écriture comptable : utilisez l\u2019extourne (contre-passation).');
+      return;
+    }
 
     const { error } = await supabase.from('journal').delete().eq('id', id);
     if (error) { toast.error('Erreur suppression: ' + error.message); return; }
@@ -403,8 +454,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return b;
     });
 
-    toast.success('Écriture supprimée');
+    toast.success('Ligne historique supprimée');
   }, [journal, exercice]);
+
 
   // ─── PLAN COMPTABLE (persisted) ───────────────────────
   const addCompte = useCallback(async (c: PlanCompte) => {
