@@ -886,6 +886,181 @@ export type Database = {
           },
         ]
       }
+      ecriture_lignes: {
+        Row: {
+          compte: string
+          created_at: string
+          credit: number
+          debit: number
+          ecriture_id: string
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          intitule: string
+          lettrage: string | null
+          libelle: string | null
+          ordre: number
+        }
+        Insert: {
+          compte: string
+          created_at?: string
+          credit?: number
+          debit?: number
+          ecriture_id: string
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          intitule?: string
+          lettrage?: string | null
+          libelle?: string | null
+          ordre?: number
+        }
+        Update: {
+          compte?: string
+          created_at?: string
+          credit?: number
+          debit?: number
+          ecriture_id?: string
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          intitule?: string
+          lettrage?: string | null
+          libelle?: string | null
+          ordre?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecriture_lignes_ecriture_id_fkey"
+            columns: ["ecriture_id"]
+            isOneToOne: false
+            referencedRelation: "ecritures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ecriture_sequences: {
+        Row: {
+          dernier_numero: number
+          entreprise_id: string
+          exercice_id: string
+          journal_code: string
+        }
+        Insert: {
+          dernier_numero?: number
+          entreprise_id: string
+          exercice_id: string
+          journal_code: string
+        }
+        Update: {
+          dernier_numero?: number
+          entreprise_id?: string
+          exercice_id?: string
+          journal_code?: string
+        }
+        Relationships: []
+      }
+      ecritures: {
+        Row: {
+          contrepassation_de: string | null
+          contrepasse_par: string | null
+          created_at: string
+          created_by: string | null
+          date_ecriture: string
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          journal_code: string
+          libelle: string
+          motif_annulation: string | null
+          numero: string
+          numero_sequence: number
+          origine: string
+          piece: string | null
+          statut: string
+          total_credit: number
+          total_debit: number
+          updated_at: string
+          valide_le: string | null
+          valide_par: string | null
+        }
+        Insert: {
+          contrepassation_de?: string | null
+          contrepasse_par?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_ecriture: string
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          journal_code: string
+          libelle: string
+          motif_annulation?: string | null
+          numero: string
+          numero_sequence: number
+          origine?: string
+          piece?: string | null
+          statut?: string
+          total_credit?: number
+          total_debit?: number
+          updated_at?: string
+          valide_le?: string | null
+          valide_par?: string | null
+        }
+        Update: {
+          contrepassation_de?: string | null
+          contrepasse_par?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_ecriture?: string
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          journal_code?: string
+          libelle?: string
+          motif_annulation?: string | null
+          numero?: string
+          numero_sequence?: number
+          origine?: string
+          piece?: string | null
+          statut?: string
+          total_credit?: number
+          total_debit?: number
+          updated_at?: string
+          valide_le?: string | null
+          valide_par?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecritures_contrepassation_de_fkey"
+            columns: ["contrepassation_de"]
+            isOneToOne: false
+            referencedRelation: "ecritures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecritures_contrepasse_par_fkey"
+            columns: ["contrepasse_par"]
+            isOneToOne: false
+            referencedRelation: "ecritures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecritures_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecritures_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ecritures_abonnement: {
         Row: {
           actif: boolean
@@ -2324,6 +2499,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          entreprise_id: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entreprise_id?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entreprise_id?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ventilations_analytiques: {
         Row: {
           axe_id: string
@@ -2370,14 +2577,96 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      mv_balance: {
+        Row: {
+          compte: string | null
+          entreprise_id: string | null
+          exercice_id: string | null
+          intitule: string | null
+          mc: number | null
+          md: number | null
+          sfc: number | null
+          sfd: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      can_admin_entreprise: {
+        Args: { _entreprise_id: string }
+        Returns: boolean
+      }
+      can_write_entreprise: {
+        Args: { _entreprise_id: string }
+        Returns: boolean
+      }
+      exercice_est_cloture: { Args: { _exercice_id: string }; Returns: boolean }
+      fn_balance: {
+        Args: { _entreprise_id: string; _exercice_id: string }
+        Returns: {
+          compte: string
+          intitule: string
+          mc: number
+          md: number
+          sfc: number
+          sfd: number
+        }[]
+      }
+      fn_balance_ecarts: {
+        Args: { _entreprise_id: string; _exercice_id: string }
+        Returns: {
+          compte: string
+          ecart_credit: number
+          ecart_debit: number
+          mc_calculee: number
+          mc_stockee: number
+          md_calculee: number
+          md_stockee: number
+        }[]
+      }
+      fn_contrepasser_ecriture: {
+        Args: { _ecriture_id: string; _motif: string }
+        Returns: string
+      }
+      fn_creer_ecriture: {
+        Args: {
+          _date: string
+          _entreprise_id: string
+          _exercice_id: string
+          _journal_code: string
+          _libelle: string
+          _lignes: Json
+          _origine?: string
+          _piece?: string
+          _statut?: string
+        }
+        Returns: string
+      }
+      fn_refresh_balance: { Args: never; Returns: undefined }
+      fn_rouvrir_exercice: {
+        Args: { _exercice_id: string; _motif: string }
+        Returns: undefined
+      }
+      fn_valider_ecriture: {
+        Args: { _ecriture_id: string }
+        Returns: undefined
+      }
       get_cabinet_role: {
         Args: { _cabinet_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_entreprise_role: {
+        Args: { _entreprise_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       get_user_entreprise_ids: { Args: { _user_id: string }; Returns: string[] }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_cabinet_member: {
         Args: { _cabinet_id: string; _user_id: string }
         Returns: boolean
