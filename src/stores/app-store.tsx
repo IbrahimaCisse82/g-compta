@@ -664,7 +664,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       env, demo, launched, loading, currentPage, entreprise, exercice, exercices,
       balance, balanceN1, journal, plan, entreprises,
       setPage: setCurrentPage, launchDemo, launchUser, logout, addJournalEntry,
-      deleteJournalEntry, addCompte, deleteCompte, toggleCompte,
+      deleteJournalEntry, extournerEcriture, addCompte, deleteCompte, toggleCompte,
       addExercice, deleteExercice, openExercice, updateEntreprise,
       clotureExercice, isExerciceCloture, switchEntreprise,
     }}>
