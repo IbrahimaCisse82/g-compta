@@ -2,7 +2,9 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { BalanceLine, JournalLine, PlanCompte, Entreprise, Exercice } from '@/lib/accounting';
 import { supabase } from '@/integrations/supabase/client';
 import { DEMO_ENTREPRISE, DEMO_EXERCICE, DEMO_LBH_BALANCE, DEMO_LBH_JOURNAL, buildPlan } from '@/lib/demo-data';
+import { creerEcriture, contrepasserEcriture } from '@/lib/ecritures';
 import { toast } from 'sonner';
+
 
 export type EnvMode = 'entreprise' | 'cabinet';
 export type PageId = 'dashboard' | 'clients' | 'cabinet_mgmt' | 'kpi_collab' | 'abonnements_clients' | 'journal' | 'balance' | 'grandlivre' | 'bilan' | 'resultat' | 'tft' | 'note34' | 'liasse' | 'rapprochement' | 'saisie' | 'plan' | 'exercices' | 'parametres' | 'balance_agee' | 'audit' | 'import' | 'lettrage' | 'analytique' | 'budget' | 'tva' | 'abonnement' | 'mon_abonnement' | 'cloture' | 'immobilisations' | 'facturation' | 'fournisseurs' | 'paie' | 'echeancier' | 'stocks' | 'provisions' | 'documents' | 'validation' | 'portail' | 'mobile_money' | 'factures_dgid';
@@ -27,6 +29,8 @@ interface AppState {
   logout: () => void;
   addJournalEntry: (lines: JournalLine[]) => void;
   deleteJournalEntry: (id: string) => void;
+  extournerEcriture: (journalLineId: string, motif: string) => Promise<void>;
+
   addCompte: (c: PlanCompte) => Promise<void>;
   deleteCompte: (id: string) => Promise<void>;
   toggleCompte: (id: string) => void;
