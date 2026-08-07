@@ -1738,6 +1738,7 @@ export type Database = {
           credit: number
           date_ecriture: string
           debit: number
+          ecriture_id: string | null
           entreprise_id: string
           exercice_id: string
           id: string
@@ -1758,6 +1759,7 @@ export type Database = {
           credit?: number
           date_ecriture: string
           debit?: number
+          ecriture_id?: string | null
           entreprise_id: string
           exercice_id: string
           id?: string
@@ -1778,6 +1780,7 @@ export type Database = {
           credit?: number
           date_ecriture?: string
           debit?: number
+          ecriture_id?: string | null
           entreprise_id?: string
           exercice_id?: string
           id?: string
@@ -1793,6 +1796,13 @@ export type Database = {
           valide_par?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "journal_ecriture_id_fkey"
+            columns: ["ecriture_id"]
+            isOneToOne: false
+            referencedRelation: "ecritures"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "journal_entreprise_id_fkey"
             columns: ["entreprise_id"]
