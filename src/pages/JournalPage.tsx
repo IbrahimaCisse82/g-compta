@@ -1,14 +1,19 @@
 import { useApp } from '@/stores/app-store';
+import { useUserRole } from '@/hooks/use-user-role';
 import { fmt } from '@/lib/accounting';
 import { exportJournalCsv } from '@/lib/csv-export';
 import { buildFec, downloadFec } from '@/lib/fec-export';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function JournalPage() {
-  const { journal, deleteJournalEntry, isExerciceCloture, entreprise, exercice } = useApp();
+  const { journal, deleteJournalEntry, extournerEcriture, isExerciceCloture, entreprise, exercice } = useApp();
+  const { canWrite, canDelete } = useUserRole();
   const [filter, setFilter] = useState('');
   const locked = isExerciceCloture();
+  const showActions = !locked && canWrite;
   const rows = journal.filter(r => !filter || r.libelle?.toLowerCase().includes(filter.toLowerCase()) || r.compte?.includes(filter));
+
   const td = rows.reduce((s, r) => s + (r.debit || 0), 0);
   const tc = rows.reduce((s, r) => s + (r.credit || 0), 0);
 
@@ -43,7 +48,7 @@ export default function JournalPage() {
           </div>
           <table className="w-full border-collapse">
             <thead><tr>
-              {['Date', 'Pièce', 'Journal', 'Compte', 'Libellé', 'Débit', 'Crédit', ...(locked ? [] : [''])].map(h => (
+              {['Date', 'Pièce', 'Journal', 'Compte', 'Libellé', 'Débit', 'Crédit', ...(showActions ? ['Action'] : [])].map(h => (
                 <th key={h} className="bg-bg3 px-3 py-1.5 text-left text-[9px] font-bold text-fg3 uppercase tracking-[1px] font-mono border-b border-border whitespace-nowrap">{h}</th>
               ))}
             </tr></thead>
@@ -57,15 +62,45 @@ export default function JournalPage() {
                   <td className="px-3 py-1.5 text-[11px] border-b border-border/50">{r.libelle}<br /><small className="text-fg3">{r.intitule}</small></td>
                   <td className="px-3 py-1.5 text-[11px] font-mono text-right text-primary border-b border-border/50">{r.debit ? fmt(r.debit) : ''}</td>
                   <td className="px-3 py-1.5 text-[11px] font-mono text-right text-success border-b border-border/50">{r.credit ? fmt(r.credit) : ''}</td>
-                  {!locked && <td className="px-3 py-1.5 border-b border-border/50"><button onClick={() => deleteJournalEntry(r.id)} className="text-destructive text-xs hover:underline">🗑</button></td>}
+                  {showActions && (
+                    <td className="px-3 py-1.5 border-b border-border/50">
+                      {r.ecriture_id ? (
+                        <button
+                          type="button"
+                          aria-label={`Extourner l'écriture ${r.piece || ''}`}
+                          title="Contre-passation (l'écriture validée reste conservée)"
+                          onClick={() => {
+                            const motif = window.prompt('Motif de l\u2019extourne (5 caractères minimum) :');
+                            if (!motif) return;
+                            if (motif.trim().length < 5) { toast.error('Motif trop court'); return; }
+                            extournerEcriture(r.id, motif.trim());
+                          }}
+                          className="text-accent text-[11px] font-semibold hover:underline"
+                        >
+                          ⟲ Extourner
+                        </button>
+                      ) : canDelete ? (
+                        <button
+                          type="button"
+                          aria-label={`Supprimer la ligne historique ${r.compte}`}
+                          title="Ligne historique sans écriture rattachée"
+                          onClick={() => deleteJournalEntry(r.id)}
+                          className="text-destructive text-[11px] hover:underline"
+                        >
+                          Supprimer
+                        </button>
+                      ) : <span className="text-[10px] text-fg3">—</span>}
+                    </td>
+                  )}
                 </tr>
               ))}
               <tr className="bg-bg3 font-bold">
                 <td colSpan={5} className="px-3 py-1.5 text-[11px] border-t border-border-2">TOTAUX</td>
                 <td className="px-3 py-1.5 text-[11px] font-mono text-right text-primary border-t border-border-2">{fmt(td)}</td>
                 <td className="px-3 py-1.5 text-[11px] font-mono text-right text-success border-t border-border-2">{fmt(tc)}</td>
-                {!locked && <td className="border-t border-border-2"></td>}
+                {showActions && <td className="border-t border-border-2"></td>}
               </tr>
+
             </tbody>
           </table>
         </div>
