@@ -1,14 +1,19 @@
 import { useApp } from '@/stores/app-store';
+import { useUserRole } from '@/hooks/use-user-role';
 import { fmt } from '@/lib/accounting';
 import { exportJournalCsv } from '@/lib/csv-export';
 import { buildFec, downloadFec } from '@/lib/fec-export';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function JournalPage() {
-  const { journal, deleteJournalEntry, isExerciceCloture, entreprise, exercice } = useApp();
+  const { journal, deleteJournalEntry, extournerEcriture, isExerciceCloture, entreprise, exercice } = useApp();
+  const { canWrite, canDelete } = useUserRole();
   const [filter, setFilter] = useState('');
   const locked = isExerciceCloture();
+  const showActions = !locked && canWrite;
   const rows = journal.filter(r => !filter || r.libelle?.toLowerCase().includes(filter.toLowerCase()) || r.compte?.includes(filter));
+
   const td = rows.reduce((s, r) => s + (r.debit || 0), 0);
   const tc = rows.reduce((s, r) => s + (r.credit || 0), 0);
 
