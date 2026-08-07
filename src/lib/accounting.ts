@@ -53,7 +53,10 @@ export interface JournalLine {
   intitule: string;
   debit: number;
   credit: number;
+  /** Écriture (en-tête) dont la ligne est issue — null pour les lignes historiques. */
+  ecriture_id?: string | null;
 }
+
 
 export interface PlanCompte {
   id: string;

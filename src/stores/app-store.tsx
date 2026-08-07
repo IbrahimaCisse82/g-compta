@@ -76,8 +76,10 @@ function mapJournal(data: any[]): JournalLine[] {
     date_ecriture: d.date_ecriture, piece: d.piece, journal_code: d.journal_code,
     libelle: d.libelle, compte: d.compte, intitule: d.intitule,
     debit: Number(d.debit), credit: Number(d.credit),
+    ecriture_id: d.ecriture_id ?? null,
   }));
 }
+
 
 function mapPlan(data: any[]): PlanCompte[] {
   return data.map(d => ({
