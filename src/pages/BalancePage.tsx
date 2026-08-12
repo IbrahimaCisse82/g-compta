@@ -2,6 +2,7 @@ import { useApp } from '@/stores/app-store';
 import { fmt, pf } from '@/lib/accounting';
 import { exportBalanceCsv } from '@/lib/csv-export';
 import { useState, useRef } from 'react';
+import ControleBalance from '@/components/ControleBalance';
 import { toast } from 'sonner';
 
 function ImportCsvModal({ onImport, onClose }: { onImport: (lines: { compte: string; intitule: string; sd: number; sc: number; md: number; mc: number; sfd: number; sfc: number }[]) => void; onClose: () => void }) {
@@ -142,6 +143,8 @@ export default function BalancePage() {
       </div>
       <div className="p-5">
         {showImport && <ImportCsvModal onImport={handleImport} onClose={() => setShowImport(false)} />}
+
+        {!demo && <ControleBalance entrepriseId={entreprise?.id} exerciceId={exercice?.id} />}
 
         <div className={`rounded-lg px-4 py-2 mb-4 text-center font-bold text-[11px] ${eqInit && eqMvt && eqFin ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
           {eqInit && eqMvt && eqFin ? '✓ BALANCE ÉQUILIBRÉE' : '⚠ BALANCE DÉSÉQUILIBRÉE'}
