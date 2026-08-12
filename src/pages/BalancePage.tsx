@@ -2,6 +2,7 @@ import { useApp } from '@/stores/app-store';
 import { fmt, pf } from '@/lib/accounting';
 import { exportBalanceCsv } from '@/lib/csv-export';
 import { useState, useRef } from 'react';
+import ControleBalance from '@/components/ControleBalance';
 import { toast } from 'sonner';
 
 function ImportCsvModal({ onImport, onClose }: { onImport: (lines: { compte: string; intitule: string; sd: number; sc: number; md: number; mc: number; sfd: number; sfc: number }[]) => void; onClose: () => void }) {
