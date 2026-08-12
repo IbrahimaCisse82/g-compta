@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/stores/app-store';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
+import { enregistrerLignesJournal } from '@/lib/ecritures';
 
 type Moyen = {
   id: string;
@@ -201,9 +202,13 @@ export default function MobileMoneyPage() {
         });
       }
     }
-    const { data: inserted, error } = await supabase.from('journal').insert(lines).select('id').limit(1);
-    if (error) { toast.error(error.message); return; }
-    await supabase.from('transactions_mm').update({ statut: 'rapprochee', journal_id: inserted?.[0]?.id || null }).eq('id', t.id);
+    let journalId: string | null = null;
+    try {
+      await enregistrerLignesJournal(lines as any, { origine: 'mobile_money' });
+      const { data: inserted } = await supabase.from('journal').select('id').eq('piece', piece).eq('entreprise_id', entreprise.id).limit(1);
+      journalId = inserted?.[0]?.id ?? null;
+    } catch (e) { toast.error((e as Error).message); return; }
+    await supabase.from('transactions_mm').update({ statut: 'rapprochee', journal_id: journalId }).eq('id', t.id);
     toast.success('Écriture générée dans le journal BQ');
     load();
   };

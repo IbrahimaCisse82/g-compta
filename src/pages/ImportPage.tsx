@@ -3,6 +3,7 @@ import { useApp } from '@/stores/app-store';
 import { useUserRole } from '@/hooks/use-user-role';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { enregistrerLignesJournal } from '@/lib/ecritures';
 
 interface ImportLine {
   date_ecriture: string;
@@ -117,17 +118,15 @@ export default function ImportPage() {
       exercice_id: exercice.id,
     }));
 
-    const batchSize = 500;
     let imported = 0;
-    for (let i = 0; i < entries.length; i += batchSize) {
-      const batch = entries.slice(i, i + batchSize);
-      const { error } = await supabase.from('journal').insert(batch);
-      if (error) {
-        toast.error(`Erreur à la ligne ${i}: ${error.message}`);
-        setImporting(false);
-        return;
-      }
-      imported += batch.length;
+    try {
+      const ids = await enregistrerLignesJournal(entries as any, { origine: 'import' });
+      imported = entries.length;
+      if (ids.length === 0) { toast.error('Aucune écriture créée'); setImporting(false); return; }
+    } catch (e) {
+      toast.error(`Import refusé : ${(e as Error).message}`);
+      setImporting(false);
+      return;
     }
 
     toast.success(`${imported} écritures importées avec succès !`);

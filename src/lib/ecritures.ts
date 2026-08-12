@@ -168,3 +168,59 @@ export async function getRoleEntreprise(entrepriseId: string): Promise<'admin' |
   if (error) return null;
   return (data as any) ?? null;
 }
+
+/** Ligne « à plat » telle que produite historiquement par les modules métier. */
+export interface LigneJournalPlate {
+  entreprise_id: string;
+  exercice_id: string;
+  date_ecriture: string;
+  piece?: string | null;
+  journal_code: string;
+  libelle?: string | null;
+  compte: string;
+  intitule?: string | null;
+  debit?: number | null;
+  credit?: number | null;
+}
+
+/**
+ * Passerelle pour les modules métier (immobilisations, provisions, paie,
+ * facturation, mobile money, import) : regroupe les lignes par pièce puis
+ * délègue la création à `fn_creer_ecriture`. Aucun INSERT direct dans le
+ * journal — l'équilibre, la période et les droits restent contrôlés en base.
+ */
+export async function enregistrerLignesJournal(
+  lignes: LigneJournalPlate[],
+  options?: { statut?: 'brouillon' | 'validee'; origine?: string }
+): Promise<string[]> {
+  if (!lignes.length) return [];
+  const groupes = new Map<string, LigneJournalPlate[]>();
+  for (const l of lignes) {
+    const cle = [l.entreprise_id, l.exercice_id, l.journal_code, l.date_ecriture, l.piece ?? ''].join('|');
+    const arr = groupes.get(cle);
+    if (arr) arr.push(l); else groupes.set(cle, [l]);
+  }
+
+  const ids: string[] = [];
+  for (const groupe of groupes.values()) {
+    const tete = groupe[0];
+    ids.push(await creerEcriture({
+      entrepriseId: tete.entreprise_id,
+      exerciceId: tete.exercice_id,
+      journalCode: tete.journal_code,
+      date: tete.date_ecriture,
+      libelle: tete.libelle || tete.piece || 'Écriture',
+      piece: tete.piece ?? null,
+      statut: options?.statut ?? 'validee',
+      origine: options?.origine ?? 'module',
+      lignes: groupe.map(l => ({
+        compte: l.compte,
+        intitule: l.intitule ?? '',
+        libelle: l.libelle ?? undefined,
+        debit: Number(l.debit) || 0,
+        credit: Number(l.credit) || 0,
+      })),
+    }));
+  }
+  return ids;
+}

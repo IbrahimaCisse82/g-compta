@@ -5,6 +5,7 @@ import { useUserRole } from '@/hooks/use-user-role';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
 import { calcPlan, compteAmortFrom, type Immo } from '@/lib/amortissement';
+import { enregistrerLignesJournal } from '@/lib/ecritures';
 
 type ImmoRow = Immo & {
   id: string;
@@ -114,9 +115,10 @@ export default function ImmobilisationsPage() {
         intitule: 'Amortissements', debit: 0, credit: row.dotation,
       },
     ];
-    const { error } = await supabase.from('journal').insert(lines);
-    if (error) toast.error(error.message);
-    else toast.success(`Dotation ${fmt(row.dotation)} comptabilisée (pièce ${piece})`);
+    try {
+      await enregistrerLignesJournal(lines as any, { origine: 'immobilisation' });
+      toast.success(`Dotation ${fmt(row.dotation)} comptabilisée (pièce ${piece})`);
+    } catch (e) { toast.error((e as Error).message); }
   };
 
   // Comptabiliser CESSION d'immobilisation (SYSCOHADA HAO)
@@ -158,8 +160,9 @@ export default function ImmobilisationsPage() {
         compte: '822', intitule: 'Produits de cessions d\'immobilisations corporelles',
         debit: 0, credit: Math.round(prix) },
     ];
-    const { error } = await supabase.from('journal').insert(lines);
-    if (error) { toast.error(error.message); return; }
+    try {
+      await enregistrerLignesJournal(lines as any, { origine: 'cession_immo' });
+    } catch (e) { toast.error((e as Error).message); return; }
     await supabase.from('immobilisations').update({ statut: 'cede' }).eq('id', it.id);
     const pmv = prix - vnc;
     toast.success(`Cession comptabilisée (${piece}). ${pmv >= 0 ? 'Plus' : 'Moins'}-value HAO : ${fmt(Math.abs(pmv))} FCFA`);
