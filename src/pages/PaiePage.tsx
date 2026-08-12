@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/stores/app-store';
 import { toast } from 'sonner';
-import {
 import { enregistrerLignesJournal } from '@/lib/ecritures';
+import {
   calculerPaie, DEFAULT_PAIE_PARAMS, fmtMoney, MOIS,
   genererEcrituresPaie, type Employee, type PaieParametres, type BulletinResult,
 } from '@/lib/paie';
