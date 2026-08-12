@@ -4,6 +4,7 @@ import { useApp } from '@/stores/app-store';
 import { useUserRole } from '@/hooks/use-user-role';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
+import { enregistrerLignesJournal } from '@/lib/ecritures';
 
 interface Client {
   id: string;

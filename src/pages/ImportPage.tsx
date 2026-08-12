@@ -3,6 +3,7 @@ import { useApp } from '@/stores/app-store';
 import { useUserRole } from '@/hooks/use-user-role';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { enregistrerLignesJournal } from '@/lib/ecritures';
 
 interface ImportLine {
   date_ecriture: string;

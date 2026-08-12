@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/stores/app-store';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
+import { enregistrerLignesJournal } from '@/lib/ecritures';
 
 type Moyen = {
   id: string;
