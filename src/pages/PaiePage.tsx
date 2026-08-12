@@ -126,8 +126,9 @@ export default function PaiePage() {
     const totDebit = lignes.reduce((s, l) => s + l.debit, 0);
     const totCredit = lignes.reduce((s, l) => s + l.credit, 0);
     if (Math.abs(totDebit - totCredit) > 1) return toast.error(`Écriture déséquilibrée: D=${fmtMoney(totDebit)} C=${fmtMoney(totCredit)}`);
-    const { error } = await supabase.from('journal').insert(lignes);
-    if (error) return toast.error(error.message);
+    try {
+      await enregistrerLignesJournal(lignes as any, { origine: 'paie' });
+    } catch (e) { return toast.error((e as Error).message); }
     await supabase.from('bulletins_paie').update({ comptabilise: true }).eq('entreprise_id', entreprise.id).eq('periode', periode);
     toast.success(`Écritures journal PA générées (${fmtMoney(totDebit)} FCFA)`);
   }

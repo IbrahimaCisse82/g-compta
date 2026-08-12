@@ -93,9 +93,10 @@ export default function ProvisionsPage() {
         compte: p.compte_provision, intitule: 'Provisions',
         debit: 0, credit: p.montant_actuel },
     ];
-    const { error } = await supabase.from('journal').insert(lines);
-    if (error) toast.error(error.message);
-    else toast.success(`Dotation ${fmt(p.montant_actuel)} comptabilisée (${piece})`);
+    try {
+      await enregistrerLignesJournal(lines as any, { origine: 'provision' });
+      toast.success(`Dotation ${fmt(p.montant_actuel)} comptabilisée (${piece})`);
+    } catch (e) { toast.error((e as Error).message); }
   };
 
   const reprendre = async (p: Provision, montant: number, totale: boolean) => {
@@ -110,8 +111,9 @@ export default function ProvisionsPage() {
         libelle: `Reprise provision ${p.code} — ${p.libelle}`,
         compte: p.compte_reprise, intitule: 'Reprises sur provisions', debit: 0, credit: montant },
     ];
-    const { error } = await supabase.from('journal').insert(lines);
-    if (error) { toast.error(error.message); return; }
+    try {
+      await enregistrerLignesJournal(lines as any, { origine: 'reprise_provision' });
+    } catch (e) { toast.error((e as Error).message); return; }
     await supabase.from('provisions').update({
       montant_actuel: p.montant_actuel - montant,
       statut: totale ? 'reprise_totale' : 'reprise_partielle',

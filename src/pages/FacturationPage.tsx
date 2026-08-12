@@ -218,8 +218,9 @@ export default function FacturationPage() {
         debit: 0, credit: f.total_tva,
       });
     }
-    const { error } = await supabase.from('journal').insert(lines);
-    if (error) { toast.error(error.message); return; }
+    try {
+      await enregistrerLignesJournal(lines as any, { origine: 'facture_vente' });
+    } catch (e) { toast.error((e as Error).message); return; }
     await supabase.from('factures').update({ comptabilisee: true, statut: 'validee' }).eq('id', f.id);
     toast.success(`Facture ${f.numero} comptabilisée dans le journal VT`);
     load();
