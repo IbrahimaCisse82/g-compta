@@ -144,6 +144,8 @@ export default function BalancePage() {
       <div className="p-5">
         {showImport && <ImportCsvModal onImport={handleImport} onClose={() => setShowImport(false)} />}
 
+        {!demo && <ControleBalance entrepriseId={entreprise?.id} exerciceId={exercice?.id} />}
+
         <div className={`rounded-lg px-4 py-2 mb-4 text-center font-bold text-[11px] ${eqInit && eqMvt && eqFin ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
           {eqInit && eqMvt && eqFin ? '✓ BALANCE ÉQUILIBRÉE' : '⚠ BALANCE DÉSÉQUILIBRÉE'}
           {!eqInit && ` — Écart soldes initiaux: ${fmt(Math.abs(T.sd - T.sc))}`}
