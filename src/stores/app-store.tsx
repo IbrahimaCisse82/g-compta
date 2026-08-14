@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { BalanceLine, JournalLine, PlanCompte, Entreprise, Exercice } from '@/lib/accounting';
 import { supabase } from '@/integrations/supabase/client';
 import { DEMO_ENTREPRISE, DEMO_EXERCICE, DEMO_LBH_BALANCE, DEMO_LBH_JOURNAL, buildPlan } from '@/lib/demo-data';
-import { creerEcriture, contrepasserEcriture } from '@/lib/ecritures';
+import { creerEcriture, contrepasserEcriture, enregistrerLignesJournal } from '@/lib/ecritures';
 import { toast } from 'sonner';
 
 
@@ -638,7 +638,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
       if (aNouveauxJournal.length > 0) {
-        await supabase.from('journal').insert(aNouveauxJournal);
+        // Les à-nouveaux passent par le moteur serveur : équilibre et droits contrôlés en base.
+        await enregistrerLignesJournal(aNouveauxJournal, { statut: 'validee', origine: 'a_nouveau' });
       }
 
       const updatedCurrent = { ...exercice, statut: 'cloture' as const };
