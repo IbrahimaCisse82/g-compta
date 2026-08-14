@@ -638,7 +638,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
       if (aNouveauxJournal.length > 0) {
-        await supabase.from('journal').insert(aNouveauxJournal);
+        // Les à-nouveaux passent par le moteur serveur : équilibre et droits contrôlés en base.
+        await enregistrerLignesJournal(aNouveauxJournal, { statut: 'validee', origine: 'a_nouveau' });
       }
 
       const updatedCurrent = { ...exercice, statut: 'cloture' as const };
