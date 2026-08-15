@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { BalanceLine, JournalLine, PlanCompte, Entreprise, Exercice } from '@/lib/accounting';
 import { supabase } from '@/integrations/supabase/client';
 import { DEMO_ENTREPRISE, DEMO_EXERCICE, DEMO_LBH_BALANCE, DEMO_LBH_JOURNAL, buildPlan } from '@/lib/demo-data';
-import { creerEcriture, contrepasserEcriture, enregistrerLignesJournal } from '@/lib/ecritures';
+import { creerEcriture, contrepasserEcriture, enregistrerLignesJournal, getBalanceDerivee } from '@/lib/ecritures';
 import { toast } from 'sonner';
 
 
@@ -112,27 +112,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return exercice?.statut === 'cloture';
   }, [exercice]);
 
+  // Balance dérivée du serveur (fn_balance) = source de vérité.
+  // Repli sur la table `balance` stockée (mode démo / anon, RPC non autorisée).
+  const chargerBalance = useCallback(async (entrepriseId: string, exerciceId: string): Promise<BalanceLine[]> => {
+    try {
+      const derivee = await getBalanceDerivee(entrepriseId, exerciceId);
+      if (derivee.length > 0) {
+        return derivee.map(d => ({
+          id: `${exerciceId}-${d.compte}`,
+          exercice_id: exerciceId,
+          entreprise_id: entrepriseId,
+          compte: d.compte,
+          intitule: d.intitule,
+          sd: 0, sc: 0,
+          md: d.md, mc: d.mc,
+          sfd: d.sfd, sfc: d.sfc,
+        }));
+      }
+    } catch { /* repli ci-dessous */ }
+    const { data } = await supabase.from('balance').select('*').eq('exercice_id', exerciceId);
+    return data ? mapBalance(data) : [];
+  }, []);
+
   const loadBalanceN1 = useCallback(async (exercicesList: Exercice[], currentExercice: Exercice) => {
     const prevExercice = exercicesList
       .filter(e => e.annee < currentExercice.annee)
       .sort((a, b) => b.annee - a.annee)[0];
     if (!prevExercice) { setBalanceN1([]); return; }
     try {
-      const { data } = await supabase.from('balance').select('*').eq('exercice_id', prevExercice.id);
-      if (data) setBalanceN1(mapBalance(data));
-      else setBalanceN1([]);
+      setBalanceN1(await chargerBalance(prevExercice.entreprise_id, prevExercice.id));
     } catch { setBalanceN1([]); }
-  }, []);
+  }, [chargerBalance]);
 
   const loadExerciceData = useCallback(async (excId: string, allExercices: Exercice[], exc: Exercice) => {
-    const [balRes, jourRes] = await Promise.all([
-      supabase.from('balance').select('*').eq('exercice_id', excId),
+    const [bal, jourRes] = await Promise.all([
+      chargerBalance(exc.entreprise_id, excId),
       supabase.from('journal').select('*').eq('exercice_id', excId).order('date_ecriture'),
     ]);
-    if (balRes.data) setBalance(mapBalance(balRes.data));
+    setBalance(bal);
     if (jourRes.data) setJournal(mapJournal(jourRes.data));
     await loadBalanceN1(allExercices, exc);
-  }, [loadBalanceN1]);
+  }, [loadBalanceN1, chargerBalance]);
+
 
   // ─── LAUNCH DEMO ─────────────────────────────────────
   const launchDemo = useCallback(async (envMode: EnvMode) => {

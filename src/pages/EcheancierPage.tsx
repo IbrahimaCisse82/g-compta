@@ -156,6 +156,17 @@ export default function EcheancierPage() {
     else reload();
   };
 
+  const genererAlertes = async () => {
+    try {
+      const { data, error } = await supabase.rpc('fn_generer_alertes_echeances' as any);
+      if (error) throw error;
+      const n = Number(data) || 0;
+      toast.success(n > 0 ? `${n} alerte(s) d'échéance générée(s).` : 'Aucune nouvelle alerte à générer.');
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur lors de la génération des alertes');
+    }
+  };
+
   const genererCalendrierAnnee = async () => {
     if (!entreprise || !exercice) return;
     if (!confirm(`Générer toutes les échéances récurrentes pour l'année ${exercice.annee} ?`)) return;
@@ -228,6 +239,10 @@ export default function EcheancierPage() {
           <button onClick={genererCalendrierAnnee}
             className="text-[11px] px-3 py-1 rounded border border-border bg-bg3 hover:bg-primary/10 hover:border-primary">
             ⚙️ Générer calendrier {exercice?.annee}
+          </button>
+          <button onClick={genererAlertes}
+            className="text-[11px] px-3 py-1 rounded border border-border bg-bg3 hover:bg-primary/10 hover:border-primary">
+            🔔 Générer les alertes J-7
           </button>
           <button onClick={() => setShowForm(true)}
             className="text-[11px] px-3 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90">

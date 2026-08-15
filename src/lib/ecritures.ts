@@ -224,3 +224,13 @@ export async function enregistrerLignesJournal(
   }
   return ids;
 }
+
+/** Resynchronise la balance stockée à partir de la balance recalculée par le serveur. */
+export async function resynchroniserBalance(entrepriseId: string, exerciceId: string): Promise<number> {
+  const { data, error } = await supabase.rpc('fn_resync_balance', {
+    _entreprise_id: entrepriseId,
+    _exercice_id: exerciceId,
+  } as any);
+  if (error) throw new Error(error.message);
+  return Number(data) || 0;
+}

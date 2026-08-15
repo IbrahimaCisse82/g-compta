@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@/hooks/use-theme';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import NotificationsBell from '@/components/NotificationsBell';
 import Dashboard from '@/pages/Dashboard';
 import JournalPage from '@/pages/JournalPage';
 import BalancePage from '@/pages/BalancePage';
@@ -235,6 +236,7 @@ export default function AppShell() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <NotificationsBell />
           {/* Theme toggle */}
           <button onClick={toggle} title="Alt+T : Basculer thème"
             className="px-2 py-1 rounded-md text-xs border border-border text-fg2 hover:bg-bg3 transition-colors">
