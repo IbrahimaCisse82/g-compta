@@ -229,6 +229,10 @@ export default function EcheancierPage() {
             className="text-[11px] px-3 py-1 rounded border border-border bg-bg3 hover:bg-primary/10 hover:border-primary">
             ⚙️ Générer calendrier {exercice?.annee}
           </button>
+          <button onClick={genererAlertes}
+            className="text-[11px] px-3 py-1 rounded border border-border bg-bg3 hover:bg-primary/10 hover:border-primary">
+            🔔 Générer les alertes J-7
+          </button>
           <button onClick={() => setShowForm(true)}
             className="text-[11px] px-3 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90">
             + Nouvelle échéance
