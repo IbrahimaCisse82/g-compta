@@ -2652,6 +2652,7 @@ export type Database = {
         }
         Returns: string
       }
+      fn_generer_alertes_echeances: { Args: never; Returns: number }
       fn_refresh_balance: { Args: never; Returns: undefined }
       fn_resync_balance: {
         Args: { _entreprise_id: string; _exercice_id: string }
