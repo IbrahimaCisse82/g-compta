@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@/hooks/use-theme';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import NotificationsBell from '@/components/NotificationsBell';
 import Dashboard from '@/pages/Dashboard';
 import JournalPage from '@/pages/JournalPage';
 import BalancePage from '@/pages/BalancePage';
