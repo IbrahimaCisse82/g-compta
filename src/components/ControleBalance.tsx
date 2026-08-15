@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
-import { getEcartsBalance, getBalanceDerivee, type EcartBalance, type BalanceDeriveeLine } from '@/lib/ecritures';
+import { getEcartsBalance, getBalanceDerivee, resynchroniserBalance, type EcartBalance, type BalanceDeriveeLine } from '@/lib/ecritures';
 
 /**
  * Contrôle de double-tenue : compare la balance stockée (table `balance`)
