@@ -33,6 +33,20 @@ export default function ControleBalance({ entrepriseId, exerciceId }: { entrepri
     }
   };
 
+  const resync = async () => {
+    if (!entrepriseId || !exerciceId) { toast.error('Sélectionnez une entreprise et un exercice.'); return; }
+    setSyncing(true);
+    try {
+      const n = await resynchroniserBalance(entrepriseId, exerciceId);
+      toast.success(`Balance stockée resynchronisée : ${n} compte(s).`);
+      await lancer();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const totD = (derivee || []).reduce((s, l) => s + l.md, 0);
   const totC = (derivee || []).reduce((s, l) => s + l.mc, 0);
 
@@ -43,15 +57,26 @@ export default function ControleBalance({ entrepriseId, exerciceId }: { entrepri
           <h2 id="controle-balance-titre" className="text-xs font-semibold">🛡 Contrôle d'intégrité — double tenue</h2>
           <p className="text-[10px] text-fg3">Balance stockée comparée à la balance recalculée par le serveur.</p>
         </div>
-        <button
-          type="button"
-          onClick={lancer}
-          disabled={loading}
-          className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-primary/40 text-primary hover:bg-primary/10 disabled:opacity-50"
-        >
-          {loading ? 'Contrôle…' : 'Lancer le contrôle'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={lancer}
+            disabled={loading || syncing}
+            className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-primary/40 text-primary hover:bg-primary/10 disabled:opacity-50"
+          >
+            {loading ? 'Contrôle…' : 'Lancer le contrôle'}
+          </button>
+          <button
+            type="button"
+            onClick={resync}
+            disabled={loading || syncing}
+            className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-border text-fg2 hover:bg-bg3 disabled:opacity-50"
+          >
+            {syncing ? 'Resynchro…' : '⟳ Resynchroniser'}
+          </button>
+        </div>
       </div>
+
 
       {derivee && (
         <div className="px-3.5 py-2 text-[11px] font-mono border-b border-border/50 flex flex-wrap gap-4">
