@@ -10,6 +10,7 @@ import { getEcartsBalance, getBalanceDerivee, resynchroniserBalance, type EcartB
  */
 export default function ControleBalance({ entrepriseId, exerciceId }: { entrepriseId?: string; exerciceId?: string }) {
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [ecarts, setEcarts] = useState<EcartBalance[] | null>(null);
   const [derivee, setDerivee] = useState<BalanceDeriveeLine[] | null>(null);
 
