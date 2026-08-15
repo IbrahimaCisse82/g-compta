@@ -156,6 +156,17 @@ export default function EcheancierPage() {
     else reload();
   };
 
+  const genererAlertes = async () => {
+    try {
+      const { data, error } = await supabase.rpc('fn_generer_alertes_echeances' as any);
+      if (error) throw error;
+      const n = Number(data) || 0;
+      toast.success(n > 0 ? `${n} alerte(s) d'échéance générée(s).` : 'Aucune nouvelle alerte à générer.');
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur lors de la génération des alertes');
+    }
+  };
+
   const genererCalendrierAnnee = async () => {
     if (!entreprise || !exercice) return;
     if (!confirm(`Générer toutes les échéances récurrentes pour l'année ${exercice.annee} ?`)) return;
