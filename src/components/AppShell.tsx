@@ -235,6 +235,7 @@ export default function AppShell() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <NotificationsBell />
           {/* Theme toggle */}
           <button onClick={toggle} title="Alt+T : Basculer thème"
             className="px-2 py-1 rounded-md text-xs border border-border text-fg2 hover:bg-bg3 transition-colors">
