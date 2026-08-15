@@ -2653,6 +2653,10 @@ export type Database = {
         Returns: string
       }
       fn_refresh_balance: { Args: never; Returns: undefined }
+      fn_resync_balance: {
+        Args: { _entreprise_id: string; _exercice_id: string }
+        Returns: number
+      }
       fn_rouvrir_exercice: {
         Args: { _exercice_id: string; _motif: string }
         Returns: undefined
