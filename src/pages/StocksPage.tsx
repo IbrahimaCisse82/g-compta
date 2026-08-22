@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/stores/app-store';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
+import { calculerMouvement, valeurStock, compterRuptures } from '@/lib/stocks';
 
 type Article = {
   id: string;
@@ -96,33 +97,18 @@ export default function StocksPage() {
 
   const saveMvt = async () => {
     if (!selected || !entreprise) return;
-    if (mvtForm.quantite <= 0) { toast.error('Quantité > 0 requise'); return; }
+    let calc;
+    try {
+      calc = calculerMouvement({
+        type: mvtForm.type_mvt,
+        stockAvant: selected.quantite_stock,
+        cumpAvant: selected.prix_achat_moyen,
+        quantite: Number(mvtForm.quantite),
+        prixUnitaire: Number(mvtForm.prix_unitaire),
+      });
+    } catch (e) { toast.error((e as Error).message); return; }
     const qte = Number(mvtForm.quantite);
-    const pu = Number(mvtForm.prix_unitaire);
-    const stockAvant = selected.quantite_stock;
-    const cumpAvant = selected.prix_achat_moyen;
-    let qteApres = stockAvant;
-    let cumpApres = cumpAvant;
-    let montant = 0;
-
-    if (mvtForm.type_mvt === 'entree') {
-      qteApres = stockAvant + qte;
-      cumpApres = qteApres > 0 ? (stockAvant * cumpAvant + qte * pu) / qteApres : pu;
-      montant = qte * pu;
-    } else if (mvtForm.type_mvt === 'sortie') {
-      if (qte > stockAvant) { toast.error('Stock insuffisant'); return; }
-      qteApres = stockAvant - qte;
-      cumpApres = cumpAvant;
-      montant = qte * cumpAvant;
-    } else if (mvtForm.type_mvt === 'inventaire') {
-      qteApres = qte;
-      cumpApres = pu || cumpAvant;
-      montant = qteApres * cumpApres;
-    } else {
-      qteApres = stockAvant + qte;
-      cumpApres = cumpAvant;
-      montant = qte * cumpAvant;
-    }
+    const { qteApres, cumpApres, montant, prixUtilise } = calc;
 
     const { error } = await supabase.from('mouvements_stock').insert({
       entreprise_id: entreprise.id,
@@ -132,9 +118,9 @@ export default function StocksPage() {
       type_mvt: mvtForm.type_mvt,
       reference: mvtForm.reference,
       quantite: qte,
-      prix_unitaire: mvtForm.type_mvt === 'sortie' ? cumpAvant : pu,
-      montant: Math.round(montant * 100) / 100,
-      cump_apres: Math.round(cumpApres * 10000) / 10000,
+      prix_unitaire: prixUtilise,
+      montant,
+      cump_apres: cumpApres,
       qte_apres: qteApres,
       notes: mvtForm.notes,
     });
@@ -160,11 +146,11 @@ export default function StocksPage() {
     else { toast.success('Supprimé'); load(); }
   };
 
-  const totals = useMemo(() => {
-    const valeur = articles.reduce((s, a) => s + a.quantite_stock * a.prix_achat_moyen, 0);
-    const alerteRupture = articles.filter(a => a.quantite_stock <= a.stock_minimum && a.actif).length;
-    return { count: articles.length, valeur, alerteRupture };
-  }, [articles]);
+  const totals = useMemo(() => ({
+    count: articles.length,
+    valeur: valeurStock(articles),
+    alerteRupture: compterRuptures(articles),
+  }), [articles]);
 
   return (
     <div>
