@@ -4,6 +4,10 @@ import { useApp } from '@/stores/app-store';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
 import { enregistrerLignesJournal } from '@/lib/ecritures';
+import {
+  NATURES_PROVISIONS as NATURES, lignesDotationProvision, lignesRepriseProvision,
+  validerMontantReprise, encoursProvisions,
+} from '@/lib/provisions';
 
 type Provision = {
   id: string;
@@ -22,15 +26,6 @@ type Provision = {
   statut: 'active' | 'reprise_partielle' | 'reprise_totale';
   notes: string | null;
 };
-
-const NATURES = [
-  { code: 'exploitation', label: "Provision risques et charges d'exploitation", cp: '191', cd: '6911', cr: '7911' },
-  { code: 'financiere', label: 'Provision risques et charges financières', cp: '194', cd: '6971', cr: '7971' },
-  { code: 'hao', label: 'Provision risques et charges HAO', cp: '198', cd: '853', cr: '863' },
-  { code: 'depreciation_immo', label: 'Dépréciation immobilisations (29X)', cp: '291', cd: '6913', cr: '7913' },
-  { code: 'depreciation_stock', label: 'Dépréciation stocks (39X)', cp: '391', cd: '6593', cr: '7593' },
-  { code: 'depreciation_creance', label: 'Dépréciation créances (491)', cp: '491', cd: '6594', cr: '7594' },
-];
 
 const empty = (): Partial<Provision> => ({
   code: '', libelle: '', nature: 'exploitation',
@@ -81,36 +76,22 @@ export default function ProvisionsPage() {
 
   const comptabiliserDotation = async (p: Provision) => {
     if (!exercice || !entreprise) return;
-    const piece = `PROV-${p.code}-${exercice.annee}`;
-    const date = exercice.date_fin;
-    const lines = [
-      { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: date, piece, journal_code: 'OD',
-        libelle: `Dotation provision ${p.code} — ${p.libelle}`,
-        compte: p.compte_dotation, intitule: 'Dotations aux provisions',
-        debit: p.montant_actuel, credit: 0 },
-      { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: date, piece, journal_code: 'OD',
-        libelle: `Dotation provision ${p.code} — ${p.libelle}`,
-        compte: p.compte_provision, intitule: 'Provisions',
-        debit: 0, credit: p.montant_actuel },
-    ];
+    const ctx = { entreprise_id: entreprise.id, exercice_id: exercice.id, date: exercice.date_fin };
+    const lines = lignesDotationProvision(p, ctx)
+      .map(l => ({ ...l, piece: `${l.piece}-${exercice.annee}` }));
     try {
       await enregistrerLignesJournal(lines as any, { origine: 'provision' });
-      toast.success(`Dotation ${fmt(p.montant_actuel)} comptabilisée (${piece})`);
+      toast.success(`Dotation ${fmt(p.montant_actuel)} comptabilisée (${lines[0].piece})`);
     } catch (e) { toast.error((e as Error).message); }
   };
 
   const reprendre = async (p: Provision, montant: number, totale: boolean) => {
     if (!exercice || !entreprise) return;
-    if (montant <= 0 || montant > p.montant_actuel) { toast.error('Montant invalide'); return; }
-    const piece = `REP-${p.code}-${exercice.annee}`;
-    const lines = [
-      { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: exercice.date_fin, piece, journal_code: 'OD',
-        libelle: `Reprise provision ${p.code} — ${p.libelle}`,
-        compte: p.compte_provision, intitule: 'Provisions', debit: montant, credit: 0 },
-      { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: exercice.date_fin, piece, journal_code: 'OD',
-        libelle: `Reprise provision ${p.code} — ${p.libelle}`,
-        compte: p.compte_reprise, intitule: 'Reprises sur provisions', debit: 0, credit: montant },
-    ];
+    const err = validerMontantReprise(montant, p.montant_actuel);
+    if (err) { toast.error(err); return; }
+    const ctx = { entreprise_id: entreprise.id, exercice_id: exercice.id, date: exercice.date_fin };
+    const lines = lignesRepriseProvision(p, montant, ctx)
+      .map(l => ({ ...l, piece: `${l.piece}-${exercice.annee}` }));
     try {
       await enregistrerLignesJournal(lines as any, { origine: 'reprise_provision' });
     } catch (e) { toast.error((e as Error).message); return; }
