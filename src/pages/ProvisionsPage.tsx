@@ -100,7 +100,7 @@ export default function ProvisionsPage() {
       statut: totale ? 'reprise_totale' : 'reprise_partielle',
       date_reprise: exercice.date_fin,
     }).eq('id', p.id);
-    toast.success(`Reprise ${fmt(montant)} comptabilisée (${piece})`);
+    toast.success(`Reprise ${fmt(montant)} comptabilisée (${lines[0].piece})`);
     load();
   };
 
