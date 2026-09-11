@@ -131,7 +131,38 @@ export default function StocksPage() {
       .update({ quantite_stock: qteApres, prix_achat_moyen: cumpApres })
       .eq('id', selected.id);
 
-    toast.success('Mouvement enregistré');
+    // Inventaire permanent : chaque mouvement génère son écriture 3XX / 603X
+    if (exercice) {
+      const variation = variationValeur(selected.quantite_stock, selected.prix_achat_moyen, qteApres, cumpApres);
+      const lignes = lignesEcritureStock({
+        type: mvtForm.type_mvt,
+        compteStock: selected.compte_stock,
+        compteVariation: selected.compte_variation,
+        designation: selected.designation,
+        montant: variation,
+      });
+      if (lignes.length) {
+        const piece = mvtForm.reference || `STK-${selected.code}-${mvtForm.date_mvt}`;
+        try {
+          await enregistrerLignesJournal(lignes.map(l => ({
+            entreprise_id: entreprise.id,
+            exercice_id: exercice.id,
+            date_ecriture: mvtForm.date_mvt,
+            piece,
+            journal_code: 'OD',
+            libelle: `Mouvement stock ${selected.code} — ${mvtForm.type_mvt}`,
+            compte: l.compte,
+            intitule: l.intitule,
+            debit: l.debit,
+            credit: l.credit,
+          })), { origine: 'stock' });
+        } catch (e: any) {
+          toast.error(`Mouvement enregistré, écriture refusée : ${e.message}`);
+        }
+      }
+    }
+
+    toast.success('Mouvement enregistré et comptabilisé');
     setShowMvt(false);
     setMvtForm({ type_mvt: 'entree', date_mvt: new Date().toISOString().slice(0, 10), reference: '', quantite: 0, prix_unitaire: 0, notes: '' });
     await load();
