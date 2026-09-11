@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/stores/app-store';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
-import { calculerMouvement, valeurStock, compterRuptures } from '@/lib/stocks';
+import { calculerMouvement, valeurStock, compterRuptures, lignesEcritureStock, variationValeur } from '@/lib/stocks';
+import { enregistrerLignesJournal } from '@/lib/ecritures';
 
 type Article = {
   id: string;
@@ -11,7 +12,7 @@ type Article = {
   code: string;
   designation: string;
   unite: string;
-  methode_valorisation: 'CUMP' | 'FIFO';
+  methode_valorisation: 'CUMP';
   compte_stock: string;
   compte_achat: string;
   compte_vente: string;
