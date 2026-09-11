@@ -74,3 +74,43 @@ export function valeurStock(articles: ArticleValorise[]): number {
 export function compterRuptures(articles: ArticleValorise[]): number {
   return articles.filter(a => a.actif && a.quantite_stock <= a.stock_minimum).length;
 }
+
+// ─── COMPTABILISATION DES MOUVEMENTS — inventaire permanent (SYSCOHADA) ──
+// Entrée   : débit 3XX (stock)      / crédit 603X (variation de stocks)
+// Sortie   : débit 603X (variation) / crédit 3XX (stock)
+// Inventaire / ajustement : écart valorisé, même logique selon le sens.
+
+export interface LigneStockComptable {
+  compte: string;
+  intitule: string;
+  debit: number;
+  credit: number;
+}
+
+export interface EcritureStockInput {
+  type: TypeMouvement;
+  compteStock: string;
+  compteVariation: string;
+  designation: string;
+  /** Valeur du mouvement (positive). Pour inventaire : valeur après − valeur avant. */
+  montant: number;
+}
+
+/**
+ * Construit les deux lignes équilibrées d'un mouvement de stock.
+ * Retourne [] si le montant est nul (aucune écriture à passer).
+ */
+export function lignesEcritureStock({ type, compteStock, compteVariation, designation, montant }: EcritureStockInput): LigneStockComptable[] {
+  const m = round2(Math.abs(montant));
+  if (!(m > 0)) return [];
+  const entree = montant > 0 ? type !== 'sortie' : false;
+  const sensEntree = type === 'entree' ? true : type === 'sortie' ? false : entree;
+  const stock = { compte: compteStock, intitule: `Stock ${designation}`, debit: sensEntree ? m : 0, credit: sensEntree ? 0 : m };
+  const variation = { compte: compteVariation, intitule: `Variation de stocks ${designation}`, debit: sensEntree ? 0 : m, credit: sensEntree ? m : 0 };
+  return [stock, variation];
+}
+
+/** Variation de valeur induite par un mouvement (valeur après − valeur avant). */
+export function variationValeur(stockAvant: number, cumpAvant: number, qteApres: number, cumpApres: number): number {
+  return round2(qteApres * cumpApres - stockAvant * cumpAvant);
+}
