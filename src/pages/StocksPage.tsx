@@ -187,7 +187,7 @@ export default function StocksPage() {
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
-        <div className="font-serif text-[17px]">📦 Gestion des Stocks (CUMP / FIFO)</div>
+        <div className="font-serif text-[17px]">📦 Gestion des Stocks (CUMP — inventaire permanent)</div>
         <button onClick={() => { setForm(emptyArticle()); setShowForm(true); }}
           className="px-3 py-1 rounded-md text-xs bg-primary text-primary-foreground hover:opacity-90">
           + Nouvel article
@@ -308,7 +308,6 @@ export default function StocksPage() {
             <Field label="Méthode">
               <select className="inp" value={form.methode_valorisation || 'CUMP'} onChange={e => setForm({ ...form, methode_valorisation: e.target.value as any })}>
                 <option value="CUMP">CUMP (Coût Unitaire Moyen Pondéré)</option>
-                <option value="FIFO">FIFO (Premier Entré Premier Sorti)</option>
               </select>
             </Field>
             <Field label="Compte stock (31X/32X/33X)"><input className="inp" value={form.compte_stock || '311'} onChange={e => setForm({ ...form, compte_stock: e.target.value })} /></Field>
