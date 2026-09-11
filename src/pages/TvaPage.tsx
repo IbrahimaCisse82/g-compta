@@ -1,5 +1,6 @@
 import { useApp } from '@/stores/app-store';
 import { fmt } from '@/lib/accounting';
+import { enregistrerLignesJournal, round2 } from '@/lib/ecritures';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
