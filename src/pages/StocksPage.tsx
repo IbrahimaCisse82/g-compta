@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/stores/app-store';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
-import { calculerMouvement, valeurStock, compterRuptures } from '@/lib/stocks';
+import { calculerMouvement, valeurStock, compterRuptures, lignesEcritureStock, variationValeur } from '@/lib/stocks';
+import { enregistrerLignesJournal } from '@/lib/ecritures';
 
 type Article = {
   id: string;
@@ -11,7 +12,7 @@ type Article = {
   code: string;
   designation: string;
   unite: string;
-  methode_valorisation: 'CUMP' | 'FIFO';
+  methode_valorisation: 'CUMP';
   compte_stock: string;
   compte_achat: string;
   compte_vente: string;
@@ -130,7 +131,38 @@ export default function StocksPage() {
       .update({ quantite_stock: qteApres, prix_achat_moyen: cumpApres })
       .eq('id', selected.id);
 
-    toast.success('Mouvement enregistré');
+    // Inventaire permanent : chaque mouvement génère son écriture 3XX / 603X
+    if (exercice) {
+      const variation = variationValeur(selected.quantite_stock, selected.prix_achat_moyen, qteApres, cumpApres);
+      const lignes = lignesEcritureStock({
+        type: mvtForm.type_mvt,
+        compteStock: selected.compte_stock,
+        compteVariation: selected.compte_variation,
+        designation: selected.designation,
+        montant: variation,
+      });
+      if (lignes.length) {
+        const piece = mvtForm.reference || `STK-${selected.code}-${mvtForm.date_mvt}`;
+        try {
+          await enregistrerLignesJournal(lignes.map(l => ({
+            entreprise_id: entreprise.id,
+            exercice_id: exercice.id,
+            date_ecriture: mvtForm.date_mvt,
+            piece,
+            journal_code: 'OD',
+            libelle: `Mouvement stock ${selected.code} — ${mvtForm.type_mvt}`,
+            compte: l.compte,
+            intitule: l.intitule,
+            debit: l.debit,
+            credit: l.credit,
+          })), { origine: 'stock' });
+        } catch (e: any) {
+          toast.error(`Mouvement enregistré, écriture refusée : ${e.message}`);
+        }
+      }
+    }
+
+    toast.success('Mouvement enregistré et comptabilisé');
     setShowMvt(false);
     setMvtForm({ type_mvt: 'entree', date_mvt: new Date().toISOString().slice(0, 10), reference: '', quantite: 0, prix_unitaire: 0, notes: '' });
     await load();
@@ -155,7 +187,7 @@ export default function StocksPage() {
   return (
     <div>
       <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
-        <div className="font-serif text-[17px]">📦 Gestion des Stocks (CUMP / FIFO)</div>
+        <div className="font-serif text-[17px]">📦 Gestion des Stocks (CUMP — inventaire permanent)</div>
         <button onClick={() => { setForm(emptyArticle()); setShowForm(true); }}
           className="px-3 py-1 rounded-md text-xs bg-primary text-primary-foreground hover:opacity-90">
           + Nouvel article
@@ -276,7 +308,6 @@ export default function StocksPage() {
             <Field label="Méthode">
               <select className="inp" value={form.methode_valorisation || 'CUMP'} onChange={e => setForm({ ...form, methode_valorisation: e.target.value as any })}>
                 <option value="CUMP">CUMP (Coût Unitaire Moyen Pondéré)</option>
-                <option value="FIFO">FIFO (Premier Entré Premier Sorti)</option>
               </select>
             </Field>
             <Field label="Compte stock (31X/32X/33X)"><input className="inp" value={form.compte_stock || '311'} onChange={e => setForm({ ...form, compte_stock: e.target.value })} /></Field>

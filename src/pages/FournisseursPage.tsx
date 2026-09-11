@@ -4,6 +4,7 @@ import { useApp } from '@/stores/app-store';
 import { useUserRole } from '@/hooks/use-user-role';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
+import { enregistrerLignesJournal, round2 as r2, type LigneJournalPlate } from '@/lib/ecritures';
 
 interface Fournisseur {
   id: string;
@@ -231,49 +232,55 @@ export default function FournisseursPage() {
     const frn = fournisseurs.find(x => x.id === f.fournisseur_id);
     if (!frn) { toast.error('Fournisseur introuvable'); return; }
 
-    // Construction de l'écriture journal AC
-    // Débit 60X / 4452 (TVA déductible) — Crédit 401[FRN]
-    const lines: any[] = [];
-    // Agrégation par compte charge
-    const byCharge: Record<string, number> = {};
-    let totalTva = 0;
-    for (const l of lgs as any[]) {
-      const ht = Number(l.quantite) * Number(l.prix_unitaire);
-      byCharge[l.compte_charge] = (byCharge[l.compte_charge] || 0) + ht;
-      totalTva += ht * (Number(l.taux_tva) / 100);
-    }
-    for (const [compte, ht] of Object.entries(byCharge)) {
-      lines.push({
-        id: `tmp-${Date.now()}-${compte}`,
-        exercice_id: exercice.id, entreprise_id: entreprise.id,
-        date_ecriture: f.date_facture, piece: f.numero_interne, journal_code: 'AC',
-        libelle: `Achat ${frn.raison_sociale} — ${f.numero_interne}`,
-        compte, intitule: `Achat ${compte}`,
-        debit: Math.round(ht * 100) / 100, credit: 0,
-      });
-    }
-    if (totalTva > 0) {
-      lines.push({
-        id: `tmp-${Date.now()}-tva`,
-        exercice_id: exercice.id, entreprise_id: entreprise.id,
-        date_ecriture: f.date_facture, piece: f.numero_interne, journal_code: 'AC',
-        libelle: `TVA déductible — ${f.numero_interne}`,
-        compte: '4452', intitule: 'TVA déductible / achats',
-        debit: Math.round(totalTva * 100) / 100, credit: 0,
-      });
-    }
-    const compteFrn = `${frn.compte_tiers}${frn.code.replace(/\D/g, '').slice(0, 4)}`;
-    lines.push({
-      id: `tmp-${Date.now()}-frn`,
+    // Construction de l'écriture journal AC — équilibre garanti :
+    // le crédit fournisseur est la somme exacte des débits arrondis (HT par compte + TVA
+    // par taux), jamais le TTC stocké, afin d'éliminer tout écart d'arrondi.
+    const base = {
       exercice_id: exercice.id, entreprise_id: entreprise.id,
       date_ecriture: f.date_facture, piece: f.numero_interne, journal_code: 'AC',
-      libelle: `Facture ${frn.raison_sociale} — ${f.numero_interne}`,
+    };
+    const lines: LigneJournalPlate[] = [];
+    const byCharge: Record<string, number> = {};
+    const byTva: Record<string, number> = {}; // TVA ventilée : 4451 (immo) ou 4452 (achats)
+    for (const l of lgs as any[]) {
+      const ht = r2(Number(l.quantite) * Number(l.prix_unitaire));
+      byCharge[l.compte_charge] = r2((byCharge[l.compte_charge] || 0) + ht);
+      const tva = r2(ht * (Number(l.taux_tva) / 100));
+      if (tva > 0) {
+        const compteTva = /^2/.test(String(l.compte_charge)) ? '4451' : '4452';
+        byTva[compteTva] = r2((byTva[compteTva] || 0) + tva);
+      }
+    }
+    for (const [compte, ht] of Object.entries(byCharge)) {
+      lines.push({ ...base, libelle: `Achat ${frn.raison_sociale} — ${f.numero_interne}`, compte, intitule: `Achat ${compte}`, debit: ht, credit: 0 });
+    }
+    for (const [compte, tva] of Object.entries(byTva)) {
+      lines.push({
+        ...base, libelle: `TVA déductible — ${f.numero_interne}`, compte,
+        intitule: compte === '4451' ? 'TVA récupérable sur immobilisations' : 'TVA récupérable sur achats',
+        debit: tva, credit: 0,
+      });
+    }
+    const totalDebit = r2(lines.reduce((s, l) => s + (l.debit || 0), 0));
+    const compteFrn = `${frn.compte_tiers}${frn.code.replace(/\D/g, '').slice(0, 4)}`;
+    lines.push({
+      ...base, libelle: `Facture ${frn.raison_sociale} — ${f.numero_interne}`,
       compte: compteFrn, intitule: `Fournisseur ${frn.raison_sociale}`,
-      debit: 0, credit: f.total_ttc,
+      debit: 0, credit: totalDebit,
     });
 
-    await addJournalEntry(lines as any);
-    await supabase.from('factures_achat').update({ comptabilisee: true, piece_journal: f.numero_interne, statut: 'validee' }).eq('id', f.id);
+    try {
+      await enregistrerLignesJournal(lines, { origine: 'facture_achat' });
+    } catch (e: any) {
+      toast.error(e.message || 'Comptabilisation refusée');
+      return;
+    }
+    await supabase.from('factures_achat').update({
+      comptabilisee: true, piece_journal: f.numero_interne, statut: 'validee',
+      total_ht: r2(Object.values(byCharge).reduce((s, v) => s + v, 0)),
+      total_tva: r2(Object.values(byTva).reduce((s, v) => s + v, 0)),
+      total_ttc: totalDebit,
+    }).eq('id', f.id);
     toast.success('Facture comptabilisée au journal AC');
     load();
   };
