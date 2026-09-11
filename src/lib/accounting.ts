@@ -202,7 +202,8 @@ export const ACTIF: MapLine[] = [
   { id: 'BG', label: 'CRÉANCES ET EMPLOIS ASSIMILÉS', type: 'total', refs: ['BH', 'BI', 'BJ'] },
   { id: 'BH', label: 'Fournisseurs, avances versées', c: [['4091', '4098']], s: 'D' },
   { id: 'BI', label: 'Clients', c: [['411', '4198']], s: 'D' },
-  { id: 'BJ', label: 'Autres créances', c: [['42', '47']], s: 'D' },
+  // Non-compensation : les fournisseurs au solde débiteur figurent à l'actif
+  { id: 'BJ', label: 'Autres créances', c: [['401', '408'], ['42', '47']], s: 'D' },
   { id: 'BK', label: 'TOTAL ACTIF CIRCULANT (II)', type: 'gtotal', refs: ['BA', 'BB', 'BG'] },
 
   { id: 'S_TA', label: 'TRÉSORERIE — ACTIF', type: 'sect' },
@@ -241,13 +242,15 @@ export const PASSIF: MapLine[] = [
   { id: 'DI', label: 'Clients, avances reçues', c: [['4191', '4198']], s: 'C' },
   { id: 'DJ', label: "Fournisseurs d'exploitation", c: [['401', '408']], s: 'C' },
   { id: 'DK', label: 'Dettes fiscales et sociales', c: [['421', '459']], s: 'C' },
-  { id: 'DM', label: 'Autres dettes', c: [['46', '478']], s: 'C' },
+  // Non-compensation : les clients au solde créditeur figurent au passif
+  { id: 'DM', label: 'Autres dettes', c: [['411', '418'], ['46', '478']], s: 'C' },
   { id: 'DN', label: 'Risques provisionnés', c: [['499', '499']], s: 'C' },
   { id: 'DP', label: 'TOTAL PASSIF CIRCULANT (III)', type: 'gtotal', refs: ['DH', 'DI', 'DJ', 'DK', 'DM', 'DN'] },
 
   { id: 'S_TP', label: 'TRÉSORERIE — PASSIF', type: 'sect' },
   { id: 'DQ', label: "Banques, crédits d'escompte", c: [['561', '564']], s: 'C' },
-  { id: 'DR', label: 'Banques, crédits de trésorerie et découvert', c: [['565', '569']], s: 'C' },
+  // Tout compte de trésorerie au solde créditeur (découvert) bascule en trésorerie-passif
+  { id: 'DR', label: 'Banques, crédits de trésorerie et découvert', c: [['521', '559'], ['565', '569']], s: 'C' },
   { id: 'DT', label: 'TOTAL TRÉSORERIE PASSIF (IV)', type: 'total', refs: ['DQ', 'DR'] },
 
   { id: 'DV', label: 'Écart de conversion passif', c: [['479', '479']], s: 'C' },
