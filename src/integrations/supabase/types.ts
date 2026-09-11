@@ -967,6 +967,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           date_ecriture: string
+          document_id: string | null
           entreprise_id: string
           exercice_id: string
           id: string
@@ -990,6 +991,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date_ecriture: string
+          document_id?: string | null
           entreprise_id: string
           exercice_id: string
           id?: string
@@ -1013,6 +1015,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date_ecriture?: string
+          document_id?: string | null
           entreprise_id?: string
           exercice_id?: string
           id?: string
@@ -1043,6 +1046,13 @@ export type Database = {
             columns: ["contrepasse_par"]
             isOneToOne: false
             referencedRelation: "ecritures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecritures_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
           {
