@@ -76,9 +76,37 @@ export default function TvaPage() {
     setLoading(false);
   };
 
+  // Validation d'une déclaration → OD de liquidation de TVA (SYSCOHADA) :
+  // débit 4431 (TVA facturée) / crédit 4452 (TVA récupérable)
+  // solde créditeur → 4441 TVA due ; solde débiteur → 4449 crédit à reporter.
   const validerDecl = async (id: string) => {
+    const d = declarations.find(x => x.id === id);
+    if (!d || !entreprise || !exercice) return;
+    const collectee = round2(Number(d.tva_collectee));
+    const deductible = round2(Number(d.tva_deductible));
+    const solde = round2(collectee - deductible);
+    if (collectee > 0 || deductible > 0) {
+      const base = {
+        entreprise_id: entreprise.id, exercice_id: exercice.id,
+        date_ecriture: d.date_fin, piece: `TVA-${d.date_fin}`, journal_code: 'OD',
+        libelle: `Liquidation TVA — ${d.periode}`,
+      };
+      const lignes = [
+        { ...base, compte: '4431', intitule: 'TVA facturée sur ventes', debit: collectee, credit: 0 },
+        { ...base, compte: '4452', intitule: 'TVA récupérable sur achats', debit: 0, credit: deductible },
+        solde >= 0
+          ? { ...base, compte: '4441', intitule: 'État, TVA due', debit: 0, credit: solde }
+          : { ...base, compte: '4449', intitule: 'État, crédit de TVA à reporter', debit: -solde, credit: 0 },
+      ].filter(l => (l.debit || 0) + (l.credit || 0) > 0);
+      try {
+        await enregistrerLignesJournal(lignes, { origine: 'tva' });
+      } catch (e: any) {
+        toast.error(`Écriture de liquidation refusée : ${e.message}`);
+        return;
+      }
+    }
     await supabase.from('declarations_tva').update({ statut: 'validee' } as any).eq('id', id);
-    toast.success('Déclaration validée');
+    toast.success('Déclaration validée et liquidation comptabilisée');
     await loadData();
   };
 
