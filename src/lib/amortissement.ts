@@ -90,9 +90,47 @@ export function getDotationExercice(immo: Immo, annee: number): number {
   return calcPlan(immo).find(p => p.annee === annee)?.dotation || 0;
 }
 
-// Détermine le compte d'amortissement à partir du compte d'immo (2XX → 28XX)
+/** Nature SYSCOHADA d'une immobilisation d'après son compte */
+export type NatureImmo = 'incorporelle' | 'corporelle' | 'financiere';
+
+export function natureImmo(compteImmo: string): NatureImmo {
+  const c = String(compteImmo || '').trim();
+  if (/^2[01]/.test(c)) return 'incorporelle';
+  if (/^2[67]/.test(c)) return 'financiere';
+  return 'corporelle';
+}
+
+// Compte d'amortissement à partir du compte d'immo (2XX → 28XX)
 export function compteAmortFrom(compteImmo: string): string {
   const c = String(compteImmo || '').trim();
-  if (/^2[0-7]/.test(c)) return '28' + c.slice(1);
   return '28' + c.slice(1);
+}
+
+// Compte de dépréciation (2XX → 29XX) — seule écriture de valeur pour les immos financières
+export function compteDeprecFrom(compteImmo: string): string {
+  const c = String(compteImmo || '').trim();
+  return '29' + c.slice(1);
+}
+
+// Compte de dotation aux amortissements selon la nature
+export function compteDotationFrom(compteImmo: string): string {
+  const n = natureImmo(compteImmo);
+  if (n === 'incorporelle') return '6811';
+  if (n === 'financiere') return '6972'; // dotations aux dépréciations financières
+  return '6813';
+}
+
+/** Comptes de cession HAO selon la nature (SYSCOHADA révisé) */
+export function comptesCession(compteImmo: string): { vnc: string; vncLibelle: string; produit: string; produitLibelle: string } {
+  switch (natureImmo(compteImmo)) {
+    case 'incorporelle':
+      return { vnc: '811', vncLibelle: "Valeurs comptables des cessions d'immobilisations incorporelles",
+               produit: '821', produitLibelle: "Produits des cessions d'immobilisations incorporelles" };
+    case 'financiere':
+      return { vnc: '816', vncLibelle: "Valeurs comptables des cessions d'immobilisations financières",
+               produit: '826', produitLibelle: "Produits des cessions d'immobilisations financières" };
+    default:
+      return { vnc: '812', vncLibelle: "Valeurs comptables des cessions d'immobilisations corporelles",
+               produit: '822', produitLibelle: "Produits des cessions d'immobilisations corporelles" };
+  }
 }
