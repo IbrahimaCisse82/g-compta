@@ -22,7 +22,15 @@ export interface PlanRow {
   vnc: number;
 }
 
-export function calcPlan(immo: Immo): PlanRow[] {
+/** Coefficients dégressifs SYSCOHADA — paramétrables par entreprise */
+export interface CoefDegressif { court: number; moyen: number; long: number }
+export const COEF_DEGRESSIF_DEFAUT: CoefDegressif = { court: 1.5, moyen: 2, long: 2.5 };
+
+export function coefDegressif(duree: number, coefs: CoefDegressif = COEF_DEGRESSIF_DEFAUT): number {
+  return duree <= 4 ? coefs.court : duree <= 6 ? coefs.moyen : coefs.long;
+}
+
+export function calcPlan(immo: Immo, coefs: CoefDegressif = COEF_DEGRESSIF_DEFAUT): PlanRow[] {
   const base = (immo.valeur_origine || 0) - (immo.valeur_residuelle || 0);
   const duree = Math.max(1, Number(immo.duree_annees || 1));
   const start = new Date(immo.date_mise_service || immo.date_acquisition);
@@ -32,9 +40,8 @@ export function calcPlan(immo: Immo): PlanRow[] {
   const rows: PlanRow[] = [];
 
   if (immo.mode_amortissement === 'degressif') {
-    // Coefficient SYSCOHADA simplifié: 1.5 (≤4 ans), 2 (5-6 ans), 2.5 (>6 ans)
-    const coef = duree <= 4 ? 1.5 : duree <= 6 ? 2 : 2.5;
-    const tauxDeg = tauxLin * coef;
+    const coef = coefDegressif(duree, coefs);
+    const tauxDeg = immo.taux ? Number(immo.taux) / 100 : tauxLin * coef;
     let vnc = base;
     for (let i = 0; i < duree; i++) {
       const annee = startYear + i;
