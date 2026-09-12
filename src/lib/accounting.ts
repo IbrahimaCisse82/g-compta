@@ -161,9 +161,10 @@ export function calc(balance: BalanceLine[], def: MapLine[], extra: Record<strin
   for (const l of def) { if (l.srcCR) v[l.id] = extra[l.srcCR] ?? 0; }
   for (let i = 0; i < 10; i++) {
     for (const l of def) {
-      if (!l.type || l.type === 'sect') continue;
+      if (l.type === 'sect') continue;
+      if (!l.f && !l.refs) continue;
       const val = l.f ? l.f(v) : l.refs?.reduce((s, r) => s + (v[r] ?? 0), 0);
-      if (val !== undefined) v[l.id] = val;
+      if (val !== undefined && !Number.isNaN(val)) v[l.id] = val;
     }
   }
   return v;
