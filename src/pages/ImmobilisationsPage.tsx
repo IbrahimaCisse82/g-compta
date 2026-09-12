@@ -135,12 +135,13 @@ export default function ImmobilisationsPage() {
     const cumul = plan.filter(p => p.annee <= anneeCession).reduce((s, p) => s + p.dotation, 0);
     const vnc = vo - cumul;
     const compteAmort = it.compte_amort || compteAmortFrom(it.compte_immo);
+    const cc = comptesCession(it.compte_immo);
     const piece = `CES-${it.code}-${anneeCession}`;
     const lines: any[] = [
       // 1. Sortie de l'immobilisation : 81X DEBIT VNC + 28XX DEBIT cumul = 2XX CREDIT valeur origine
       { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: it.date_cession,
         piece, journal_code: 'OD', libelle: `Sortie immo ${it.code} (VCEAC)`,
-        compte: '812', intitule: 'Valeurs comptables des cessions d\'immo corporelles',
+        compte: cc.vnc, intitule: cc.vncLibelle,
         debit: Math.round(vnc), credit: 0 },
       { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: it.date_cession,
         piece, journal_code: 'OD', libelle: `Annulation amortissements ${it.code}`,
@@ -157,7 +158,7 @@ export default function ImmobilisationsPage() {
         debit: Math.round(prix), credit: 0 },
       { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: it.date_cession,
         piece, journal_code: 'OD', libelle: `Produit cession ${it.code}`,
-        compte: '822', intitule: 'Produits de cessions d\'immobilisations corporelles',
+        compte: cc.produit, intitule: cc.produitLibelle,
         debit: 0, credit: Math.round(prix) },
     ];
     try {
