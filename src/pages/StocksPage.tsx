@@ -241,6 +241,8 @@ export default function StocksPage() {
                         className="text-[10px] px-2 py-1 rounded border border-border hover:bg-bg3">📊 Mvt</button>
                       <button onClick={() => { setSelected(a); setShowMvt(true); }}
                         className="text-[10px] px-2 py-1 rounded border border-primary text-primary hover:bg-primary/10">+ Mvt</button>
+                      <button onClick={() => { setSelected(a); setDepForm({ valeur_realisation: Math.round(a.quantite_stock * a.prix_achat_moyen), date: new Date().toISOString().slice(0, 10) }); setShowDep(true); }}
+                        className="text-[10px] px-2 py-1 rounded border border-amber-500/50 text-amber-500 hover:bg-amber-500/10" title="Dépréciation (valeur nette de réalisation)">📉</button>
                       <button onClick={() => { setForm(a); setShowForm(true); }}
                         className="text-[10px] px-2 py-1 rounded border border-border hover:bg-bg3">✏️</button>
                       <button onClick={() => remove(a.id)}
