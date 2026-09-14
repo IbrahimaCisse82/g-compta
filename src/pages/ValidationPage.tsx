@@ -79,6 +79,29 @@ export default function ValidationPage() {
       .eq('entreprise_id', entreprise.id)
       .eq('piece', piece);
     if (error) { toast.error(error.message); return; }
+
+    // Notification du circuit de validation (cloche + email si configuré)
+    const libelles: Record<string, { titre: string; message: string }> = {
+      soumis: { titre: 'Pièce soumise à validation', message: `La pièce ${piece} attend une validation.` },
+      valide: { titre: 'Pièce validée', message: `La pièce ${piece} a été validée.` },
+      refuse: { titre: 'Pièce refusée', message: `La pièce ${piece} a été refusée. Motif : ${motif || 'Non spécifié'}` },
+    };
+    const notif = libelles[newStatus];
+    if (notif) {
+      try {
+        await supabase.functions.invoke('send-notification', {
+          body: {
+            entreprise_id: entreprise.id,
+            type: `validation_${newStatus}`,
+            titre: notif.titre,
+            message: notif.message,
+            lien: '/validation',
+            meta: { piece },
+          },
+        });
+      } catch { /* notification non bloquante */ }
+    }
+
     toast.success(`Pièce ${piece} → ${newStatus}`);
     load();
   };
