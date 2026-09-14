@@ -114,3 +114,54 @@ export function lignesEcritureStock({ type, compteStock, compteVariation, design
 export function variationValeur(stockAvant: number, cumpAvant: number, qteApres: number, cumpApres: number): number {
   return round2(qteApres * cumpApres - stockAvant * cumpAvant);
 }
+
+// ══════════════════════════════════════════════════════════
+// DÉPRÉCIATION DES STOCKS (SYSCOHADA — comptes 39X / 6593 / 7593)
+// ══════════════════════════════════════════════════════════
+
+/** Compte de dépréciation d'un stock : 3XX → 39XX */
+export function compteDeprecStock(compteStock: string): string {
+  const c = String(compteStock || '').trim();
+  return '39' + c.slice(1);
+}
+
+/**
+ * Dépréciation requise = valeur comptable − valeur nette de réalisation (si positive).
+ * Aucune dépréciation si la valeur de réalisation est supérieure ou égale au coût.
+ */
+export function depreciationRequise(valeurComptable: number, valeurRealisation: number): number {
+  return round2(Math.max(0, (valeurComptable || 0) - (valeurRealisation || 0)));
+}
+
+export interface DepreciationStockInput {
+  compteStock: string;
+  designation: string;
+  valeurComptable: number;
+  valeurRealisation: number;
+  /** Dépréciation déjà comptabilisée sur cet article */
+  deprecExistante?: number;
+}
+
+/**
+ * Ajuste la dépréciation d'un stock : dotation (6593) si elle augmente,
+ * reprise (7593) si elle diminue. Retourne [] si aucun ajustement n'est nécessaire.
+ */
+export function lignesDepreciationStock({
+  compteStock, designation, valeurComptable, valeurRealisation, deprecExistante = 0,
+}: DepreciationStockInput): LigneStockComptable[] {
+  const cible = depreciationRequise(valeurComptable, valeurRealisation);
+  const ecart = round2(cible - round2(deprecExistante));
+  if (ecart === 0) return [];
+  const compteDeprec = compteDeprecStock(compteStock);
+  const m = Math.abs(ecart);
+  if (ecart > 0) {
+    return [
+      { compte: '6593', intitule: `Charges pour dépréciation des stocks — ${designation}`, debit: m, credit: 0 },
+      { compte: compteDeprec, intitule: `Dépréciation stock ${designation}`, debit: 0, credit: m },
+    ];
+  }
+  return [
+    { compte: compteDeprec, intitule: `Dépréciation stock ${designation}`, debit: m, credit: 0 },
+    { compte: '7593', intitule: `Reprise de charges provisionnées — ${designation}`, debit: 0, credit: m },
+  ];
+}
