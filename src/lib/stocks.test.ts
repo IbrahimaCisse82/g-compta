@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculerMouvement, valeurStock, compterRuptures } from './stocks';
+import { calculerMouvement, valeurStock, compterRuptures, compteDeprecStock, depreciationRequise, lignesDepreciationStock } from './stocks';
 
 describe('calculerMouvement — entrée (CUMP)', () => {
   it('recalcule le CUMP pondéré après une entrée', () => {
@@ -66,5 +66,34 @@ describe('indicateurs', () => {
 
   it('compterRuptures ne compte que les articles actifs ≤ stock min', () => {
     expect(compterRuptures(articles)).toBe(1);
+  });
+});
+
+describe('dépréciation des stocks (39X)', () => {
+  it('déduit le compte 39X du compte de stock', () => {
+    expect(compteDeprecStock('311')).toBe('3911');
+    expect(compteDeprecStock('3211')).toBe('39211');
+  });
+
+  it('aucune dépréciation si la valeur de réalisation couvre le coût', () => {
+    expect(depreciationRequise(100000, 120000)).toBe(0);
+    expect(lignesDepreciationStock({ compteStock: '311', designation: 'Riz', valeurComptable: 100000, valeurRealisation: 120000 })).toEqual([]);
+  });
+
+  it('dotation 6593 quand la valeur de réalisation est inférieure au coût', () => {
+    const l = lignesDepreciationStock({ compteStock: '311', designation: 'Riz', valeurComptable: 100000, valeurRealisation: 80000 });
+    expect(l.map(x => x.compte)).toEqual(['6593', '3911']);
+    expect(l[0].debit).toBe(20000);
+    expect(l[1].credit).toBe(20000);
+  });
+
+  it('reprise 7593 quand la dépréciation antérieure devient excessive', () => {
+    const l = lignesDepreciationStock({ compteStock: '311', designation: 'Riz', valeurComptable: 100000, valeurRealisation: 95000, deprecExistante: 20000 });
+    expect(l.map(x => x.compte)).toEqual(['3911', '7593']);
+    expect(l[0].debit).toBe(15000);
+  });
+
+  it('aucune écriture si la dépréciation est déjà au bon niveau', () => {
+    expect(lignesDepreciationStock({ compteStock: '311', designation: 'Riz', valeurComptable: 100000, valeurRealisation: 80000, deprecExistante: 20000 })).toEqual([]);
   });
 });

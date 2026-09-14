@@ -4,7 +4,7 @@ import { useApp } from '@/stores/app-store';
 import { useUserRole } from '@/hooks/use-user-role';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
-import { calcPlan, compteAmortFrom, type Immo } from '@/lib/amortissement';
+import { calcPlan, compteAmortFrom, compteDotationFrom, comptesCession, natureImmo, type Immo } from '@/lib/amortissement';
 import { enregistrerLignesJournal } from '@/lib/ecritures';
 
 type ImmoRow = Immo & {
@@ -59,10 +59,10 @@ export default function ImmobilisationsPage() {
       entreprise_id: entreprise.id,
       code: form.code,
       libelle: form.libelle,
-      categorie: form.categorie || 'corporelle',
+      categorie: form.categorie || natureImmo(form.compte_immo),
       compte_immo: form.compte_immo,
       compte_amort: form.compte_amort || compteAmortFrom(form.compte_immo),
-      compte_dotation: form.compte_dotation || '6813',
+      compte_dotation: form.compte_dotation || compteDotationFrom(form.compte_immo),
       date_acquisition: form.date_acquisition,
       date_mise_service: form.date_mise_service || form.date_acquisition,
       valeur_origine: Number(form.valeur_origine || 0),
@@ -282,9 +282,9 @@ export default function ImmobilisationsPage() {
                 <option value="financiere">Financière</option>
               </select>
             </Field>
-            <Field label="Compte immo (2XX)"><input className="inp" value={form.compte_immo || ''} onChange={e => setForm({ ...form, compte_immo: e.target.value, compte_amort: compteAmortFrom(e.target.value) })} /></Field>
+            <Field label="Compte immo (2XX)"><input className="inp" value={form.compte_immo || ''} onChange={e => setForm({ ...form, compte_immo: e.target.value, compte_amort: compteAmortFrom(e.target.value), compte_dotation: compteDotationFrom(e.target.value) })} /></Field>
             <Field label="Compte amortissement (28XX)"><input className="inp" value={form.compte_amort || ''} onChange={e => setForm({ ...form, compte_amort: e.target.value })} /></Field>
-            <Field label="Compte dotation (681X)"><input className="inp" value={form.compte_dotation || '6813'} onChange={e => setForm({ ...form, compte_dotation: e.target.value })} /></Field>
+            <Field label="Compte dotation (681X)"><input className="inp" value={form.compte_dotation || compteDotationFrom(form.compte_immo || '')} onChange={e => setForm({ ...form, compte_dotation: e.target.value })} /></Field>
             <Field label="Date acquisition"><input type="date" className="inp" value={form.date_acquisition || ''} onChange={e => setForm({ ...form, date_acquisition: e.target.value })} /></Field>
             <Field label="Date mise en service"><input type="date" className="inp" value={form.date_mise_service || ''} onChange={e => setForm({ ...form, date_mise_service: e.target.value })} /></Field>
             <Field label="Valeur d'origine (FCFA)"><input type="number" className="inp" value={form.valeur_origine || 0} onChange={e => setForm({ ...form, valeur_origine: Number(e.target.value) })} /></Field>

@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/stores/app-store';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
-import { calculerMouvement, valeurStock, compterRuptures, lignesEcritureStock, variationValeur } from '@/lib/stocks';
+import { calculerMouvement, valeurStock, compterRuptures, lignesEcritureStock, variationValeur, compteDeprecStock, lignesDepreciationStock } from '@/lib/stocks';
 import { enregistrerLignesJournal } from '@/lib/ecritures';
 
 type Article = {
@@ -52,6 +52,8 @@ export default function StocksPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<Partial<Article>>(emptyArticle());
   const [showMvt, setShowMvt] = useState(false);
+  const [showDep, setShowDep] = useState(false);
+  const [depForm, setDepForm] = useState({ valeur_realisation: 0, date: new Date().toISOString().slice(0, 10) });
   const [mvtForm, setMvtForm] = useState({
     type_mvt: 'entree' as Mvt['type_mvt'], date_mvt: new Date().toISOString().slice(0, 10),
     reference: '', quantite: 0, prix_unitaire: 0, notes: '',
@@ -171,6 +173,45 @@ export default function StocksPage() {
     loadMvts(selected.id);
   };
 
+  // Dépréciation SYSCOHADA : ajuste 39X par dotation 6593 ou reprise 7593
+  const enregistrerDepreciation = async () => {
+    if (!selected || !entreprise || !exercice) return;
+    const valeurComptable = Math.round(selected.quantite_stock * selected.prix_achat_moyen);
+    const compteDeprec = compteDeprecStock(selected.compte_stock);
+    const { data: existant } = await supabase
+      .from('journal')
+      .select('debit, credit')
+      .eq('entreprise_id', entreprise.id)
+      .eq('exercice_id', exercice.id)
+      .eq('compte', compteDeprec);
+    const deprecExistante = (existant || []).reduce((s, l: any) => s + Number(l.credit || 0) - Number(l.debit || 0), 0);
+    const lignes = lignesDepreciationStock({
+      compteStock: selected.compte_stock,
+      designation: selected.designation,
+      valeurComptable,
+      valeurRealisation: Number(depForm.valeur_realisation || 0),
+      deprecExistante,
+    });
+    if (!lignes.length) { toast.info('Dépréciation déjà au niveau requis — aucune écriture'); setShowDep(false); return; }
+    const piece = `DEP-${selected.code}-${depForm.date}`;
+    try {
+      await enregistrerLignesJournal(lignes.map(l => ({
+        entreprise_id: entreprise.id,
+        exercice_id: exercice.id,
+        date_ecriture: depForm.date,
+        piece,
+        journal_code: 'OD',
+        libelle: `Dépréciation stock ${selected.code}`,
+        compte: l.compte,
+        intitule: l.intitule,
+        debit: l.debit,
+        credit: l.credit,
+      })), { origine: 'depreciation_stock' });
+      toast.success(`Dépréciation comptabilisée (pièce ${piece})`);
+      setShowDep(false);
+    } catch (e: any) { toast.error(e.message); }
+  };
+
   const remove = async (id: string) => {
     if (!confirm('Supprimer cet article ?')) return;
     const { error } = await supabase.from('articles').delete().eq('id', id);
@@ -241,6 +282,8 @@ export default function StocksPage() {
                         className="text-[10px] px-2 py-1 rounded border border-border hover:bg-bg3">📊 Mvt</button>
                       <button onClick={() => { setSelected(a); setShowMvt(true); }}
                         className="text-[10px] px-2 py-1 rounded border border-primary text-primary hover:bg-primary/10">+ Mvt</button>
+                      <button onClick={() => { setSelected(a); setDepForm({ valeur_realisation: Math.round(a.quantite_stock * a.prix_achat_moyen), date: new Date().toISOString().slice(0, 10) }); setShowDep(true); }}
+                        className="text-[10px] px-2 py-1 rounded border border-amber-500/50 text-amber-500 hover:bg-amber-500/10" title="Dépréciation (valeur nette de réalisation)">📉</button>
                       <button onClick={() => { setForm(a); setShowForm(true); }}
                         className="text-[10px] px-2 py-1 rounded border border-border hover:bg-bg3">✏️</button>
                       <button onClick={() => remove(a.id)}
@@ -355,6 +398,31 @@ export default function StocksPage() {
           </div>
         </Modal>
       )}
+
+      {showDep && selected && (
+        <Modal title={`📉 Dépréciation — ${selected.code} ${selected.designation}`} onClose={() => setShowDep(false)}>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Valeur comptable (CUMP × quantité)">
+              <input className="inp" disabled value={fmt(Math.round(selected.quantite_stock * selected.prix_achat_moyen))} />
+            </Field>
+            <Field label="Valeur nette de réalisation">
+              <input type="number" className="inp" value={depForm.valeur_realisation}
+                onChange={e => setDepForm({ ...depForm, valeur_realisation: Number(e.target.value) })} />
+            </Field>
+            <Field label="Date">
+              <input type="date" className="inp" value={depForm.date} onChange={e => setDepForm({ ...depForm, date: e.target.value })} />
+            </Field>
+          </div>
+          <p className="text-[10px] text-fg3 mt-3">
+            Une dotation (6593) est passée si la valeur de réalisation est inférieure au coût, une reprise (7593) si la dépréciation antérieure devient excessive.
+          </p>
+          <div className="flex justify-end gap-2 mt-4">
+            <button onClick={() => setShowDep(false)} className="px-3 py-1.5 rounded text-xs border border-border">Annuler</button>
+            <button onClick={enregistrerDepreciation} className="px-3 py-1.5 rounded text-xs bg-primary text-primary-foreground">Comptabiliser</button>
+          </div>
+        </Modal>
+      )}
+
 
       <style>{`.inp{width:100%;padding:6px 8px;background:hsl(var(--bg3));border:1px solid hsl(var(--border));border-radius:4px;color:hsl(var(--foreground));font-size:11px;}`}</style>
     </div>
