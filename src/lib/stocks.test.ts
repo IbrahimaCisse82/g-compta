@@ -71,8 +71,8 @@ describe('indicateurs', () => {
 
 describe('dépréciation des stocks (39X)', () => {
   it('déduit le compte 39X du compte de stock', () => {
-    expect(compteDeprecStock('311')).toBe('391');
-    expect(compteDeprecStock('3211')).toBe('3921');
+    expect(compteDeprecStock('311')).toBe('3911');
+    expect(compteDeprecStock('3211')).toBe('39211');
   });
 
   it('aucune dépréciation si la valeur de réalisation couvre le coût', () => {
@@ -82,14 +82,14 @@ describe('dépréciation des stocks (39X)', () => {
 
   it('dotation 6593 quand la valeur de réalisation est inférieure au coût', () => {
     const l = lignesDepreciationStock({ compteStock: '311', designation: 'Riz', valeurComptable: 100000, valeurRealisation: 80000 });
-    expect(l.map(x => x.compte)).toEqual(['6593', '391']);
+    expect(l.map(x => x.compte)).toEqual(['6593', '3911']);
     expect(l[0].debit).toBe(20000);
     expect(l[1].credit).toBe(20000);
   });
 
   it('reprise 7593 quand la dépréciation antérieure devient excessive', () => {
     const l = lignesDepreciationStock({ compteStock: '311', designation: 'Riz', valeurComptable: 100000, valeurRealisation: 95000, deprecExistante: 20000 });
-    expect(l.map(x => x.compte)).toEqual(['391', '7593']);
+    expect(l.map(x => x.compte)).toEqual(['3911', '7593']);
     expect(l[0].debit).toBe(15000);
   });
 
