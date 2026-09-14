@@ -4,7 +4,7 @@ import { useApp } from '@/stores/app-store';
 import { useUserRole } from '@/hooks/use-user-role';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
-import { calcPlan, compteAmortFrom, type Immo } from '@/lib/amortissement';
+import { calcPlan, compteAmortFrom, compteDotationFrom, comptesCession, natureImmo, type Immo } from '@/lib/amortissement';
 import { enregistrerLignesJournal } from '@/lib/ecritures';
 
 type ImmoRow = Immo & {
