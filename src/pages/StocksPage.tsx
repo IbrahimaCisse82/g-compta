@@ -52,6 +52,8 @@ export default function StocksPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<Partial<Article>>(emptyArticle());
   const [showMvt, setShowMvt] = useState(false);
+  const [showDep, setShowDep] = useState(false);
+  const [depForm, setDepForm] = useState({ valeur_realisation: 0, date: new Date().toISOString().slice(0, 10) });
   const [mvtForm, setMvtForm] = useState({
     type_mvt: 'entree' as Mvt['type_mvt'], date_mvt: new Date().toISOString().slice(0, 10),
     reference: '', quantite: 0, prix_unitaire: 0, notes: '',
