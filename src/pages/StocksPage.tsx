@@ -171,6 +171,45 @@ export default function StocksPage() {
     loadMvts(selected.id);
   };
 
+  // Dépréciation SYSCOHADA : ajuste 39X par dotation 6593 ou reprise 7593
+  const enregistrerDepreciation = async () => {
+    if (!selected || !entreprise || !exercice) return;
+    const valeurComptable = Math.round(selected.quantite_stock * selected.prix_achat_moyen);
+    const compteDeprec = compteDeprecStock(selected.compte_stock);
+    const { data: existant } = await supabase
+      .from('journal')
+      .select('debit, credit')
+      .eq('entreprise_id', entreprise.id)
+      .eq('exercice_id', exercice.id)
+      .eq('compte', compteDeprec);
+    const deprecExistante = (existant || []).reduce((s, l: any) => s + Number(l.credit || 0) - Number(l.debit || 0), 0);
+    const lignes = lignesDepreciationStock({
+      compteStock: selected.compte_stock,
+      designation: selected.designation,
+      valeurComptable,
+      valeurRealisation: Number(depForm.valeur_realisation || 0),
+      deprecExistante,
+    });
+    if (!lignes.length) { toast.info('Dépréciation déjà au niveau requis — aucune écriture'); setShowDep(false); return; }
+    const piece = `DEP-${selected.code}-${depForm.date}`;
+    try {
+      await enregistrerLignesJournal(lignes.map(l => ({
+        entreprise_id: entreprise.id,
+        exercice_id: exercice.id,
+        date_ecriture: depForm.date,
+        piece,
+        journal_code: 'OD',
+        libelle: `Dépréciation stock ${selected.code}`,
+        compte: l.compte,
+        intitule: l.intitule,
+        debit: l.debit,
+        credit: l.credit,
+      })), { origine: 'depreciation_stock' });
+      toast.success(`Dépréciation comptabilisée (pièce ${piece})`);
+      setShowDep(false);
+    } catch (e: any) { toast.error(e.message); }
+  };
+
   const remove = async (id: string) => {
     if (!confirm('Supprimer cet article ?')) return;
     const { error } = await supabase.from('articles').delete().eq('id', id);
