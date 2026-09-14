@@ -399,6 +399,31 @@ export default function StocksPage() {
         </Modal>
       )}
 
+      {showDep && selected && (
+        <Modal title={`📉 Dépréciation — ${selected.code} ${selected.designation}`} onClose={() => setShowDep(false)}>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Valeur comptable (CUMP × quantité)">
+              <input className="inp" disabled value={fmt(Math.round(selected.quantite_stock * selected.prix_achat_moyen))} />
+            </Field>
+            <Field label="Valeur nette de réalisation">
+              <input type="number" className="inp" value={depForm.valeur_realisation}
+                onChange={e => setDepForm({ ...depForm, valeur_realisation: Number(e.target.value) })} />
+            </Field>
+            <Field label="Date">
+              <input type="date" className="inp" value={depForm.date} onChange={e => setDepForm({ ...depForm, date: e.target.value })} />
+            </Field>
+          </div>
+          <p className="text-[10px] text-fg3 mt-3">
+            Une dotation (6593) est passée si la valeur de réalisation est inférieure au coût, une reprise (7593) si la dépréciation antérieure devient excessive.
+          </p>
+          <div className="flex justify-end gap-2 mt-4">
+            <button onClick={() => setShowDep(false)} className="px-3 py-1.5 rounded text-xs border border-border">Annuler</button>
+            <button onClick={enregistrerDepreciation} className="px-3 py-1.5 rounded text-xs bg-primary text-primary-foreground">Comptabiliser</button>
+          </div>
+        </Modal>
+      )}
+
+
       <style>{`.inp{width:100%;padding:6px 8px;background:hsl(var(--bg3));border:1px solid hsl(var(--border));border-radius:4px;color:hsl(var(--foreground));font-size:11px;}`}</style>
     </div>
   );
