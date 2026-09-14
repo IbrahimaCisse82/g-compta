@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/stores/app-store';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
-import { calculerMouvement, valeurStock, compterRuptures, lignesEcritureStock, variationValeur } from '@/lib/stocks';
+import { calculerMouvement, valeurStock, compterRuptures, lignesEcritureStock, variationValeur, compteDeprecStock, lignesDepreciationStock } from '@/lib/stocks';
 import { enregistrerLignesJournal } from '@/lib/ecritures';
 
 type Article = {
