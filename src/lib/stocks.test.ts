@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculerMouvement, valeurStock, compterRuptures } from './stocks';
+import { calculerMouvement, valeurStock, compterRuptures, compteDeprecStock, depreciationRequise, lignesDepreciationStock } from './stocks';
 
 describe('calculerMouvement — entrée (CUMP)', () => {
   it('recalcule le CUMP pondéré après une entrée', () => {
