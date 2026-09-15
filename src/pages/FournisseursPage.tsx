@@ -542,6 +542,40 @@ export default function FournisseursPage() {
         </div>
       )}
 
+      {/* ─── MODAL RÈGLEMENT / ACOMPTE ─────────────────── */}
+      {regFact && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setRegFact(null)}>
+          <div className="bg-bg2 border border-border rounded-lg p-5 max-w-lg w-full" onClick={e => e.stopPropagation()}>
+            <div className="text-[15px] font-serif mb-4">Règlement — {regFact.numero_interne}</div>
+            <div className="grid grid-cols-2 gap-3 text-[11px]">
+              <div>
+                <label className="text-fg3 uppercase text-[10px]">Nature</label>
+                <select value={regForm.type} onChange={e => setRegForm({ ...regForm, type: e.target.value as 'acompte' | 'solde' })} className="w-full bg-bg3 border border-border rounded px-2 py-1">
+                  <option value="solde">Règlement sur facture (401)</option>
+                  <option value="acompte">Avance / acompte versé (4091)</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-fg3 uppercase text-[10px]">Date</label>
+                <input type="date" value={regForm.date} onChange={e => setRegForm({ ...regForm, date: e.target.value })} className="w-full bg-bg3 border border-border rounded px-2 py-1" />
+              </div>
+              <div>
+                <label className="text-fg3 uppercase text-[10px]">Montant payé</label>
+                <input type="number" value={regForm.montant} onChange={e => setRegForm({ ...regForm, montant: parseFloat(e.target.value) || 0 })} className="w-full bg-bg3 border border-border rounded px-2 py-1 font-mono" />
+              </div>
+              <div>
+                <label className="text-fg3 uppercase text-[10px]">Compte de trésorerie</label>
+                <input value={regForm.compte} onChange={e => setRegForm({ ...regForm, compte: e.target.value })} className="w-full bg-bg3 border border-border rounded px-2 py-1 font-mono" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setRegFact(null)} className="px-3 py-1.5 rounded text-xs border border-border">Annuler</button>
+              <button onClick={enregistrerReglement} className="px-3 py-1.5 rounded text-xs bg-primary text-primary-foreground">Comptabiliser</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ─── MODAL FACTURE ─────────────────────────────── */}
       {showFact && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={() => setShowFact(false)}>
