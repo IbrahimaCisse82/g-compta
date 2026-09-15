@@ -5,6 +5,7 @@ import { useUserRole } from '@/hooks/use-user-role';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
 import { enregistrerLignesJournal, round2 as r2, type LigneJournalPlate } from '@/lib/ecritures';
+import { lignesReglementFournisseur } from '@/lib/reglements';
 
 interface Fournisseur {
   id: string;
