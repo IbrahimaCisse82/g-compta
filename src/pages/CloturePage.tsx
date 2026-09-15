@@ -7,10 +7,12 @@ import { toast } from 'sonner';
 interface ClotureLog { id: string; action: string; details: any; created_at: string; user_id: string | null; }
 
 export default function CloturePage() {
-  const { exercice, exercices, entreprise, balance, clotureExercice, loading, openExercice } = useApp();
+  const { exercice, exercices, entreprise, balance, clotureExercice, affecterResultat, loading, openExercice } = useApp();
   const [logs, setLogs] = useState<ClotureLog[]>([]);
   const [confirming, setConfirming] = useState(false);
   const [confirmReopen, setConfirmReopen] = useState<string | null>(null);
+  const [showAffectation, setShowAffectation] = useState(false);
+  const [aff, setAff] = useState({ ran: 0, reserves: 0, dividendes: 0 });
 
   const loadLogs = useCallback(async () => {
     if (!entreprise) return;
@@ -59,6 +61,8 @@ export default function CloturePage() {
   const canCloture = exercice?.statut === 'en_cours';
   const resultatNet = balance.filter(b => /^[6-8]/.test(b.compte)).reduce((s, b) => s + ((b.sfc || 0) - (b.sfd || 0)), 0);
   const bilanCount = balance.filter(b => /^[1-5]/.test(b.compte)).length;
+  const compte131 = balance.find(b => /^131/.test(b.compte));
+  const resultat131 = compte131 ? (compte131.sfc || 0) - (compte131.sfd || 0) : 0;
 
   return (
     <div>
@@ -97,7 +101,7 @@ export default function CloturePage() {
             <ul className="list-disc ml-4 mt-1 space-y-0.5">
               <li>Les comptes de bilan (classes 1-5) sont reportés en à-nouveaux</li>
               <li>Les comptes de résultat (classes 6-8) sont soldés</li>
-              <li>Le résultat net est affecté au RAN (121 créditeur / 129 débiteur)</li>
+              <li>Le résultat net est porté au compte 131 (résultat en instance d'affectation)</li>
               <li>L'exercice est verrouillé (lecture seule)</li>
               <li>Un nouvel exercice N+1 est automatiquement créé</li>
             </ul>
@@ -114,6 +118,51 @@ export default function CloturePage() {
             </div>
           )}
         </div>
+
+        {/* Affectation du résultat (post-AG) — uniquement si un 131 est présent */}
+        {Math.abs(resultat131) > 0.01 && (
+          <div className="bg-bg2 border border-border rounded-lg p-4 mb-4">
+            <div className="font-bold text-sm mb-1 text-primary">⚖️ Affectation du résultat (décision d'AG)</div>
+            <div className="text-[11px] text-fg3 mb-3">
+              Résultat à affecter (compte 131) : <span className={`font-mono font-bold ${resultat131 >= 0 ? 'text-success' : 'text-destructive'}`}>{fmt(resultat131)}</span>
+              {' '}— répartissez-le entre RAN, réserves et dividendes (total = {fmt(Math.abs(resultat131))}).
+            </div>
+            {!showAffectation ? (
+              <button onClick={() => { setAff({ ran: Math.abs(resultat131), reserves: 0, dividendes: 0 }); setShowAffectation(true); }}
+                className="px-3 py-1.5 rounded text-[11px] font-bold bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25">
+                Affecter le résultat
+              </button>
+            ) : (
+              <div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                  <label className="text-[11px] text-fg2 flex flex-col gap-1">
+                    Report à nouveau (121/129)
+                    <input type="number" value={aff.ran} onChange={e => setAff({ ...aff, ran: parseFloat(e.target.value) || 0 })}
+                      className="bg-bg1 border border-border rounded px-2 py-1.5 text-[11px] font-mono" />
+                  </label>
+                  <label className="text-[11px] text-fg2 flex flex-col gap-1">
+                    Réserves (118)
+                    <input type="number" value={aff.reserves} disabled={resultat131 < 0} onChange={e => setAff({ ...aff, reserves: parseFloat(e.target.value) || 0 })}
+                      className="bg-bg1 border border-border rounded px-2 py-1.5 text-[11px] font-mono disabled:opacity-40" />
+                  </label>
+                  <label className="text-[11px] text-fg2 flex flex-col gap-1">
+                    Dividendes (465)
+                    <input type="number" value={aff.dividendes} disabled={resultat131 < 0} onChange={e => setAff({ ...aff, dividendes: parseFloat(e.target.value) || 0 })}
+                      className="bg-bg1 border border-border rounded px-2 py-1.5 text-[11px] font-mono disabled:opacity-40" />
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => affecterResultat(aff)} disabled={loading}
+                    className="px-4 py-1.5 rounded text-[11px] font-bold bg-success text-white hover:bg-success/90 disabled:opacity-50">
+                    {loading ? '⏳ Affectation...' : "Valider l'affectation"}
+                  </button>
+                  <button onClick={() => setShowAffectation(false)} className="px-3 py-1.5 rounded text-[11px] border border-border text-fg2">Annuler</button>
+                  <span className="text-[10px] text-fg3 font-mono ml-auto">Total : {fmt(aff.ran + aff.reserves + aff.dividendes)} / {fmt(Math.abs(resultat131))}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* All exercices */}
         <div className="bg-bg2 border border-border rounded-lg overflow-hidden mb-4">

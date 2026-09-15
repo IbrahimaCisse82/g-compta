@@ -43,6 +43,7 @@ import PortailPage from '@/pages/PortailPage';
 import KpiCollabPage from '@/pages/KpiCollabPage';
 import MobileMoneyPage from '@/pages/MobileMoneyPage';
 import FacturesDgidPage from '@/pages/FacturesDgidPage';
+import EngagementsPage from '@/pages/EngagementsPage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -88,6 +89,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'echeancier', icon: '📅', label: 'Échéancier Fiscal' },
     { id: 'balance_agee', icon: '⏳', label: 'Balance Âgée' },
     { id: 'audit', icon: '🔍', label: "Piste d'Audit" },
+    { id: 'engagements', icon: '📜', label: 'Engagements (Hors Bilan)' },
   ]},
   { section: 'Paramètres', items: [
     { id: 'plan', icon: '🗂️', label: 'Plan Comptable', shortcut: 'Alt+P' },
@@ -123,6 +125,7 @@ const PAGES: Record<string, React.ComponentType> = {
   kpi_collab: KpiCollabPage,
   mobile_money: MobileMoneyPage,
   factures_dgid: FacturesDgidPage,
+  engagements: EngagementsPage,
 };
 
 function ClientsPage() {

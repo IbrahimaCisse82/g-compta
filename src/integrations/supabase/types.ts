@@ -1214,6 +1214,75 @@ export type Database = {
           },
         ]
       }
+      engagements: {
+        Row: {
+          compte_engagement: string
+          created_at: string
+          date_debut: string | null
+          date_echeance: string | null
+          devise: string
+          entreprise_id: string
+          exercice_id: string | null
+          id: string
+          libelle: string
+          montant: number
+          notes: string | null
+          statut: string
+          tiers: string | null
+          type_engagement: string
+          updated_at: string
+        }
+        Insert: {
+          compte_engagement: string
+          created_at?: string
+          date_debut?: string | null
+          date_echeance?: string | null
+          devise?: string
+          entreprise_id: string
+          exercice_id?: string | null
+          id?: string
+          libelle: string
+          montant?: number
+          notes?: string | null
+          statut?: string
+          tiers?: string | null
+          type_engagement: string
+          updated_at?: string
+        }
+        Update: {
+          compte_engagement?: string
+          created_at?: string
+          date_debut?: string | null
+          date_echeance?: string | null
+          devise?: string
+          entreprise_id?: string
+          exercice_id?: string | null
+          id?: string
+          libelle?: string
+          montant?: number
+          notes?: string | null
+          statut?: string
+          tiers?: string | null
+          type_engagement?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagements_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagements_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entreprises: {
         Row: {
           adresse: string | null

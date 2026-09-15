@@ -2,12 +2,12 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { BalanceLine, JournalLine, PlanCompte, Entreprise, Exercice } from '@/lib/accounting';
 import { supabase } from '@/integrations/supabase/client';
 import { DEMO_ENTREPRISE, DEMO_EXERCICE, DEMO_LBH_BALANCE, DEMO_LBH_JOURNAL, buildPlan } from '@/lib/demo-data';
-import { creerEcriture, contrepasserEcriture, enregistrerLignesJournal, getBalanceDerivee } from '@/lib/ecritures';
+import { creerEcriture, contrepasserEcriture, enregistrerLignesJournal, getBalanceDerivee, round2 } from '@/lib/ecritures';
 import { toast } from 'sonner';
 
 
 export type EnvMode = 'entreprise' | 'cabinet';
-export type PageId = 'dashboard' | 'clients' | 'cabinet_mgmt' | 'kpi_collab' | 'abonnements_clients' | 'journal' | 'balance' | 'grandlivre' | 'bilan' | 'resultat' | 'tft' | 'note34' | 'liasse' | 'rapprochement' | 'saisie' | 'plan' | 'exercices' | 'parametres' | 'balance_agee' | 'audit' | 'import' | 'lettrage' | 'analytique' | 'budget' | 'tva' | 'abonnement' | 'mon_abonnement' | 'cloture' | 'immobilisations' | 'facturation' | 'fournisseurs' | 'paie' | 'echeancier' | 'stocks' | 'provisions' | 'documents' | 'validation' | 'portail' | 'mobile_money' | 'factures_dgid';
+export type PageId = 'dashboard' | 'clients' | 'cabinet_mgmt' | 'kpi_collab' | 'abonnements_clients' | 'journal' | 'balance' | 'grandlivre' | 'bilan' | 'resultat' | 'tft' | 'note34' | 'liasse' | 'rapprochement' | 'saisie' | 'plan' | 'exercices' | 'parametres' | 'balance_agee' | 'audit' | 'import' | 'lettrage' | 'analytique' | 'budget' | 'tva' | 'abonnement' | 'mon_abonnement' | 'cloture' | 'immobilisations' | 'facturation' | 'fournisseurs' | 'paie' | 'echeancier' | 'stocks' | 'provisions' | 'documents' | 'validation' | 'portail' | 'mobile_money' | 'factures_dgid' | 'engagements';
 
 interface AppState {
   env: EnvMode;
@@ -39,6 +39,7 @@ interface AppState {
   openExercice: (id: string) => void;
   updateEntreprise: (updates: Partial<Entreprise>) => Promise<void>;
   clotureExercice: () => Promise<void>;
+  affecterResultat: (affectation: { ran: number; reserves: number; dividendes: number }) => Promise<void>;
   isExerciceCloture: () => boolean;
   switchEntreprise: (entrepriseId: string) => Promise<void>;
 }
@@ -578,31 +579,58 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [entreprises, loadExerciceData]);
 
   // ─── CLÔTURE D'EXERCICE ──────────────────────────────
+  // SYSCOHADA révisé : soldes des comptes 6/7/8 → 131 (résultat de l'exercice),
+  // puis report des comptes de bilan (1-5, y compris 131) en à-nouveaux sur N+1.
+  // Le résultat séjourne au 131 jusqu'à l'affectation post-AG (voir affecterResultat) :
+  // il n'est JAMAIS affecté automatiquement au RAN.
   const clotureExercice = useCallback(async () => {
     if (!exercice || !entreprise) { toast.error('Aucun exercice ou entreprise sélectionné.'); return; }
     setLoading(true);
     try {
-      await supabase.from('exercices').update({ statut: 'cloture' }).eq('id', exercice.id);
+      // 1. Résultat net = produits (classe 7) − charges (classes 6 et 8)
+      const comptesResultat = balance.filter(b => /^[6-8]/.test(b.compte));
+      const totalProduits = round2(comptesResultat.filter(b => /^7/.test(b.compte)).reduce((s, b) => s + ((b.sfc || 0) - (b.sfd || 0)), 0));
+      const totalCharges = round2(comptesResultat.filter(b => /^[68]/.test(b.compte)).reduce((s, b) => s + ((b.sfd || 0) - (b.sfc || 0)), 0));
+      const resultatNet = round2(totalProduits - totalCharges);
 
+      // 2. Écritures de clôture (journal OD, origine 'cloture') : solde des 6/7/8 contre 131.
+      //    Passe par le moteur serveur (fn_creer_ecriture) : équilibre, période et droits contrôlés en base.
+      const dateCloture = exercice.date_fin;
+      const baseLigne = { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: dateCloture, piece: 'CLOTURE', journal_code: 'OD', libelle: "Clôture de l'exercice" };
+      const lignesCloture: any[] = [];
+      for (const b of comptesResultat.filter(b => /^7/.test(b.compte))) {
+        const soldeC = round2((b.sfc || 0) - (b.sfd || 0));
+        if (Math.abs(soldeC) < 0.01) continue;
+        lignesCloture.push({ ...baseLigne, libelle: `Clôture — solde ${b.compte}`, compte: b.compte, intitule: b.intitule, debit: soldeC, credit: 0 });
+      }
+      for (const b of comptesResultat.filter(b => /^[68]/.test(b.compte))) {
+        const soldeD = round2((b.sfd || 0) - (b.sfc || 0));
+        if (Math.abs(soldeD) < 0.01) continue;
+        lignesCloture.push({ ...baseLigne, libelle: `Clôture — solde ${b.compte}`, compte: b.compte, intitule: b.intitule, debit: 0, credit: soldeD });
+      }
+      if (Math.abs(totalProduits) > 0.01) lignesCloture.push({ ...baseLigne, libelle: "Résultat de l'exercice (produits)", compte: '131000', intitule: "Résultat de l'exercice", debit: 0, credit: totalProduits });
+      if (Math.abs(totalCharges) > 0.01) lignesCloture.push({ ...baseLigne, libelle: "Résultat de l'exercice (charges)", compte: '131000', intitule: "Résultat de l'exercice", debit: totalCharges, credit: 0 });
+
+      if (lignesCloture.length > 0) {
+        await enregistrerLignesJournal(lignesCloture, { statut: 'validee', origine: 'cloture' });
+      }
+
+      // 3. Verrouillage de l'exercice courant + création de N+1
+      await supabase.from('exercices').update({ statut: 'cloture' }).eq('id', exercice.id);
       const newAnnee = exercice.annee + 1;
       const newDebut = `${newAnnee}-01-01`;
       const newFin = `${newAnnee}-12-31`;
       const { data: newExcData, error: excErr } = await supabase.from('exercices').insert({
-        entreprise_id: entreprise.id, annee: newAnnee,
-        date_debut: newDebut, date_fin: newFin, statut: 'en_cours',
+        entreprise_id: entreprise.id, annee: newAnnee, date_debut: newDebut, date_fin: newFin, statut: 'en_cours',
       }).select().single();
       if (excErr || !newExcData) throw excErr || new Error('Erreur création exercice');
-
       const newExercice = mapExercice(newExcData);
 
+      // 4. À-nouveaux N+1 : report des comptes de bilan (1-5) + 131 (résultat en instance d'affectation).
       const bilanAccounts = balance.filter(b => /^[1-5]/.test(b.compte));
-      const resultatNet = balance
-        .filter(b => /^[6-8]/.test(b.compte))
-        .reduce((sum, b) => sum + ((b.sfc || 0) - (b.sfd || 0)), 0);
-
       const aNouveaux: any[] = [];
       for (const b of bilanAccounts) {
-        const soldeNet = (b.sfd || 0) - (b.sfc || 0);
+        const soldeNet = round2((b.sfd || 0) - (b.sfc || 0));
         if (Math.abs(soldeNet) < 0.01) continue;
         aNouveaux.push({
           exercice_id: newExercice.id, entreprise_id: entreprise.id,
@@ -612,54 +640,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           sfd: soldeNet > 0 ? soldeNet : 0, sfc: soldeNet < 0 ? -soldeNet : 0,
         });
       }
-
+      // Le résultat (131) est reporté tel quel — il sera affecté ultérieurement (décision d'AG).
       if (Math.abs(resultatNet) > 0.01) {
-      // SYSCOHADA: RAN = compte 121 (créditeur) ou 129 (débiteur)
-      const ranCompte = resultatNet >= 0 ? '121000' : '129000';
-      const existingRAN = aNouveaux.find(a => a.compte === ranCompte);
-      if (existingRAN) {
-        const newSolde = (existingRAN.sc - existingRAN.sd) + resultatNet;
-        existingRAN.sd = newSolde < 0 ? -newSolde : 0;
-        existingRAN.sc = newSolde > 0 ? newSolde : 0;
-        existingRAN.sfd = existingRAN.sd;
-        existingRAN.sfc = existingRAN.sc;
-      } else {
         aNouveaux.push({
           exercice_id: newExercice.id, entreprise_id: entreprise.id,
-          compte: ranCompte, intitule: 'Report à nouveau',
+          compte: '131000', intitule: "Résultat de l'exercice (en instance d'affectation)",
           sd: resultatNet < 0 ? -resultatNet : 0, sc: resultatNet > 0 ? resultatNet : 0,
           md: 0, mc: 0,
           sfd: resultatNet < 0 ? -resultatNet : 0, sfc: resultatNet > 0 ? resultatNet : 0,
         });
       }
-      }
 
+      // Repli balance stockée (mode démo / anon, où fn_balance n'est pas la source de vérité).
       if (aNouveaux.length > 0) {
-        const { error: balErr } = await supabase.from('balance').insert(aNouveaux);
-        if (balErr) throw balErr;
+        await supabase.from('balance').insert(aNouveaux);
       }
 
+      // À-nouveaux via le journal AN (moteur serveur : équilibre et droits contrôlés en base).
       const aNouveauxJournal: any[] = [];
       for (const an of aNouveaux) {
-        if (an.sd > 0) {
-          aNouveauxJournal.push({
-            exercice_id: newExercice.id, entreprise_id: entreprise.id,
-            date_ecriture: newDebut, piece: 'AN', journal_code: 'AN',
-            libelle: 'À-nouveau', compte: an.compte, intitule: an.intitule,
-            debit: an.sd, credit: 0,
-          });
-        }
-        if (an.sc > 0) {
-          aNouveauxJournal.push({
-            exercice_id: newExercice.id, entreprise_id: entreprise.id,
-            date_ecriture: newDebut, piece: 'AN', journal_code: 'AN',
-            libelle: 'À-nouveau', compte: an.compte, intitule: an.intitule,
-            debit: 0, credit: an.sc,
-          });
-        }
+        if (an.sd > 0) aNouveauxJournal.push({ entreprise_id: entreprise.id, exercice_id: newExercice.id, date_ecriture: newDebut, piece: 'AN', journal_code: 'AN', libelle: 'À-nouveau', compte: an.compte, intitule: an.intitule, debit: an.sd, credit: 0 });
+        if (an.sc > 0) aNouveauxJournal.push({ entreprise_id: entreprise.id, exercice_id: newExercice.id, date_ecriture: newDebut, piece: 'AN', journal_code: 'AN', libelle: 'À-nouveau', compte: an.compte, intitule: an.intitule, debit: 0, credit: an.sc });
       }
       if (aNouveauxJournal.length > 0) {
-        // Les à-nouveaux passent par le moteur serveur : équilibre et droits contrôlés en base.
         await enregistrerLignesJournal(aNouveauxJournal, { statut: 'validee', origine: 'a_nouveau' });
       }
 
@@ -674,12 +677,54 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setBalance(mapBalance(aNouveaux.map((a, i) => ({ ...a, id: `an-${i}` }))));
       setJournal(mapJournal(aNouveauxJournal.map((j, i) => ({ ...j, id: `anj-${i}` }))));
 
-      toast.success(`Exercice ${exercice.annee} clôturé. Exercice ${newAnnee} créé.`);
+      toast.success(`Exercice ${exercice.annee} clôturé. Résultat porté au 131. Exercice ${newAnnee} créé.`);
     } catch (err: any) {
       toast.error('Erreur clôture: ' + (err?.message || 'Erreur inconnue'));
     }
     setLoading(false);
   }, [exercice, entreprise, balance]);
+
+  // ─── AFFECTATION DU RÉSULTAT (post-AG) ───────────────
+  // Solde du 131 (résultat reporté de l'exercice précédent) vers :
+  //   121 (RAN créditeur) / 129 (RAN débiteur) / 118 (réserves) / 465 (dividendes).
+  // Acte distinct de la clôture, sur décision d'assemblée générale.
+  const affecterResultat = useCallback(async (affectation: { ran: number; reserves: number; dividendes: number }) => {
+    if (!exercice || !entreprise) { toast.error('Aucun exercice sélectionné.'); return; }
+    const compte131 = balance.find(b => /^131/.test(b.compte));
+    const resultat131 = round2((compte131?.sfc || 0) - (compte131?.sfd || 0));
+    if (Math.abs(resultat131) < 0.01) { toast.error('Aucun résultat (131) à affecter sur cet exercice.'); return; }
+
+    const { ran, reserves, dividendes } = affectation;
+    const totalAffecte = round2(ran + reserves + dividendes);
+    if (Math.abs(totalAffecte - Math.abs(resultat131)) > 0.01) {
+      toast.error(`Le total affecté (${totalAffecte}) doit égaler le résultat à affecter (${Math.abs(resultat131)}).`);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const date = exercice.date_debut;
+      const baseLigne = { entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: date, piece: 'AFFECTATION', journal_code: 'OD', libelle: "Affectation du résultat" };
+      const lignes: any[] = [];
+      // Solde du 131
+      lignes.push({ ...baseLigne, compte: '131000', intitule: "Résultat de l'exercice", debit: resultat131 > 0 ? resultat131 : 0, credit: resultat131 < 0 ? -resultat131 : 0 });
+      // RAN : 121 (créditeur) si bénéfice, 129 (débiteur) si perte
+      if (ran > 0) {
+        if (resultat131 >= 0) lignes.push({ ...baseLigne, compte: '121000', intitule: 'Report à nouveau', debit: 0, credit: ran });
+        else lignes.push({ ...baseLigne, compte: '129000', intitule: 'Report à nouveau débiteur', debit: ran, credit: 0 });
+      }
+      if (reserves > 0) lignes.push({ ...baseLigne, compte: '118000', intitule: 'Autres réserves', debit: 0, credit: reserves });
+      if (dividendes > 0) lignes.push({ ...baseLigne, compte: '465000', intitule: 'Associés, dividendes à payer', debit: 0, credit: dividendes });
+
+      await enregistrerLignesJournal(lignes, { statut: 'validee', origine: 'cloture' });
+      // Rechargement de la balance / journal de l'exercice courant
+      await loadExerciceData(exercice.id, exercices, exercice);
+      toast.success('Résultat affecté (RAN / réserves / dividendes).');
+    } catch (err: any) {
+      toast.error('Affectation refusée : ' + (err?.message || 'Erreur inconnue'));
+    }
+    setLoading(false);
+  }, [exercice, entreprise, balance, exercices, loadExerciceData]);
 
   return (
     <AppContext.Provider value={{
@@ -688,7 +733,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setPage: setCurrentPage, launchDemo, launchUser, logout, addJournalEntry,
       deleteJournalEntry, extournerEcriture, addCompte, deleteCompte, toggleCompte,
       addExercice, deleteExercice, openExercice, updateEntreprise,
-      clotureExercice, isExerciceCloture, switchEntreprise,
+      clotureExercice, affecterResultat, isExerciceCloture, switchEntreprise,
     }}>
       {children}
     </AppContext.Provider>
