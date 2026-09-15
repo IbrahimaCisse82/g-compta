@@ -8,6 +8,8 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    // Allow the preview's external hostname (sandbox id rotates, so allow all).
+    allowedHosts: true,
     hmr: {
       overlay: false,
     },
