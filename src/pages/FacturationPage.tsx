@@ -5,6 +5,7 @@ import { useUserRole } from '@/hooks/use-user-role';
 import { toast } from 'sonner';
 import { fmt } from '@/lib/accounting';
 import { enregistrerLignesJournal } from '@/lib/ecritures';
+import { lignesReglementClient } from '@/lib/reglements';
 
 interface Client {
   id: string;
