@@ -383,7 +383,10 @@ export default function FournisseursPage() {
                               {canWrite && !f.comptabilisee && (
                                 <button onClick={() => comptabiliser(f)} className="text-green-500 hover:underline text-[10px]">Comptab.</button>
                               )}
-                              {canWrite && <button onClick={() => deleteFact(f.id)} className="text-red-500 hover:underline text-[10px]">Suppr</button>}
+                               {canWrite && f.statut !== 'payee' && f.statut !== 'annulee' && (
+                                 <button onClick={() => openReglement(f)} className="text-amber-500 hover:underline text-[10px]">Régler</button>
+                               )}
+                               {canWrite && <button onClick={() => deleteFact(f.id)} className="text-red-500 hover:underline text-[10px]">Suppr</button>}
                             </div>
                           </td>
                         </tr>
