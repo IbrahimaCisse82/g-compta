@@ -228,6 +228,38 @@ export default function FacturationPage() {
     load();
   };
 
+  // Règlement / acompte client — l'acompte est crédité en 4191 (jamais compensé avec 411)
+  const openReglement = (f: Facture) => {
+    setRegFact(f);
+    setRegForm({ montant: f.total_ttc, compte: '521', type: 'solde', date: new Date().toISOString().slice(0, 10) });
+  };
+
+  const enregistrerReglement = async () => {
+    if (!entreprise || !exercice || !regFact || !canWrite) return;
+    const cl = clients.find(c => c.id === regFact.client_id);
+    if (!cl) { toast.error('Client introuvable'); return; }
+    const compteClient = `${cl.compte_tiers}${cl.code}`.slice(0, 12);
+    const lib = `${regForm.type === 'acompte' ? 'Acompte' : 'Règlement'} ${regFact.numero} - ${cl.nom}`;
+    const lignesReg = lignesReglementClient({
+      compteTiers: compteClient, compteTresorerie: regForm.compte,
+      montant: Number(regForm.montant), type: regForm.type, libelle: lib,
+    });
+    if (!lignesReg.length) { toast.error('Montant invalide'); return; }
+    try {
+      await enregistrerLignesJournal(lignesReg.map(l => ({
+        entreprise_id: entreprise.id, exercice_id: exercice.id,
+        date_ecriture: regForm.date, piece: `REG-${regFact.numero}`, journal_code: 'BQ',
+        libelle: l.libelle || lib, compte: l.compte, intitule: l.intitule || '',
+        debit: l.debit || 0, credit: l.credit || 0,
+      })) as any, { origine: 'reglement_client' });
+    } catch (e) { toast.error((e as Error).message); return; }
+    if (regForm.type === 'solde' && Number(regForm.montant) >= regFact.total_ttc) {
+      await supabase.from('factures').update({ statut: 'payee' }).eq('id', regFact.id);
+    }
+    toast.success('Règlement comptabilisé (journal BQ)');
+    setRegFact(null); load();
+  };
+
   const deleteFacture = async (id: string) => {
     if (!canDelete || !confirm('Supprimer cette facture ?')) return;
     const { error } = await supabase.from('factures').delete().eq('id', id);
