@@ -67,6 +67,8 @@ export default function FacturationPage() {
   const [viewLignes, setViewLignes] = useState<Ligne[]>([]);
 
   // Client form
+  const [regFact, setRegFact] = useState<Facture | null>(null);
+  const [regForm, setRegForm] = useState<{ montant: number; compte: string; type: 'acompte' | 'solde'; date: string }>({ montant: 0, compte: '521', type: 'solde', date: new Date().toISOString().slice(0, 10) });
   const [showClient, setShowClient] = useState(false);
   const [clientForm, setClientForm] = useState<Partial<Client>>({});
 
