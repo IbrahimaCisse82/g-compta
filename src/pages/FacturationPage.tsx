@@ -396,6 +396,27 @@ export default function FacturationPage() {
         )}
       </div>
 
+      {/* ===== RÈGLEMENT / ACOMPTE CLIENT ===== */}
+      {regFact && (
+        <Modal title={`Règlement — ${regFact.numero}`} onClose={() => setRegFact(null)}>
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <Field label="Nature">
+              <select className="inp" value={regForm.type} onChange={e => setRegForm({ ...regForm, type: e.target.value as 'acompte' | 'solde' })}>
+                <option value="solde">Règlement sur facture (411)</option>
+                <option value="acompte">Avance / acompte reçu (4191)</option>
+              </select>
+            </Field>
+            <Field label="Date"><input type="date" className="inp" value={regForm.date} onChange={e => setRegForm({ ...regForm, date: e.target.value })} /></Field>
+            <Field label="Montant reçu"><input type="number" className="inp" value={regForm.montant} onChange={e => setRegForm({ ...regForm, montant: parseFloat(e.target.value) || 0 })} /></Field>
+            <Field label="Compte de trésorerie"><input className="inp" value={regForm.compte} onChange={e => setRegForm({ ...regForm, compte: e.target.value })} /></Field>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <button onClick={() => setRegFact(null)} className="px-3 py-1.5 rounded text-xs border border-border">Annuler</button>
+            <button onClick={enregistrerReglement} className="px-3 py-1.5 rounded text-xs bg-primary text-primary-foreground">Comptabiliser</button>
+          </div>
+        </Modal>
+      )}
+
       {/* ===== FORM CLIENT ===== */}
       {showClient && (
         <Modal title={clientForm.id ? 'Modifier client' : 'Nouveau client'} onClose={() => setShowClient(false)}>
