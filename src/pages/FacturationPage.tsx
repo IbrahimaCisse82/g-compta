@@ -343,6 +343,7 @@ export default function FacturationPage() {
                       <td className="p-2 text-center">{f.comptabilisee ? '✅' : '—'}</td>
                       <td className="p-2 text-right space-x-1 whitespace-nowrap">
                         <button onClick={() => printFacture(f)} className="text-[10px] px-2 py-1 rounded border border-border hover:bg-bg3" title="Imprimer/PDF">🖨</button>
+                        {canWrite && f.statut !== 'payee' && f.statut !== 'annulee' && <button onClick={() => openReglement(f)} className="text-[10px] px-2 py-1 rounded border border-accent/40 text-accent hover:bg-accent/10" title="Règlement / acompte">💰</button>}
                         {canWrite && !f.comptabilisee && <button onClick={() => comptabiliserFacture(f)} className="text-[10px] px-2 py-1 rounded border border-primary/40 text-primary hover:bg-primary/10" title="Comptabiliser (Journal VT)">💾</button>}
                         {canWrite && !f.comptabilisee && <button onClick={() => editFacture(f)} className="text-[10px] px-2 py-1 rounded border border-border hover:bg-bg3">✏️</button>}
                         {canDelete && !f.comptabilisee && <button onClick={() => deleteFacture(f.id)} className="text-[10px] px-2 py-1 rounded border border-destructive/40 text-destructive hover:bg-destructive/10">🗑</button>}
