@@ -288,6 +288,46 @@ export default function FournisseursPage() {
     load();
   };
 
+  // ─── RÈGLEMENTS ET ACOMPTES (4091) ────────────────────
+  const openReglement = (f: FactureAchat) => {
+    setRegFact(f);
+    setRegForm({
+      montant: r2(Number(f.total_ttc) - Number(f.montant_paye || 0)),
+      compte: '521', type: 'solde', date: new Date().toISOString().slice(0, 10),
+    });
+  };
+
+  const enregistrerReglement = async () => {
+    if (!entreprise || !exercice || !regFact || !canWrite) return;
+    const frn = fournisseurs.find(x => x.id === regFact.fournisseur_id);
+    if (!frn) { toast.error('Fournisseur introuvable'); return; }
+    const compteFrn = `${frn.compte_tiers}${frn.code.replace(/\D/g, '').slice(0, 4)}`;
+    const lib = `${regForm.type === 'acompte' ? 'Acompte versé' : 'Règlement'} ${regFact.numero_interne} — ${frn.raison_sociale}`;
+    const lgs = lignesReglementFournisseur({
+      compteTiers: compteFrn, compteTresorerie: regForm.compte,
+      montant: Number(regForm.montant), type: regForm.type, libelle: lib,
+    });
+    if (!lgs.length) { toast.error('Montant invalide'); return; }
+    try {
+      await enregistrerLignesJournal(lgs.map(l => ({
+        entreprise_id: entreprise.id, exercice_id: exercice.id,
+        date_ecriture: regForm.date, piece: `REG-${regFact.numero_interne}`, journal_code: 'BQ',
+        libelle: l.libelle || lib, compte: l.compte, intitule: l.intitule || '',
+        debit: l.debit || 0, credit: l.credit || 0,
+      })) as LigneJournalPlate[], { origine: 'reglement_fournisseur' });
+    } catch (e: any) { toast.error(e.message || 'Comptabilisation refusée'); return; }
+    if (regForm.type === 'solde') {
+      const paye = r2(Number(regFact.montant_paye || 0) + Number(regForm.montant));
+      await supabase.from('factures_achat').update({
+        montant_paye: paye,
+        statut: paye >= Number(regFact.total_ttc) ? 'payee' : 'payee_partiel',
+      }).eq('id', regFact.id);
+    }
+    toast.success('Règlement comptabilisé au journal BQ');
+    setRegFact(null);
+    load();
+  };
+
   // ─── STATS ────────────────────────────────────────────
   const stats = {
     nb: factures.length,
