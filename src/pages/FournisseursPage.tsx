@@ -72,6 +72,8 @@ export default function FournisseursPage() {
   const [lignes, setLignes] = useState<Ligne[]>([emptyLigne()]);
 
   // Fournisseur form
+  const [regFact, setRegFact] = useState<FactureAchat | null>(null);
+  const [regForm, setRegForm] = useState<{ montant: number; compte: string; type: 'acompte' | 'solde'; date: string }>({ montant: 0, compte: '521', type: 'solde', date: new Date().toISOString().slice(0, 10) });
   const [showFrn, setShowFrn] = useState(false);
   const [frnForm, setFrnForm] = useState<Partial<Fournisseur>>({});
 
