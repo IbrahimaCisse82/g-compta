@@ -4,6 +4,7 @@ import { exportBalanceCsv } from '@/lib/csv-export';
 import { useState, useRef } from 'react';
 import ControleBalance from '@/components/ControleBalance';
 import { toast } from 'sonner';
+import { enregistrerLignesJournal } from '@/lib/ecritures';
 
 function ImportCsvModal({ onImport, onClose }: { onImport: (lines: { compte: string; intitule: string; sd: number; sc: number; md: number; mc: number; sfd: number; sfc: number }[]) => void; onClose: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -104,26 +105,25 @@ export default function BalancePage() {
   const eqFin = Math.abs(T.sfd - T.sfc) < 1;
 
   const handleImport = async (lines: { compte: string; intitule: string; sd: number; sc: number; md: number; mc: number; sfd: number; sfc: number }[]) => {
-    // For now, just show a message — full DB import requires supabase insert
-    const { supabase } = await import('@/integrations/supabase/client');
     if (!exercice || !entreprise) { toast.error('Sélectionnez un exercice.'); return; }
-
-    const inserts = lines.map(l => ({
-      exercice_id: exercice.id,
-      entreprise_id: entreprise.id,
-      compte: l.compte,
-      intitule: l.intitule,
-      sd: l.sd, sc: l.sc, md: l.md, mc: l.mc, sfd: l.sfd, sfc: l.sfc,
-    }));
-
-    const { error } = await supabase.from('balance').upsert(inserts, { onConflict: 'exercice_id,compte' }).select();
-    if (error) {
-      // Fallback: insert without upsert
-      const { error: err2 } = await supabase.from('balance').insert(inserts);
-      if (err2) { toast.error('Erreur import: ' + err2.message); return; }
+    // A7 : la table `balance` est gelée. L'import d'un solde d'ouverture se fait
+    // désormais par des à-nouveaux au journal AN (moteur serveur : équilibre + droits).
+    const anLignes = [];
+    for (const l of lines) {
+      if (l.sfd > 0) anLignes.push({ entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: exercice.date_debut, piece: 'AN', journal_code: 'AN', libelle: 'À-nouveau (import)', compte: l.compte, intitule: l.intitule, debit: l.sfd, credit: 0 });
+      if (l.sfc > 0) anLignes.push({ entreprise_id: entreprise.id, exercice_id: exercice.id, date_ecriture: exercice.date_debut, piece: 'AN', journal_code: 'AN', libelle: 'À-nouveau (import)', compte: l.compte, intitule: l.intitule, debit: 0, credit: l.sfc });
     }
-    toast.success(`${lines.length} lignes importées. Rechargez la page pour voir les changements.`);
-    setShowImport(false);
+    if (anLignes.length === 0) { toast.error('Aucun solde à importer.'); return; }
+    const totD = anLignes.reduce((s, l) => s + (l.debit || 0), 0);
+    const totC = anLignes.reduce((s, l) => s + (l.credit || 0), 0);
+    if (Math.abs(totD - totC) > 0.01) { toast.error(`Balance non équilibrée (D=${totD}, C=${totC}).`); return; }
+    try {
+      await enregistrerLignesJournal(anLignes, { statut: 'validee', origine: 'a_nouveau' });
+      toast.success(`${lines.length} ligne(s) importée(s) via à-nouveaux (journal AN). Rechargez la page.`);
+      setShowImport(false);
+    } catch (e: any) {
+      toast.error('Import refusé : ' + (e?.message || 'Erreur'));
+    }
   };
 
   return (

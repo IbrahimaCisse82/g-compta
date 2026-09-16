@@ -352,9 +352,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       balUpdates[l.compte].debit += l.debit || 0;
       balUpdates[l.compte].credit += l.credit || 0;
     }
+    // La balance est désormais dérivée du journal (mv_balance / fn_balance), rafraîchie
+    // côté serveur par fn_creer_ecriture. La table `balance` est gelée (A7) : on ne
+    // l'écrit plus ici, seul l'état local est mis à jour pour l'affichage immédiat
+    // (synchronisé depuis fn_balance au prochain chargement).
     setBalance(prev => {
-      const b = [...prev];
-      const dbOps: Promise<any>[] = [];
+      const b = prev.map(x => ({ ...x }));
       for (const [compte, delta] of Object.entries(balUpdates)) {
         const existing = b.find(x => x.compte === compte);
         if (existing) {
@@ -363,27 +366,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const net = (existing.sd || 0) + existing.md - ((existing.sc || 0) + existing.mc);
           existing.sfd = net > 0 ? net : 0;
           existing.sfc = net < 0 ? -net : 0;
-          dbOps.push(supabase.from('balance').update({ md: existing.md, mc: existing.mc, sfd: existing.sfd, sfc: existing.sfc }).eq('id', existing.id).then() as Promise<any>);
         } else {
-          const newBal: BalanceLine = {
+          b.push({
             id: `temp-${Date.now()}-${compte}`, exercice_id: exId, entreprise_id: entId,
             compte, intitule: delta.intitule,
             sd: 0, sc: 0, md: delta.debit, mc: delta.credit,
             sfd: delta.debit > delta.credit ? delta.debit - delta.credit : 0,
             sfc: delta.credit > delta.debit ? delta.credit - delta.debit : 0,
-          };
-          b.push(newBal);
-          dbOps.push(
-            supabase.from('balance').insert({
-              exercice_id: exId, entreprise_id: entId,
-              compte, intitule: delta.intitule,
-              sd: 0, sc: 0, md: delta.debit, mc: delta.credit,
-              sfd: newBal.sfd, sfc: newBal.sfc,
-            }).select().single().then(({ data }) => { if (data) newBal.id = data.id; }) as Promise<any>
-          );
+          });
         }
       }
-      Promise.all(dbOps).catch(e => toast.error('Erreur balance: ' + e.message));
       return b;
     });
   }, []);
@@ -464,10 +456,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.from('journal').delete().eq('id', id);
     if (error) { toast.error('Erreur suppression: ' + error.message); return; }
 
+    // mv_balance est une vue matérialisée : on la rafraîchit côté serveur pour
+    // refléter la suppression de la ligne historique (la table `balance` est gelée).
+    await supabase.rpc('fn_refresh_balance');
+
     setJournal(prev => prev.filter(j => j.id !== id));
 
     setBalance(prev => {
-      const b = [...prev];
+      const b = prev.map(x => ({ ...x }));
       const existing = b.find(x => x.compte === entry.compte);
       if (existing) {
         existing.md -= entry.debit || 0;
@@ -475,7 +471,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const net = (existing.sd || 0) + existing.md - ((existing.sc || 0) + existing.mc);
         existing.sfd = net > 0 ? net : 0;
         existing.sfc = net < 0 ? -net : 0;
-        supabase.from('balance').update({ md: existing.md, mc: existing.mc, sfd: existing.sfd, sfc: existing.sfc }).eq('id', existing.id).then();
       }
       return b;
     });
@@ -651,12 +646,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
       }
 
-      // Repli balance stockée (mode démo / anon, où fn_balance n'est pas la source de vérité).
-      if (aNouveaux.length > 0) {
-        await supabase.from('balance').insert(aNouveaux);
-      }
-
       // À-nouveaux via le journal AN (moteur serveur : équilibre et droits contrôlés en base).
+      // La table `balance` est gelée (A7) : la balance est dérivée de mv_balance.
       const aNouveauxJournal: any[] = [];
       for (const an of aNouveaux) {
         if (an.sd > 0) aNouveauxJournal.push({ entreprise_id: entreprise.id, exercice_id: newExercice.id, date_ecriture: newDebut, piece: 'AN', journal_code: 'AN', libelle: 'À-nouveau', compte: an.compte, intitule: an.intitule, debit: an.sd, credit: 0 });
