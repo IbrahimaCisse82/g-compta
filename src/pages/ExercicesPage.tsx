@@ -1,8 +1,10 @@
 import { useApp } from '@/stores/app-store';
+import { useUserRole } from '@/hooks/use-user-role';
 import { useState } from 'react';
 
 export default function ExercicesPage() {
-  const { exercices, openExercice, deleteExercice, addExercice, exercice, entreprise, clotureExercice, loading, demo } = useApp();
+  const { exercices, openExercice, deleteExercice, addExercice, exercice, entreprise, clotureExercice, loading, demo, periodes, verrouillerPeriode } = useApp();
+  const { canCloturer } = useUserRole();
   const [confirming, setConfirming] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [newAnnee, setNewAnnee] = useState(new Date().getFullYear() + 1);
@@ -129,6 +131,31 @@ export default function ExercicesPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Verrouillage mensuel des périodes (A9) */}
+        {!demo && canCloturer && exercice?.statut === 'en_cours' && (() => {
+          const moisList = Array.from({ length: 12 }, (_, i) => `${exercice.annee}-${String(i + 1).padStart(2, '0')}-01`);
+          return (
+            <div className="bg-bg2 border border-border rounded-lg p-4 mt-4">
+              <div className="font-bold text-sm mb-1 text-primary">🔒 Verrouillage des périodes — {exercice.annee}</div>
+              <p className="text-[10px] text-fg3 mb-3">Verrouillez un mois clos pour interdire toute saisie (contrôle serveur). Un exercice clôturé verrouille automatiquement tous ses mois.</p>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                {moisList.map(mois => {
+                  const p = periodes.find(x => x.mois === mois);
+                  const locked = p?.statut === 'verrouille';
+                  const label = new Date(mois + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'short' });
+                  return (
+                    <button key={mois} onClick={() => verrouillerPeriode(mois, !locked)}
+                      className={`rounded-md px-2 py-2 text-[10px] font-semibold border transition ${locked ? 'bg-destructive/10 text-destructive border-destructive/30' : 'bg-success/10 text-success border-success/30 hover:opacity-80'}`}>
+                      <div className="capitalize">{label}</div>
+                      <div className="text-[9px]">{locked ? '🔒 Verrouillé' : '🔓 Ouvert'}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

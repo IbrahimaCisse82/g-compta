@@ -225,6 +225,14 @@ export async function enregistrerLignesJournal(
   return ids;
 }
 
+/** Verrouille / déverrouille un mois pour un exercice (admin only, contrôle serveur). */
+export async function verrouillerPeriode(exerciceId: string, mois: string, verrouille: boolean): Promise<void> {
+  const { error } = await supabase.rpc('fn_verrouiller_periode', {
+    _exercice_id: exerciceId, _mois: mois, _verrouille: verrouille,
+  } as any);
+  if (error) throw new Error(error.message);
+}
+
 /** Resynchronise la balance stockée à partir de la balance recalculée par le serveur. */
 export async function resynchroniserBalance(entrepriseId: string, exerciceId: string): Promise<number> {
   const { data, error } = await supabase.rpc('fn_resync_balance', {

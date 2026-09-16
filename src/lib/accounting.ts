@@ -92,6 +92,13 @@ export interface Exercice {
   statut: 'en_cours' | 'cloture';
 }
 
+export interface Periode {
+  id: string;
+  exercice_id: string;
+  mois: string;   // YYYY-MM-01
+  statut: 'ouvert' | 'verrouille';
+}
+
 // ─── MAPPING DEFINITION ────────────────────────────────
 export interface MapLine {
   id: string;

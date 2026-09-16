@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import type { BalanceLine, JournalLine, PlanCompte, Entreprise, Exercice } from '@/lib/accounting';
+import type { BalanceLine, JournalLine, PlanCompte, Entreprise, Exercice, Periode } from '@/lib/accounting';
 import { supabase } from '@/integrations/supabase/client';
 import { DEMO_ENTREPRISE, DEMO_EXERCICE, DEMO_LBH_BALANCE, DEMO_LBH_JOURNAL, buildPlan } from '@/lib/demo-data';
-import { creerEcriture, contrepasserEcriture, enregistrerLignesJournal, getBalanceDerivee, round2 } from '@/lib/ecritures';
+import { creerEcriture, contrepasserEcriture, enregistrerLignesJournal, getBalanceDerivee, round2, verrouillerPeriode as verrouillerPeriodeRpc } from '@/lib/ecritures';
 import { toast } from 'sonner';
 
 
@@ -18,6 +18,7 @@ interface AppState {
   entreprise: Entreprise | null;
   exercice: Exercice | null;
   exercices: Exercice[];
+  periodes: Periode[];
   balance: BalanceLine[];
   balanceN1: BalanceLine[];
   journal: JournalLine[];
@@ -41,6 +42,7 @@ interface AppState {
   clotureExercice: () => Promise<void>;
   affecterResultat: (affectation: { ran: number; reserves: number; dividendes: number }) => Promise<void>;
   isExerciceCloture: () => boolean;
+  verrouillerPeriode: (mois: string, verrouille: boolean) => Promise<void>;
   switchEntreprise: (entrepriseId: string) => Promise<void>;
 }
 
@@ -64,6 +66,10 @@ function mapExercice(data: any): Exercice {
     annee: data.annee, date_debut: data.date_debut,
     date_fin: data.date_fin, statut: data.statut as 'en_cours' | 'cloture',
   };
+}
+
+function mapPeriode(data: any): Periode {
+  return { id: data.id, exercice_id: data.exercice_id, mois: data.mois, statut: data.statut as 'ouvert' | 'verrouille' };
 }
 
 function mapBalance(data: any[]): BalanceLine[] {
@@ -103,6 +109,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
   const [exercice, setExercice] = useState<Exercice | null>(null);
   const [exercices, setExercices] = useState<Exercice[]>([]);
+  const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [balance, setBalance] = useState<BalanceLine[]>([]);
   const [balanceN1, setBalanceN1] = useState<BalanceLine[]>([]);
   const [journal, setJournal] = useState<JournalLine[]>([]);
@@ -146,12 +153,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [chargerBalance]);
 
   const loadExerciceData = useCallback(async (excId: string, allExercices: Exercice[], exc: Exercice) => {
-    const [bal, jourRes] = await Promise.all([
+    const [bal, jourRes, perRes] = await Promise.all([
       chargerBalance(exc.entreprise_id, excId),
       supabase.from('journal').select('*').eq('exercice_id', excId).order('date_ecriture'),
+      supabase.from('periodes').select('*').eq('exercice_id', excId).order('mois'),
     ]);
     setBalance(bal);
     if (jourRes.data) setJournal(mapJournal(jourRes.data));
+    setPeriodes(perRes.data ? perRes.data.map(mapPeriode) : []);
     await loadBalanceN1(allExercices, exc);
   }, [loadBalanceN1, chargerBalance]);
 
@@ -194,6 +203,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setBalance(mapBalance(balData));
         setJournal(mapJournal(jourData));
         setPlan(mapPlan(planRes.data));
+        setPeriodes([]);
         if (envMode === 'cabinet') setEntreprises([ent]);
         await loadBalanceN1(allExercices, currentExc);
         setLaunched(true);
@@ -208,6 +218,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setBalance([...DEMO_LBH_BALANCE]);
     setJournal([...DEMO_LBH_JOURNAL]);
     setPlan(buildPlan(DEMO_ENTREPRISE.id));
+    setPeriodes([]);
     setBalanceN1([]);
     if (envMode === 'cabinet') setEntreprises([DEMO_ENTREPRISE]);
     setLaunched(true);
@@ -537,6 +548,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, [exercices, loadExerciceData]);
 
+  // ─── VERROUILLAGE DE PÉRIODE (A9) ────────────────────
+  const verrouillerPeriode = useCallback(async (mois: string, verrouille: boolean) => {
+    if (!exercice) return;
+    try {
+      await verrouillerPeriodeRpc(exercice.id, mois, verrouille);
+      const { data } = await supabase.from('periodes').select('*').eq('exercice_id', exercice.id).order('mois');
+      setPeriodes(data ? data.map(mapPeriode) : []);
+    } catch (e: any) {
+      toast.error('Verrouillage impossible : ' + (e?.message || 'Erreur'));
+    }
+  }, [exercice]);
+
   // ─── PARAMETRES (persisted) ───────────────────────────
   const updateEntreprise = useCallback(async (updates: Partial<Entreprise>) => {
     if (!entreprise) return;
@@ -720,11 +743,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{
       env, demo, launched, loading, currentPage, entreprise, exercice, exercices,
-      balance, balanceN1, journal, plan, entreprises,
+      periodes, balance, balanceN1, journal, plan, entreprises,
       setPage: setCurrentPage, launchDemo, launchUser, logout, addJournalEntry,
       deleteJournalEntry, extournerEcriture, addCompte, deleteCompte, toggleCompte,
       addExercice, deleteExercice, openExercice, updateEntreprise,
-      clotureExercice, affecterResultat, isExerciceCloture, switchEntreprise,
+      clotureExercice, affecterResultat, isExerciceCloture, verrouillerPeriode, switchEntreprise,
     }}>
       {children}
     </AppContext.Provider>

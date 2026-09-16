@@ -2664,6 +2664,33 @@ export type Database = {
           },
         ]
       }
+      periodes: {
+        Row: {
+          id: string
+          entreprise_id: string
+          exercice_id: string
+          mois: string
+          statut: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          entreprise_id: string
+          exercice_id: string
+          mois: string
+          statut?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          entreprise_id?: string
+          exercice_id?: string
+          mois?: string
+          statut?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       mv_balance: {
@@ -2716,6 +2743,14 @@ export type Database = {
       fn_contrepasser_ecriture: {
         Args: { _ecriture_id: string; _motif: string }
         Returns: string
+      }
+      fn_verrouiller_periode: {
+        Args: { _exercice_id: string; _mois: string; _verrouille: boolean }
+        Returns: undefined
+      }
+      periode_est_verrouillee: {
+        Args: { _exercice_id: string; _date: string }
+        Returns: boolean
       }
       fn_creer_ecriture: {
         Args: {
