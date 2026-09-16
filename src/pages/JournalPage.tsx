@@ -2,7 +2,8 @@ import { useApp } from '@/stores/app-store';
 import { useUserRole } from '@/hooks/use-user-role';
 import { fmt } from '@/lib/accounting';
 import { exportJournalCsv } from '@/lib/csv-export';
-import { buildFec, downloadFec } from '@/lib/fec-export';
+import { buildFec, downloadFec, controleFec } from '@/lib/fec-export';
+import { supabase } from '@/integrations/supabase/client';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -17,14 +18,29 @@ export default function JournalPage() {
   const td = rows.reduce((s, r) => s + (r.debit || 0), 0);
   const tc = rows.reduce((s, r) => s + (r.credit || 0), 0);
 
-  const handleExportFec = () => {
+  const handleExportFec = async () => {
     if (!entreprise || !exercice) return;
-    const content = buildFec(journal as any, {
+    // Numéro persistant : on récupère ecritures.numero pour chaque ligne rattachée.
+    const ids = [...new Set(journal.map(j => j.ecriture_id).filter(Boolean))] as string[];
+    const numeroMap: Record<string, string> = {};
+    if (ids.length) {
+      const { data: ecr } = await supabase.from('ecritures').select('id, numero').in('id', ids);
+      if (ecr) for (const e of ecr) numeroMap[e.id] = e.numero;
+    }
+    const fecLines = journal.map(j => ({ ...j, numero: j.ecriture_id ? numeroMap[j.ecriture_id] : undefined }));
+    const rapport = controleFec(fecLines);
+    const content = buildFec(fecLines, {
       entrepriseNom: entreprise.nom,
       ninea: entreprise.ninea || '',
       exerciceAnnee: exercice.annee,
     });
     downloadFec(content, entreprise.ninea || 'FEC', exercice.annee, exercice.date_fin);
+    if (rapport.equilibre) {
+      toast.success(`FEC exporté : ${rapport.nbLignes} lignes, ${rapport.nbPieces} pièces — D=C=${rapport.totalDebit}.`);
+    } else {
+      toast.error(`FEC exporté avec ${rapport.anomalies.length} anomalie(s) — D=${rapport.totalDebit}, C=${rapport.totalCredit}. Voir la console.`);
+      console.warn('[FEC] Rapport de contrôle', rapport);
+    }
   };
 
   return (
