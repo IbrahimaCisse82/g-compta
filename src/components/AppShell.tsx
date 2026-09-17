@@ -45,6 +45,7 @@ import MobileMoneyPage from '@/pages/MobileMoneyPage';
 import FacturesDgidPage from '@/pages/FacturesDgidPage';
 import EngagementsPage from '@/pages/EngagementsPage';
 import AnomaliesPage from '@/pages/AnomaliesPage';
+import SantePage from '@/pages/SantePage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -92,6 +93,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'audit', icon: '🔍', label: "Piste d'Audit" },
     { id: 'engagements', icon: '📜', label: 'Engagements (Hors Bilan)' },
     { id: 'anomalies', icon: '🔍', label: 'Anomalies & Contrôles' },
+    { id: 'sante', icon: '🏥', label: 'Module Santé' },
   ]},
   { section: 'Paramètres', items: [
     { id: 'plan', icon: '🗂️', label: 'Plan Comptable', shortcut: 'Alt+P' },
@@ -129,6 +131,7 @@ const PAGES: Record<string, React.ComponentType> = {
   factures_dgid: FacturesDgidPage,
   engagements: EngagementsPage,
   anomalies: AnomaliesPage,
+  sante: SantePage,
 };
 
 function ClientsPage() {
