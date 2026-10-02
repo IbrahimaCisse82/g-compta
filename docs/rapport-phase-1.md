@@ -13,9 +13,15 @@
 | CA-1.3 Aucun code client n'écrit sur `balance` | Fait et testé | recherche code : 0 occurrence ; INSERT/UPDATE `balance` = false |
 | CA-1.4 SoD en base | Fait non testé avec jetons réels | fonction + trigger en place |
 | CA-1.5 Numérotation sans trou sous concurrence | Partiel | compteur par table existant ; test 1 000 validations non exécuté |
-| CA-1.6 Hors période refusé | Fait (existant) | trigger `trg_ecritures_periode` |
+| CA-1.6 Hors période refusé | Fait non testé par jeton | trigger `trg_ecritures_periode` : exercice clôturé, date hors exercice, période verrouillée (table `periodes`, `fn_verrouiller_periode` réservée admin) |
 | CA-1.7 Reprise + quarantaine | Non fait | 10 lignes orphelines, 5 pièces déséquilibrées à mettre en `a_corriger` |
-| CA-1.8 NUMERIC(18,2) | Non fait | 55 colonnes ; changement de type bloqué par la règle « pas de migration cassante » — à autoriser par l'utilisateur |
+| CA-1.8 NUMERIC(18,2) | Partiel | contraintes « 2 décimales, non négatif » sur journal, factures, paie (0 ligne non conforme). Conversion de type des 55 colonnes : nécessite l'autorisation « migrations incompatibles » |
 
 ## Restant (Phases 1 à 3)
 Table `periodes`, `comptes_systeme`, `audit_log` chaîné par hash, reprise/quarantaine, rôle `reviseur`, FEC à numéro persistant, clôture transactionnelle, puis Phases 2–3 et B/D/E.
+
+## Lot 2 (02/10/2026)
+- `periodes` + verrouillage serveur ; `comptes_systeme` (14 rôles par défaut, ⚠ À VALIDER) ; `audit_log` en ajout seul chaîné SHA-256 sur écritures, plan, exercices, rôles, périodes, comptes système, TVA.
+- FEC : `EcritureNum` et `ValidDate` repris des écritures serveur, comptes auxiliaires, rapport de contrôle à l'export (2 tests).
+- 95 tests au vert, typecheck OK.
+- Non fait : export quotidien du dernier hash hors base, reprise/quarantaine des 10 lignes historiques, rôle `reviseur`, test de concurrence 1 000 validations, tests par jetons réels.
