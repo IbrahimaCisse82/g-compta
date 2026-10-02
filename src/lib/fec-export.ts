@@ -35,6 +35,13 @@ export interface FecLine {
   credit: number;
   created_at?: string;
   id?: string;
+  /** Numéro persistant de l'écriture serveur (prioritaire sur la numérotation d'export). */
+  ecriture_numero?: string | null;
+  /** Date de validation persistée. */
+  valide_le?: string | null;
+  /** Compte auxiliaire (tiers). */
+  compte_auxiliaire?: string | null;
+  compte_auxiliaire_lib?: string | null;
 }
 
 const JOURNAL_LIBELLES: Record<string, string> = {
@@ -87,7 +94,7 @@ export function buildFec(
 
   const rows = lines.map(l => {
     const key = `${l.journal_code}|${l.piece}`;
-    const ecrNum = `${l.journal_code}${String(pieceNum.get(key)).padStart(6, '0')}`;
+    const ecrNum = l.ecriture_numero || `${l.journal_code}${String(pieceNum.get(key)).padStart(6, '0')}`;
     const dateEc = toFecDate(l.date_ecriture);
     const lett = opts.lettrage?.[l.id || ''];
     return [
@@ -97,8 +104,8 @@ export function buildFec(
       dateEc,
       clean(l.compte),
       clean(l.intitule),
-      '', // CompAuxNum (non géré)
-      '',
+      clean(l.compte_auxiliaire),
+      clean(l.compte_auxiliaire_lib),
       clean(l.piece),
       dateEc,
       clean(l.libelle),
@@ -106,7 +113,7 @@ export function buildFec(
       num(l.credit),
       clean(lett?.code || ''),
       toFecDate(lett?.date),
-      toFecDate(l.created_at),
+      toFecDate(l.valide_le || l.created_at),
       num(0),
       'XOF',
     ].join('|');
@@ -124,4 +131,17 @@ export function downloadFec(content: string, entrepriseNinea: string, exerciceAn
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+/** Rapport de contrôle FEC : lignes sans numéro persistant, sans validation, pièces déséquilibrées. */
+export function controlerFec(lines: FecLine[]) {
+  const sansNumero = lines.filter(l => !l.ecriture_numero).length;
+  const sansValidation = lines.filter(l => !l.valide_le).length;
+  const pieces = new Map<string, number>();
+  for (const l of lines) {
+    const k = l.ecriture_numero || `${l.journal_code}|${l.piece}`;
+    pieces.set(k, (pieces.get(k) || 0) + (Number(l.debit) || 0) - (Number(l.credit) || 0));
+  }
+  const desequilibrees = [...pieces.values()].filter(v => Math.abs(v) >= 0.005).length;
+  return { lignes: lines.length, sansNumero, sansValidation, desequilibrees, conforme: sansNumero === 0 && desequilibrees === 0 };
 }

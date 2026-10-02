@@ -69,3 +69,17 @@ describe('validerEcritureLocalement', () => {
     }
   });
 });
+
+import { buildFec, controlerFec } from './fec-export';
+describe('FEC persistant', () => {
+  const l = (o: any) => ({ date_ecriture: '2026-01-10', piece: 'P1', journal_code: 'VT', compte: '411', intitule: '', libelle: 'x', debit: 0, credit: 0, ...o });
+  it('reprend le numéro et la date de validation persistés', () => {
+    const fec = buildFec([l({ debit: 100, ecriture_numero: 'VT-2026-000007', valide_le: '2026-01-12T10:00:00Z' })], { entrepriseNom: 'X', exerciceAnnee: 2026 });
+    expect(fec).toContain('VT-2026-000007');
+    expect(fec).toContain('20260112');
+  });
+  it('signale lignes sans numéro et pièces déséquilibrées', () => {
+    const r = controlerFec([l({ debit: 100 }), l({ credit: 90 })]);
+    expect(r.sansNumero).toBe(2); expect(r.desequilibrees).toBe(1); expect(r.conforme).toBe(false);
+  });
+});
