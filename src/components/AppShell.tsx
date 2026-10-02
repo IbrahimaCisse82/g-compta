@@ -1,5 +1,6 @@
 import { useApp, type PageId } from '@/stores/app-store';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/use-user-role';
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@/hooks/use-theme';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
@@ -43,8 +44,20 @@ import PortailPage from '@/pages/PortailPage';
 import KpiCollabPage from '@/pages/KpiCollabPage';
 import MobileMoneyPage from '@/pages/MobileMoneyPage';
 import FacturesDgidPage from '@/pages/FacturesDgidPage';
+import PatientsPage from '@/pages/medical/PatientsPage';
+import ActesPage from '@/pages/medical/ActesPage';
+import AssureursPage from '@/pages/medical/AssureursPage';
+import FacturationMedicalePage from '@/pages/medical/FacturationMedicalePage';
+import EncaissementsPage from '@/pages/medical/EncaissementsPage';
 
-const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
+const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean; adminOnly?: boolean }[] }[] = [
+  { section: 'Médical', items: [
+    { id: 'med_patients', icon: '🩺', label: 'Patients' },
+    { id: 'med_actes', icon: '🧪', label: 'Actes & Tarifs' },
+    { id: 'med_facturation', icon: '🧾', label: 'Facturation médicale' },
+    { id: 'med_encaissements', icon: '💰', label: 'Encaissements' },
+    { id: 'med_assureurs', icon: '🛡️', label: 'Assureurs', adminOnly: true },
+  ]},
   { section: 'Synthèse', items: [
     { id: 'dashboard', icon: '◈', label: 'Tableau de bord', shortcut: 'Alt+D' },
     { id: 'clients', icon: '👥', label: 'Mes Clients', cabinet: true },
@@ -123,6 +136,11 @@ const PAGES: Record<string, React.ComponentType> = {
   kpi_collab: KpiCollabPage,
   mobile_money: MobileMoneyPage,
   factures_dgid: FacturesDgidPage,
+  med_patients: PatientsPage,
+  med_actes: ActesPage,
+  med_assureurs: AssureursPage,
+  med_facturation: FacturationMedicalePage,
+  med_encaissements: EncaissementsPage,
 };
 
 function ClientsPage() {
@@ -190,6 +208,7 @@ function ShortcutsModal({ open, onClose }: { open: boolean; onClose: () => void 
 export default function AppShell() {
   const { env, currentPage, setPage, entreprise, exercice, logout, demo, isExerciceCloture } = useApp();
   const { user } = useAuth();
+  const { role } = useUserRole();
   const { resolved, toggle } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -262,7 +281,9 @@ export default function AppShell() {
             {NAV.map(section => (
               <div key={section.section}>
                 <div className="px-3.5 pt-2 pb-0.5 text-[9px] text-fg3 uppercase tracking-[2px] font-mono">{section.section}</div>
-                {section.items.filter(item => !item.cabinet || env === 'cabinet').map(item => (
+                {section.items
+                  .filter(item => (!item.cabinet || env === 'cabinet') && (!item.adminOnly || role === 'admin'))
+                  .map(item => (
                   <button key={item.id} onClick={() => handlePageChange(item.id)}
                     title={item.shortcut || undefined}
                     className={`w-full flex items-center gap-2.5 px-3.5 py-1.5 text-xs border-l-2 transition-all group ${
