@@ -105,24 +105,17 @@ export default function BalancePage() {
 
   const handleImport = async (lines: { compte: string; intitule: string; sd: number; sc: number; md: number; mc: number; sfd: number; sfc: number }[]) => {
     // For now, just show a message — full DB import requires supabase insert
-    const { supabase } = await import('@/integrations/supabase/client');
     if (!exercice || !entreprise) { toast.error('Sélectionnez un exercice.'); return; }
 
-    const inserts = lines.map(l => ({
-      exercice_id: exercice.id,
-      entreprise_id: entreprise.id,
-      compte: l.compte,
-      intitule: l.intitule,
-      sd: l.sd, sc: l.sc, md: l.md, mc: l.mc, sfd: l.sfd, sfc: l.sfc,
-    }));
-
-    const { error } = await supabase.from('balance').upsert(inserts, { onConflict: 'exercice_id,compte' }).select();
-    if (error) {
-      // Fallback: insert without upsert
-      const { error: err2 } = await supabase.from('balance').insert(inserts);
-      if (err2) { toast.error('Erreur import: ' + err2.message); return; }
-    }
-    toast.success(`${lines.length} lignes importées. Rechargez la page pour voir les changements.`);
+    // Import = écriture d'à-nouveaux (journal AN) : la balance reste dérivée du journal.
+    const lignes = lines.map(l => ({ compte: l.compte, intitule: l.intitule, debit: Math.max(0, l.sfd - l.sfc), credit: Math.max(0, l.sfc - l.sfd) }))
+      .filter(l => l.debit > 0 || l.credit > 0);
+    try {
+      const { creerEcriture } = await import('@/lib/ecritures');
+      await creerEcriture({ entrepriseId: entreprise.id, exerciceId: exercice.id, journalCode: 'AN', date: exercice.date_debut,
+        libelle: 'Reprise de balance (import)', piece: 'AN-IMPORT', origine: 'a_nouveau', lignes });
+    } catch (e: any) { toast.error('Import refusé : ' + e.message); return; }
+    toast.success(`${lignes.length} lignes reprises en à-nouveaux. Rechargez la page pour voir les changements.`);
     setShowImport(false);
   };
 

@@ -353,7 +353,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     setBalance(prev => {
       const b = [...prev];
-      const dbOps: Promise<any>[] = [];
       for (const [compte, delta] of Object.entries(balUpdates)) {
         const existing = b.find(x => x.compte === compte);
         if (existing) {
@@ -362,7 +361,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const net = (existing.sd || 0) + existing.md - ((existing.sc || 0) + existing.mc);
           existing.sfd = net > 0 ? net : 0;
           existing.sfc = net < 0 ? -net : 0;
-          dbOps.push(supabase.from('balance').update({ md: existing.md, mc: existing.mc, sfd: existing.sfd, sfc: existing.sfc }).eq('id', existing.id).then() as Promise<any>);
         } else {
           const newBal: BalanceLine = {
             id: `temp-${Date.now()}-${compte}`, exercice_id: exId, entreprise_id: entId,
@@ -372,17 +370,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             sfc: delta.credit > delta.debit ? delta.credit - delta.debit : 0,
           };
           b.push(newBal);
-          dbOps.push(
-            supabase.from('balance').insert({
-              exercice_id: exId, entreprise_id: entId,
-              compte, intitule: delta.intitule,
-              sd: 0, sc: 0, md: delta.debit, mc: delta.credit,
-              sfd: newBal.sfd, sfc: newBal.sfc,
-            }).select().single().then(({ data }) => { if (data) newBal.id = data.id; }) as Promise<any>
-          );
         }
       }
-      Promise.all(dbOps).catch(e => toast.error('Erreur balance: ' + e.message));
       return b;
     });
   }, []);
@@ -460,26 +449,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const { error } = await supabase.from('journal').delete().eq('id', id);
-    if (error) { toast.error('Erreur suppression: ' + error.message); return; }
-
-    setJournal(prev => prev.filter(j => j.id !== id));
-
-    setBalance(prev => {
-      const b = [...prev];
-      const existing = b.find(x => x.compte === entry.compte);
-      if (existing) {
-        existing.md -= entry.debit || 0;
-        existing.mc -= entry.credit || 0;
-        const net = (existing.sd || 0) + existing.md - ((existing.sc || 0) + existing.mc);
-        existing.sfd = net > 0 ? net : 0;
-        existing.sfc = net < 0 ? -net : 0;
-        supabase.from('balance').update({ md: existing.md, mc: existing.mc, sfd: existing.sfd, sfc: existing.sfc }).eq('id', existing.id).then();
-      }
-      return b;
-    });
-
-    toast.success('Ligne historique supprimée');
+    toast.error('Suppression physique interdite (art. 19 AUDCIF) : la ligne doit être reprise en écriture puis extournée.');
   }, [journal, exercice]);
 
 
@@ -635,8 +605,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (aNouveaux.length > 0) {
-        const { error: balErr } = await supabase.from('balance').insert(aNouveaux);
-        if (balErr) throw balErr;
+        // La balance est dérivée du journal : les à-nouveaux passent uniquement par le journal AN.
       }
 
       const aNouveauxJournal: any[] = [];
