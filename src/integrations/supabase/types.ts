@@ -180,6 +180,48 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          created_at: string
+          entreprise_id: string | null
+          hash: string
+          hash_precedent: string | null
+          id: number
+          new_data: Json | null
+          old_data: Json | null
+          operation: string
+          row_id: string | null
+          table_name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entreprise_id?: string | null
+          hash: string
+          hash_precedent?: string | null
+          id?: number
+          new_data?: Json | null
+          old_data?: Json | null
+          operation: string
+          row_id?: string | null
+          table_name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entreprise_id?: string | null
+          hash?: string
+          hash_precedent?: string | null
+          id?: number
+          new_data?: Json | null
+          old_data?: Json | null
+          operation?: string
+          row_id?: string | null
+          table_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       axes_analytiques: {
         Row: {
           actif: boolean
@@ -551,6 +593,41 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      comptes_systeme: {
+        Row: {
+          compte: string
+          created_at: string
+          entreprise_id: string | null
+          id: string
+          libelle: string
+          role: string
+        }
+        Insert: {
+          compte: string
+          created_at?: string
+          entreprise_id?: string | null
+          id?: string
+          libelle: string
+          role: string
+        }
+        Update: {
+          compte?: string
+          created_at?: string
+          entreprise_id?: string | null
+          id?: string
+          libelle?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comptes_systeme_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       declarations_tva: {
         Row: {
@@ -2160,6 +2237,57 @@ export type Database = {
           },
         ]
       }
+      periodes: {
+        Row: {
+          created_at: string
+          date_debut: string
+          date_fin: string
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          statut: string
+          verrouille_le: string | null
+          verrouille_par: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_debut: string
+          date_fin: string
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          statut?: string
+          verrouille_le?: string | null
+          verrouille_par?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_debut?: string
+          date_fin?: string
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          statut?: string
+          verrouille_le?: string | null
+          verrouille_par?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "periodes_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "periodes_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_comptable: {
         Row: {
           actif: boolean
@@ -2676,6 +2804,15 @@ export type Database = {
         Args: { _ecriture_id: string }
         Returns: undefined
       }
+      fn_verrouiller_periode: {
+        Args: {
+          _date_debut: string
+          _date_fin: string
+          _exercice_id: string
+          _statut: string
+        }
+        Returns: undefined
+      }
       get_cabinet_role: {
         Args: { _cabinet_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -2694,6 +2831,10 @@ export type Database = {
       }
       is_cabinet_member: {
         Args: { _cabinet_id: string; _user_id: string }
+        Returns: boolean
+      }
+      periode_est_ouverte: {
+        Args: { _date: string; _exercice_id: string }
         Returns: boolean
       }
     }

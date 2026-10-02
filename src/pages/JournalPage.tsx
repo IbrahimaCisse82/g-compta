@@ -2,7 +2,8 @@ import { useApp } from '@/stores/app-store';
 import { useUserRole } from '@/hooks/use-user-role';
 import { fmt } from '@/lib/accounting';
 import { exportJournalCsv } from '@/lib/csv-export';
-import { buildFec, downloadFec } from '@/lib/fec-export';
+import { buildFec, downloadFec, controlerFec, type FecLine } from '@/lib/fec-export';
+import { supabase } from '@/integrations/supabase/client';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -17,14 +18,24 @@ export default function JournalPage() {
   const td = rows.reduce((s, r) => s + (r.debit || 0), 0);
   const tc = rows.reduce((s, r) => s + (r.credit || 0), 0);
 
-  const handleExportFec = () => {
+  const handleExportFec = async () => {
     if (!entreprise || !exercice) return;
-    const content = buildFec(journal as any, {
-      entrepriseNom: entreprise.nom,
-      ninea: entreprise.ninea || '',
-      exerciceAnnee: exercice.annee,
+    const ids = [...new Set(journal.map(j => (j as any).ecriture_id).filter(Boolean))] as string[];
+    const meta = new Map<string, { numero: string; valide_le: string | null }>();
+    if (ids.length) {
+      const { data, error } = await supabase.from('ecritures').select('id, numero, valide_le').in('id', ids);
+      if (error) { toast.error('Export FEC impossible : ' + error.message); return; }
+      for (const e of data || []) meta.set(e.id, { numero: e.numero, valide_le: e.valide_le });
+    }
+    const lignes: FecLine[] = journal.map(j => {
+      const m = meta.get((j as any).ecriture_id);
+      return { ...(j as any), ecriture_numero: m?.numero ?? null, valide_le: m?.valide_le ?? null };
     });
+    const ctrl = controlerFec(lignes);
+    const content = buildFec(lignes, { entrepriseNom: entreprise.nom, ninea: entreprise.ninea || '', exerciceAnnee: exercice.annee });
     downloadFec(content, entreprise.ninea || 'FEC', exercice.annee, exercice.date_fin);
+    const msg = `FEC : ${ctrl.lignes} lignes — ${ctrl.sansNumero} sans numéro persistant, ${ctrl.sansValidation} non validées, ${ctrl.desequilibrees} pièce(s) déséquilibrée(s)`;
+    if (ctrl.conforme) toast.success(msg); else toast.warning(msg);
   };
 
   return (
