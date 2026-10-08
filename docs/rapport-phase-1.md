@@ -25,3 +25,7 @@ Table `periodes`, `comptes_systeme`, `audit_log` chaîné par hash, reprise/quar
 - FEC : `EcritureNum` et `ValidDate` repris des écritures serveur, comptes auxiliaires, rapport de contrôle à l'export (2 tests).
 - 95 tests au vert, typecheck OK.
 - Non fait : export quotidien du dernier hash hors base, reprise/quarantaine des 10 lignes historiques, rôle `reviseur`, test de concurrence 1 000 validations, tests par jetons réels.
+
+## Lot 3 (08/10/2026)
+- Lignes historiques de l'exercice clôturé : laissées intactes (intangibilité de l'exercice clôturé, art. AUDCIF). La base refuse toute modification, même par appel direct (vérifié). Elles restent signalées par l'écran Anomalies ; toute correction passera par une écriture de régularisation sur l'exercice ouvert, jamais par réouverture.
+- Rôle `reviseur` ajouté : lecture seule garantie par le serveur (`can_write_entreprise` n'autorise que admin/comptable). Disponible dans l'invitation et la gestion des membres.

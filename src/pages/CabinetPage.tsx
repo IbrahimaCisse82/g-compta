@@ -7,6 +7,7 @@ const ROLE_LABELS: Record<string, { label: string; color: string; desc: string }
   admin: { label: '👑 Admin', color: 'text-accent', desc: 'Accès complet, gère les membres' },
   comptable: { label: '📋 Comptable', color: 'text-primary', desc: 'Saisie, consultation, export' },
   lecteur: { label: '👁️ Lecteur', color: 'text-fg3', desc: 'Consultation uniquement' },
+  reviseur: { label: '🔎 Réviseur', color: 'text-accent', desc: 'Révision et contrôle, sans modification' },
 };
 
 export default function CabinetPage() {
@@ -21,7 +22,7 @@ export default function CabinetPage() {
 
   const [cabinetName, setCabinetName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'admin' | 'comptable' | 'lecteur'>('comptable');
+  const [inviteRole, setInviteRole] = useState<'admin' | 'comptable' | 'lecteur' | 'reviseur'>('comptable');
   const [showInvite, setShowInvite] = useState(false);
 
   const isAdmin = userRole === 'admin';
@@ -145,7 +146,7 @@ export default function CabinetPage() {
                 className="bg-bg3 border border-border rounded-md px-3 py-2 text-sm text-foreground outline-none"
               >
                 <option value="comptable">📋 Comptable</option>
-                <option value="lecteur">👁️ Lecteur</option>
+                <option value="lecteur">👁️ Lecteur</option><option value="reviseur">🔎 Réviseur</option>
                 <option value="admin">👑 Admin</option>
               </select>
               <button
@@ -195,7 +196,7 @@ export default function CabinetPage() {
                       >
                         <option value="admin">Admin</option>
                         <option value="comptable">Comptable</option>
-                        <option value="lecteur">Lecteur</option>
+                        <option value="lecteur">Lecteur</option><option value="reviseur">Réviseur</option>
                       </select>
                       <button onClick={() => removeMember(m.id)}
                         className="text-[10px] text-destructive hover:underline">✕</button>

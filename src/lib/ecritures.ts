@@ -157,7 +157,7 @@ export async function getEcartsBalance(entrepriseId: string, exerciceId: string)
 }
 
 /** Rôle applicatif effectif de l'utilisateur sur une entreprise, calculé en base. */
-export async function getRoleEntreprise(entrepriseId: string): Promise<'admin' | 'comptable' | 'lecteur' | null> {
+export async function getRoleEntreprise(entrepriseId: string): Promise<'admin' | 'comptable' | 'lecteur' | 'reviseur' | null> {
   const { data: userRes } = await supabase.auth.getUser();
   const uid = userRes?.user?.id;
   if (!uid) return null;
