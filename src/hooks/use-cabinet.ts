@@ -13,7 +13,7 @@ export interface CabinetMember {
   id: string;
   cabinet_id: string;
   user_id: string;
-  role: 'admin' | 'comptable' | 'lecteur';
+  role: 'admin' | 'comptable' | 'lecteur' | 'reviseur';
   created_at: string;
   email?: string;
   full_name?: string;
@@ -23,7 +23,7 @@ export interface Invitation {
   id: string;
   cabinet_id: string;
   email: string;
-  role: 'admin' | 'comptable' | 'lecteur';
+  role: 'admin' | 'comptable' | 'lecteur' | 'reviseur';
   invited_by: string;
   status: string;
   created_at: string;
@@ -35,7 +35,7 @@ export function useCabinet(userId: string | undefined) {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(false);
-  const [userRole, setUserRole] = useState<'admin' | 'comptable' | 'lecteur' | null>(null);
+  const [userRole, setUserRole] = useState<'admin' | 'comptable' | 'lecteur' | 'reviseur' | null>(null);
 
   // Load user's cabinet (owned or member of)
   const loadCabinet = useCallback(async () => {
@@ -92,7 +92,7 @@ export function useCabinet(userId: string | undefined) {
           const profile = profiles?.find(p => p.id === m.user_id);
           return {
             ...m,
-            role: m.role as 'admin' | 'comptable' | 'lecteur',
+            role: m.role as 'admin' | 'comptable' | 'lecteur' | 'reviseur',
             email: profile?.email || '',
             full_name: profile?.full_name || '',
           };
@@ -149,7 +149,7 @@ export function useCabinet(userId: string | undefined) {
   }, [userId, loadCabinet]);
 
   // Invite a user
-  const inviteUser = useCallback(async (email: string, role: 'admin' | 'comptable' | 'lecteur') => {
+  const inviteUser = useCallback(async (email: string, role: 'admin' | 'comptable' | 'lecteur' | 'reviseur') => {
     if (!cabinet || !userId) return;
     const { error } = await supabase.from('invitations').insert({
       cabinet_id: cabinet.id,
@@ -197,7 +197,7 @@ export function useCabinet(userId: string | undefined) {
   }, [loadCabinet]);
 
   // Update member role
-  const updateMemberRole = useCallback(async (memberId: string, role: 'admin' | 'comptable' | 'lecteur') => {
+  const updateMemberRole = useCallback(async (memberId: string, role: 'admin' | 'comptable' | 'lecteur' | 'reviseur') => {
     const { error } = await supabase
       .from('cabinet_members')
       .update({ role })

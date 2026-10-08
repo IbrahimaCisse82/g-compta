@@ -3,7 +3,7 @@ import { useApp } from '@/stores/app-store';
 import { useAuth } from './useAuth';
 import { getRoleEntreprise } from '@/lib/ecritures';
 
-export type UserRole = 'admin' | 'comptable' | 'lecteur' | null;
+export type UserRole = 'admin' | 'comptable' | 'lecteur' | 'reviseur' | null;
 
 /**
  * Le rôle est TOUJOURS calculé en base (get_entreprise_role) : propriétaire de
