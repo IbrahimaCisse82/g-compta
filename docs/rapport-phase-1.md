@@ -29,3 +29,8 @@ Table `periodes`, `comptes_systeme`, `audit_log` chaîné par hash, reprise/quar
 ## Lot 3 (08/10/2026)
 - Lignes historiques de l'exercice clôturé : laissées intactes (intangibilité de l'exercice clôturé, art. AUDCIF). La base refuse toute modification, même par appel direct (vérifié). Elles restent signalées par l'écran Anomalies ; toute correction passera par une écriture de régularisation sur l'exercice ouvert, jamais par réouverture.
 - Rôle `reviseur` ajouté : lecture seule garantie par le serveur (`can_write_entreprise` n'autorise que admin/comptable). Disponible dans l'invitation et la gestion des membres.
+
+## Lot 4 (11/10/2026)
+- Ancrage quotidien du dernier hash d'audit_log (fonction audit-anchor, 23h55) : fait, exécuté une fois avec succès.
+- Vérification audit_log (essai en transaction annulée) : 2 modifications du plan comptable → 2 événements, hash_precedent du 2e = hash du 1er (chaîne valide). Le journal est vide simplement parce qu'aucune modification n'a encore eu lieu depuis l'installation.
+- Restant : tests avec jetons réels (comptes lecteur + entreprise étrangère à créer).
