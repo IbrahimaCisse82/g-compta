@@ -65,6 +65,73 @@ export type Database = {
           },
         ]
       }
+      affectations_resultat: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date_ag: string
+          dividendes: number
+          ecriture_id: string | null
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          report_a_nouveau: number
+          reserve_legale: number
+          reserves_statutaires: number
+          resultat: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date_ag: string
+          dividendes?: number
+          ecriture_id?: string | null
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          report_a_nouveau?: number
+          reserve_legale?: number
+          reserves_statutaires?: number
+          resultat: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date_ag?: string
+          dividendes?: number
+          ecriture_id?: string | null
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          report_a_nouveau?: number
+          reserve_legale?: number
+          reserves_statutaires?: number
+          resultat?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affectations_resultat_ecriture_id_fkey"
+            columns: ["ecriture_id"]
+            isOneToOne: false
+            referencedRelation: "ecritures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affectations_resultat_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affectations_resultat_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       amortissements: {
         Row: {
           annee: number
@@ -108,6 +175,69 @@ export type Database = {
             columns: ["immobilisation_id"]
             isOneToOne: false
             referencedRelation: "immobilisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anomalies: {
+        Row: {
+          code_controle: string
+          created_at: string
+          entite: string | null
+          entreprise_id: string
+          exercice_id: string | null
+          gravite: string
+          id: string
+          justification: string | null
+          justifie_le: string | null
+          justifie_par: string | null
+          message: string
+          montant: number | null
+          statut: string
+        }
+        Insert: {
+          code_controle: string
+          created_at?: string
+          entite?: string | null
+          entreprise_id: string
+          exercice_id?: string | null
+          gravite: string
+          id?: string
+          justification?: string | null
+          justifie_le?: string | null
+          justifie_par?: string | null
+          message: string
+          montant?: number | null
+          statut?: string
+        }
+        Update: {
+          code_controle?: string
+          created_at?: string
+          entite?: string | null
+          entreprise_id?: string
+          exercice_id?: string | null
+          gravite?: string
+          id?: string
+          justification?: string | null
+          justifie_le?: string | null
+          justifie_par?: string | null
+          message?: string
+          montant?: number | null
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anomalies_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anomalies_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
             referencedColumns: ["id"]
           },
         ]
@@ -1339,6 +1469,56 @@ export type Database = {
         }
         Relationships: []
       }
+      etats_postes: {
+        Row: {
+          code_poste: string
+          created_at: string
+          etat: string
+          formule: string
+          id: string
+          libelle: string
+          niveau: number
+          note_renvoi: string | null
+          ordre: number
+          referentiel_id: string
+          sens: string
+        }
+        Insert: {
+          code_poste: string
+          created_at?: string
+          etat: string
+          formule: string
+          id?: string
+          libelle: string
+          niveau?: number
+          note_renvoi?: string | null
+          ordre: number
+          referentiel_id: string
+          sens?: string
+        }
+        Update: {
+          code_poste?: string
+          created_at?: string
+          etat?: string
+          formule?: string
+          id?: string
+          libelle?: string
+          niveau?: number
+          note_renvoi?: string | null
+          ordre?: number
+          referentiel_id?: string
+          sens?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "etats_postes_referentiel_id_fkey"
+            columns: ["referentiel_id"]
+            isOneToOne: false
+            referencedRelation: "referentiels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exercices: {
         Row: {
           annee: number
@@ -2532,6 +2712,36 @@ export type Database = {
           },
         ]
       }
+      referentiels: {
+        Row: {
+          code: string
+          created_at: string
+          date_effet: string
+          date_fin: string | null
+          id: string
+          libelle: string
+          systeme: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          date_effet: string
+          date_fin?: string | null
+          id?: string
+          libelle: string
+          systeme: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          date_effet?: string
+          date_fin?: string | null
+          id?: string
+          libelle?: string
+          systeme?: string
+        }
+        Relationships: []
+      }
       transactions_mm: {
         Row: {
           contrepartie: string | null
@@ -2749,6 +2959,17 @@ export type Database = {
         Returns: boolean
       }
       exercice_est_cloture: { Args: { _exercice_id: string }; Returns: boolean }
+      fn_affecter_resultat: {
+        Args: {
+          _date_ag: string
+          _dividendes: number
+          _exercice_id: string
+          _report_a_nouveau: number
+          _reserve_legale: number
+          _reserves_statutaires: number
+        }
+        Returns: string
+      }
       fn_balance: {
         Args: { _entreprise_id: string; _exercice_id: string }
         Returns: {
@@ -2772,9 +2993,14 @@ export type Database = {
           md_stockee: number
         }[]
       }
+      fn_cloturer_exercice: { Args: { _exercice_id: string }; Returns: string }
       fn_contrepasser_ecriture: {
         Args: { _ecriture_id: string; _motif: string }
         Returns: string
+      }
+      fn_controles_coherence: {
+        Args: { _exercice_id: string }
+        Returns: number
       }
       fn_creer_ecriture: {
         Args: {
