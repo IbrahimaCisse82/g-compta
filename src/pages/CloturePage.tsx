@@ -21,42 +21,51 @@ export default function CloturePage() {
 
   useEffect(() => { loadLogs(); }, [loadLogs]);
 
+  const [busy, setBusy] = useState(false);
+  const [nbAnomalies, setNbAnomalies] = useState<number | null>(null);
+
+  const handleControles = async () => {
+    if (!exercice) return;
+    setBusy(true);
+    const { data, error } = await supabase.rpc('fn_controles_coherence', { _exercice_id: exercice.id });
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    setNbAnomalies(Number(data ?? 0));
+    toast.info(`${data ?? 0} anomalie(s) ouverte(s) — détail dans l'écran des contrôles`);
+  };
+
+  // Clôture transactionnelle côté serveur (contrôles bloquants, OD de clôture, AN sur N+1)
   const handleCloture = async () => {
     if (!confirming) { setConfirming(true); return; }
     setConfirming(false);
-    // Log the clôture
-    if (entreprise && exercice) {
-      await supabase.from('cloture_logs').insert({
-        entreprise_id: entreprise.id, exercice_id: exercice.id,
-        action: 'cloture', details: {
-          annee: exercice.annee,
-          nb_comptes_bilan: balance.filter(b => /^[1-5]/.test(b.compte)).length,
-          resultat_net: balance.filter(b => /^[6-8]/.test(b.compte)).reduce((s, b) => s + ((b.sfc || 0) - (b.sfd || 0)), 0),
-        },
-      });
-    }
-    await clotureExercice();
+    if (!exercice) return;
+    setBusy(true);
+    const { error } = await supabase.rpc('fn_cloturer_exercice', { _exercice_id: exercice.id });
+    setBusy(false);
+    if (error) { toast.error(`Clôture refusée : ${error.message}`); return; }
+    toast.success(`Exercice ${exercice.annee} clôturé — à-nouveaux générés sur N+1`);
+    await openExercice(exercice.id);
     await loadLogs();
   };
 
+  // Réouverture serveur : motif ≥ 20 caractères, contre-passation des AN, notification
   const handleReopen = async (excId: string) => {
     if (confirmReopen !== excId) { setConfirmReopen(excId); return; }
     setConfirmReopen(null);
-    // Reopen = set status back to en_cours
-    const { error } = await supabase.from('exercices').update({ statut: 'en_cours' } as any).eq('id', excId);
+    const motif = window.prompt('Motif de réouverture (20 caractères minimum) :') ?? '';
+    if (motif.trim().length < 20) { toast.error('Motif trop court (20 caractères minimum)'); return; }
+    setBusy(true);
+    const { error } = await supabase.rpc('fn_rouvrir_exercice', { _exercice_id: excId, _motif: motif.trim() });
+    setBusy(false);
     if (error) { toast.error(error.message); return; }
-    if (entreprise && exercice) {
-      await supabase.from('cloture_logs').insert({
-        entreprise_id: entreprise.id, exercice_id: excId,
-        action: 'reouverture', details: { annee: exercices.find(e => e.id === excId)?.annee },
-      });
-    }
     toast.success('Exercice réouvert');
     await openExercice(excId);
     await loadLogs();
   };
 
-  const canCloture = exercice?.statut === 'en_cours';
+  const isOuvert = (s?: string) => s === 'en_cours' || s === 'ouvert';
+  const canCloture = isOuvert(exercice?.statut);
+  void clotureExercice; void loading;
   const resultatNet = balance.filter(b => /^[6-8]/.test(b.compte)).reduce((s, b) => s + ((b.sfc || 0) - (b.sfd || 0)), 0);
   const bilanCount = balance.filter(b => /^[1-5]/.test(b.compte)).length;
 
@@ -73,8 +82,8 @@ export default function CloturePage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
             <div>
               <div className="text-[10px] text-fg3 uppercase font-mono">Statut</div>
-              <div className={`text-sm font-bold ${exercice?.statut === 'en_cours' ? 'text-accent' : 'text-success'}`}>
-                {exercice?.statut === 'en_cours' ? '🟡 En cours' : '🟢 Clôturé'}
+              <div className={`text-sm font-bold ${isOuvert(exercice?.statut) ? 'text-accent' : 'text-success'}`}>
+                {isOuvert(exercice?.statut) ? '🟡 En cours' : '🟢 Clôturé'}
               </div>
             </div>
             <div>
@@ -104,11 +113,15 @@ export default function CloturePage() {
           </div>
 
           {canCloture && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <button onClick={handleControles} disabled={busy}
+                className="px-4 py-2 rounded text-[11px] font-bold bg-primary/10 text-primary border border-primary/30">
+                🔍 Lancer les contrôles {nbAnomalies !== null && `(${nbAnomalies} anomalie(s))`}
+              </button>
               {confirming && <span className="text-[10px] text-destructive font-bold animate-pulse">⚠ Cette action est irréversible. Confirmer ?</span>}
-              <button onClick={handleCloture} disabled={loading}
+              <button onClick={handleCloture} disabled={busy}
                 className={`px-4 py-2 rounded text-[11px] font-bold ${confirming ? 'bg-destructive text-destructive-foreground' : 'bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25'}`}>
-                {loading ? '⏳ Clôture en cours...' : confirming ? '⚠ Oui, clôturer définitivement' : `🔒 Clôturer l'exercice ${exercice?.annee}`}
+                {busy ? '⏳ Traitement...' : confirming ? '⚠ Oui, clôturer définitivement' : `🔒 Clôturer l'exercice ${exercice?.annee}`}
               </button>
               {confirming && <button onClick={() => setConfirming(false)} className="px-3 py-1 rounded text-[10px] border border-border text-fg2">Annuler</button>}
             </div>
@@ -133,8 +146,8 @@ export default function CloturePage() {
                   <td className="px-3 py-1.5 text-[11px] font-mono border-b border-border/50">{e.date_debut}</td>
                   <td className="px-3 py-1.5 text-[11px] font-mono border-b border-border/50">{e.date_fin}</td>
                   <td className="px-3 py-1.5 border-b border-border/50">
-                    <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${e.statut === 'en_cours' ? 'bg-accent/10 text-accent' : 'bg-success/10 text-success'}`}>
-                      {e.statut === 'en_cours' ? '🟡 En cours' : '🟢 Clôturé'}
+                    <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${isOuvert(e.statut) ? 'bg-accent/10 text-accent' : 'bg-success/10 text-success'}`}>
+                      {isOuvert(e.statut) ? '🟡 En cours' : '🟢 Clôturé'}
                     </span>
                   </td>
                   <td className="px-3 py-1.5 border-b border-border/50 flex gap-1">
