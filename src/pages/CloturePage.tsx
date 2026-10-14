@@ -113,11 +113,15 @@ export default function CloturePage() {
           </div>
 
           {canCloture && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <button onClick={handleControles} disabled={busy}
+                className="px-4 py-2 rounded text-[11px] font-bold bg-primary/10 text-primary border border-primary/30">
+                🔍 Lancer les contrôles {nbAnomalies !== null && `(${nbAnomalies} anomalie(s))`}
+              </button>
               {confirming && <span className="text-[10px] text-destructive font-bold animate-pulse">⚠ Cette action est irréversible. Confirmer ?</span>}
-              <button onClick={handleCloture} disabled={loading}
+              <button onClick={handleCloture} disabled={busy}
                 className={`px-4 py-2 rounded text-[11px] font-bold ${confirming ? 'bg-destructive text-destructive-foreground' : 'bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25'}`}>
-                {loading ? '⏳ Clôture en cours...' : confirming ? '⚠ Oui, clôturer définitivement' : `🔒 Clôturer l'exercice ${exercice?.annee}`}
+                {busy ? '⏳ Traitement...' : confirming ? '⚠ Oui, clôturer définitivement' : `🔒 Clôturer l'exercice ${exercice?.annee}`}
               </button>
               {confirming && <button onClick={() => setConfirming(false)} className="px-3 py-1 rounded text-[10px] border border-border text-fg2">Annuler</button>}
             </div>
