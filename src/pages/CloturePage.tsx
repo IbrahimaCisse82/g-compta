@@ -82,8 +82,8 @@ export default function CloturePage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
             <div>
               <div className="text-[10px] text-fg3 uppercase font-mono">Statut</div>
-              <div className={`text-sm font-bold ${exercice?.statut === 'en_cours' ? 'text-accent' : 'text-success'}`}>
-                {exercice?.statut === 'en_cours' ? '🟡 En cours' : '🟢 Clôturé'}
+              <div className={`text-sm font-bold ${isOuvert(exercice?.statut) ? 'text-accent' : 'text-success'}`}>
+                {isOuvert(exercice?.statut) ? '🟡 En cours' : '🟢 Clôturé'}
               </div>
             </div>
             <div>
@@ -146,8 +146,8 @@ export default function CloturePage() {
                   <td className="px-3 py-1.5 text-[11px] font-mono border-b border-border/50">{e.date_debut}</td>
                   <td className="px-3 py-1.5 text-[11px] font-mono border-b border-border/50">{e.date_fin}</td>
                   <td className="px-3 py-1.5 border-b border-border/50">
-                    <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${e.statut === 'en_cours' ? 'bg-accent/10 text-accent' : 'bg-success/10 text-success'}`}>
-                      {e.statut === 'en_cours' ? '🟡 En cours' : '🟢 Clôturé'}
+                    <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${isOuvert(e.statut) ? 'bg-accent/10 text-accent' : 'bg-success/10 text-success'}`}>
+                      {isOuvert(e.statut) ? '🟡 En cours' : '🟢 Clôturé'}
                     </span>
                   </td>
                   <td className="px-3 py-1.5 border-b border-border/50 flex gap-1">
