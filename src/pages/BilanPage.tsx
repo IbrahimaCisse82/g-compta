@@ -2,6 +2,7 @@ import { useApp } from '@/stores/app-store';
 import { calc, ACTIF, PASSIF, fmt, fmtSigned, type MapLine, type BalanceLine } from '@/lib/accounting';
 import { exportCsv } from '@/lib/csv-export';
 import { exportBilanPdf } from '@/lib/pdf-export';
+import { rapprocherEtats } from '@/lib/etats-financiers';
 
 function BilanTable({ def, vals, valsN1, valsBrut, valsAmort, title, acColor }: {
   def: MapLine[];
