@@ -108,3 +108,13 @@ describe('mapping DSF — TFT (contrôle de cohérence)', () => {
     expect(v.ZH).toBe(v.ZG + v.ZA);            // contrôle ZH = G + A
   });
 });
+
+describe('passif : résultat et report à nouveau signés', () => {
+  it('bénéfice 200 000 en 131 → +200 000 au poste CJ ; perte 50 000 en 139 → −50 000', async () => {
+    const { calc, PASSIF } = await import('./accounting');
+    const b = (compte: string, p: object) => ({ compte, intitule: '', sd: 0, sc: 0, md: 0, mc: 0, sfd: 0, sfc: 0, ...p });
+    expect(calc([b('131', { sfc: 200_000 })], PASSIF).CJ).toBe(200_000);
+    expect(calc([b('139', { sfd: 50_000 })], PASSIF).CJ).toBe(-50_000);
+    expect(calc([b('121', { sfc: 30_000 })], PASSIF).CH).toBe(30_000);
+  });
+});
