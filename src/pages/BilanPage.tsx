@@ -129,6 +129,15 @@ export default function BilanPage() {
         <div className={`rounded-lg px-4 py-2 text-center font-bold text-sm ${eq ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
           {eq ? '✓ BILAN ÉQUILIBRÉ' : '⚠ BILAN NON ÉQUILIBRÉ'} — Actif: {fmt(tA)} / Passif: {fmt(tP)}
         </div>
+        <div className="mt-3 bg-bg2 border border-border rounded-lg p-3">
+          <div className="text-xs font-semibold mb-2">🔗 Rapprochements Bilan / Compte de résultat / TFT</div>
+          {rapprocherEtats(balance).map(x => (
+            <div key={x.code} className="flex justify-between text-[11px] font-mono py-0.5">
+              <span className={x.ok ? 'text-success' : 'text-destructive'}>{x.ok ? '✓' : '⚠'} {x.libelle}</span>
+              <span className="text-fg3">{fmt(x.obtenu)} / {fmt(x.attendu)}{!x.ok && ` — écart ${fmt(x.ecart)}`}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
