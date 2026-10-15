@@ -60,6 +60,35 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Environment Base44 (aperçu sandbox)
+
+L'environnement d'aperçu utilise un compose dédié :
+
+```sh
+docker compose -f docker-compose.base44.yml up -d --build
+```
+
+- Un seul service `web` (`oven/bun:1`), code monté depuis ce dépôt, serveur de
+  développement Vite sur le port **3000** (avec rechargement à chaud).
+- Les dépendances sont installées au démarrage depuis `bun.lock`
+  (`package-lock.json` est obsolète) : `bun install --frozen-lockfile`.
+- Aucun secret n'est nécessaire au démarrage : les valeurs `VITE_SUPABASE_*` du
+  `.env` du dépôt suffisent à afficher l'application.
+
+### Override sandbox : hôtes autorisés par Vite
+
+Le proxy d'aperçu transmet l'en-tête `Host` sous la forme
+`<port>-<sandbox id>.$BASE44_SANDBOX_HOST_DOMAIN`. Le contrôle d'hôte de Vite
+répond alors `403 Blocked request` pour la page et pour tous les assets, ce qui
+ressemble à un échec de démarrage alors que le serveur est sain. Vite 5.4.19
+n'exploite pas `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS`, donc `vite.config.ts`
+ajoute `server.allowedHosts = ['.' + BASE44_SANDBOX_HOST_DOMAIN]`.
+
+- Si `BASE44_PREVIEW_MODE === "1"` : l'hôte du sandbox est autorisé (l'identifiant
+  du sandbox changeant, on utilise le joker `.domaine`).
+- Sinon (variable absente ou autre valeur) : aucune modification de configuration,
+  comportement d'origine conservé.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
