@@ -38,3 +38,15 @@ Checks:
 - **Demo mode is read-only** and is the quickest way to exercise the real app:
   Landing → "Lancer la Démo" (reads Supabase, falls back to bundled
   `src/lib/demo-data.ts`).
+- **No database credentials exist in this sandbox** (only the public key in `.env`),
+  so schema/RLS/privilege claims can be *measured* only on a local PostgreSQL
+  rebuilt from this repo's own migrations — 31 files in `supabase/migrations` then
+  the 2 in `drizzle/migrations`, in that order. Two prerequisites matter:
+  (1) stub `auth.uid()`, `auth.users`, `storage.foldername`, `cron.*` and install
+  `pgcrypto` (the audit trigger uses `digest`); (2) reproduce Supabase's default
+  privileges with
+  `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;`
+  **before** running the migrations — without it every table looks under-granted
+  and you will report false "permission denied" findings. Only `CREATE EXTENSION
+  pg_cron` fails in that environment. Read-only checks against the hosted project
+  (row counts, privilege behaviour) work with the public key through PostgREST.
