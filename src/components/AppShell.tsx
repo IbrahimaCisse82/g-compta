@@ -43,6 +43,7 @@ import PortailPage from '@/pages/PortailPage';
 import KpiCollabPage from '@/pages/KpiCollabPage';
 import MobileMoneyPage from '@/pages/MobileMoneyPage';
 import FacturesDgidPage from '@/pages/FacturesDgidPage';
+import ComptesSystemePage from '@/pages/ComptesSystemePage';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -93,6 +94,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'plan', icon: '🗂️', label: 'Plan Comptable', shortcut: 'Alt+P' },
     { id: 'exercices', icon: '📅', label: 'Exercices', shortcut: 'Alt+E' },
     { id: 'cloture', icon: '🔒', label: 'Clôture / Réouverture' },
+    { id: 'comptes_systeme', icon: '🧷', label: 'Comptes système' },
     { id: 'abonnement', icon: '🔄', label: 'Écritures Récurrentes' },
     { id: 'mon_abonnement', icon: '💳', label: 'Mon Abonnement' },
     { id: 'parametres', icon: '⚙️', label: 'Paramètres' },
@@ -123,6 +125,7 @@ const PAGES: Record<string, React.ComponentType> = {
   kpi_collab: KpiCollabPage,
   mobile_money: MobileMoneyPage,
   factures_dgid: FacturesDgidPage,
+  comptes_systeme: ComptesSystemePage,
 };
 
 function ClientsPage() {
