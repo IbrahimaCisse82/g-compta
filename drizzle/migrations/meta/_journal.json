@@ -29,6 +29,13 @@
       "when": 1791914045541,
       "tag": "0003_phase2_cloture_affectation_anomalies",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792173831679,
+      "tag": "0004_fix_controles_coherence_plan",
+      "breakpoints": true
     }
   ]
 }
