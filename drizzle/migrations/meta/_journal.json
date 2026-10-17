@@ -36,6 +36,20 @@
       "when": 1792173831679,
       "tag": "0004_fix_controles_coherence_plan",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792205974508,
+      "tag": "0005_fix_affectation_reouverture",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792206007474,
+      "tag": "0006_fix_affectation_origine",
+      "breakpoints": true
     }
   ]
 }
