@@ -6,11 +6,15 @@ import { buildFec, downloadFec, controlerFec, type FecLine } from '@/lib/fec-exp
 import { supabase } from '@/integrations/supabase/client';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
 
 export default function JournalPage() {
-  const { journal, deleteJournalEntry, extournerEcriture, isExerciceCloture, entreprise, exercice } = useApp();
+  const { journal, demo, deleteJournalEntry, extournerEcriture, isExerciceCloture, entreprise, exercice } = useApp();
   const { canWrite, canDelete } = useUserRole();
   const [filter, setFilter] = useState('');
+  const [exportBusy, setExportBusy] = useState(false);
+  const [fec, setFec] = useState<{ content: string; report: ReturnType<typeof controlerFec>; ninea: string; annee: number; dateFin: string } | null>(null);
   const locked = isExerciceCloture();
   const showActions = !locked && canWrite;
   const rows = journal.filter(r => !filter || r.libelle?.toLowerCase().includes(filter.toLowerCase()) || r.compte?.includes(filter));
@@ -20,38 +24,86 @@ export default function JournalPage() {
 
   const handleExportFec = async () => {
     if (!entreprise || !exercice) return;
-    const ids = [...new Set(journal.map(j => (j as any).ecriture_id).filter(Boolean))] as string[];
-    const meta = new Map<string, { numero: string; valide_le: string | null }>();
-    if (ids.length) {
-      const { data, error } = await supabase.from('ecritures').select('id, numero, valide_le').in('id', ids);
-      if (error) { toast.error('Export FEC impossible : ' + error.message); return; }
-      for (const e of data || []) meta.set(e.id, { numero: e.numero, valide_le: e.valide_le });
-    }
-    const lignes: FecLine[] = journal.map(j => {
-      const m = meta.get((j as any).ecriture_id);
-      return { ...(j as any), ecriture_numero: m?.numero ?? null, valide_le: m?.valide_le ?? null };
-    });
-    const ctrl = controlerFec(lignes);
-    const content = buildFec(lignes, { entrepriseNom: entreprise.nom, ninea: entreprise.ninea || '', exerciceAnnee: exercice.annee });
-    downloadFec(content, entreprise.ninea || 'FEC', exercice.annee, exercice.date_fin);
-    const msg = `FEC : ${ctrl.lignes} lignes — ${ctrl.sansNumero} sans numéro persistant, ${ctrl.sansValidation} non validées, ${ctrl.desequilibrees} pièce(s) déséquilibrée(s)`;
-    if (ctrl.conforme) toast.success(msg); else toast.warning(msg);
+    setExportBusy(true);
+    setFec(null);
+    try {
+      // Ne pas exporter la liste affichée : elle peut être limitée par le service.
+      let source: (FecLine & { ecriture_id?: string | null })[] = demo ? journal : [];
+      if (!demo) {
+        for (let offset = 0; ; offset += 1000) {
+          const { data, error } = await supabase.from('journal').select('*')
+            .eq('entreprise_id', entreprise.id).eq('exercice_id', exercice.id)
+            .order('id').range(offset, offset + 999);
+          if (error) throw error;
+          source.push(...(data || []));
+          if (source.length > 100000) throw new Error('Plus de 100 000 lignes : export différé requis, pas encore disponible. Aucun fichier partiel téléchargé.');
+          if (!data || data.length < 1000) break;
+        }
+      }
+      const comptes: string[] = [];
+      for (let offset = 0; ; offset += 1000) {
+        const { data, error } = await supabase.from('plan_comptable').select('numero')
+          .eq('entreprise_id', entreprise.id).order('numero').range(offset, offset + 999);
+        if (error) throw error;
+        comptes.push(...(data || []).map(c => c.numero));
+        if (!data || data.length < 1000) break;
+      }
+      const ids = [...new Set(source.flatMap(j => j.ecriture_id ? [j.ecriture_id] : []))];
+      const meta = new Map<string, { numero: string; valide_le: string | null; numero_sequence: number }>();
+      for (let offset = 0; offset < ids.length; offset += 200) {
+        const { data, error } = await supabase.from('ecritures').select('id, numero, valide_le, numero_sequence')
+          .eq('entreprise_id', entreprise.id).eq('exercice_id', exercice.id).in('id', ids.slice(offset, offset + 200));
+        if (error) throw error;
+        for (const e of data || []) meta.set(e.id, e);
+      }
+      const lignes: FecLine[] = source.map(j => {
+        const m = j.ecriture_id ? meta.get(j.ecriture_id) : undefined;
+        return { ...j, ecriture_numero: m?.numero ?? null, valide_le: m?.valide_le ?? null, numero_sequence: m?.numero_sequence ?? null };
+      });
+      setFec({
+        report: controlerFec(lignes, { dateDebut: exercice.date_debut, dateFin: exercice.date_fin, comptes }),
+        content: buildFec(lignes, { entrepriseNom: entreprise.nom, ninea: entreprise.ninea, exerciceAnnee: exercice.annee }),
+        ninea: entreprise.ninea, annee: exercice.annee, dateFin: exercice.date_fin,
+      });
+    } catch (error) {
+      toast.error('Export FEC impossible : ' + (error instanceof Error ? error.message : String((error as { message?: string }).message || error)));
+    } finally { setExportBusy(false); }
   };
 
   return (
     <div>
-      <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
+      <div className="min-h-12 bg-bg2 border-b border-border flex flex-wrap gap-2 items-center justify-between px-5 py-2">
         <div><div className="font-serif text-[17px]">Journal des Opérations</div><div className="text-[10px] text-fg3 font-mono">Partie double — Débit = Crédit</div></div>
         <div className="flex items-center gap-2">
           <button onClick={() => exportJournalCsv(rows, `journal_${new Date().getFullYear()}`)} className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-border text-fg2 hover:bg-bg3">
             📥 Export CSV
           </button>
-          <button onClick={handleExportFec} title="Fichier des Écritures Comptables — format officiel OHADA/fiscal" className="px-3 py-1.5 rounded-md text-[11px] font-semibold border border-primary/40 text-primary hover:bg-primary/10">
-            📋 Export FEC officiel
-          </button>
+          <Button variant="outline" size="sm" onClick={handleExportFec} disabled={exportBusy} className="text-[11px]">
+            <Download /> {exportBusy ? 'Contrôle en cours…' : 'Export FEC — format 18 colonnes'}
+          </Button>
         </div>
       </div>
       <div className="p-5">
+        {fec && <section aria-label="Rapport de contrôle FEC" className="border-b border-border pb-4 mb-4 space-y-3">
+          <h2 className="text-sm font-semibold">Rapport de contrôle FEC — {fec.report.lignes} lignes</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div>Sans numéro : <strong>{fec.report.sansNumero}</strong></div>
+            <div>Sans validation : <strong>{fec.report.sansValidation}</strong></div>
+            <div>Pièces déséquilibrées : <strong>{fec.report.desequilibrees}</strong></div>
+            <div>Écart global : <strong>{fmt(fec.report.ecartGlobal)}</strong></div>
+            <div>Hors plan : <strong>{fec.report.horsPlan}</strong></div>
+            <div>Hors exercice : <strong>{fec.report.horsExercice}</strong></div>
+            <div>Séquences invalides : <strong>{fec.report.sequencesInvalides}</strong></div>
+            <div>Montants invalides : <strong>{fec.report.montantsInvalides}</strong></div>
+          </div>
+          <div className="text-xs">Trous de numérotation : {fec.report.trousNumerotation.length === 0 ? 'aucun' : fec.report.trousNumerotation.map(t => `${t.journal} : ${t.debut}–${t.fin}`).join(', ')}</div>
+          <p className={`text-xs font-semibold ${fec.report.conforme ? 'text-success' : 'text-destructive'}`}>
+            {fec.report.conforme ? 'Contrôles réussis.' : 'Export bloqué : corriger les anomalies avant téléchargement.'}
+          </p>
+          <Button size="sm" disabled={!fec.report.conforme} onClick={() => downloadFec(fec.content, fec.ninea, fec.annee, fec.dateFin)}>
+            <Download /> Télécharger le FEC
+          </Button>
+        </section>}
         <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
           <div className="px-3.5 py-2.5 border-b border-border flex items-center justify-between gap-2">
             <span className="text-xs font-semibold">Journal — {rows.length} ligne(s)</span>
