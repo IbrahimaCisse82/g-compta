@@ -18,6 +18,31 @@ Checks:
 - tests: `docker compose -f docker-compose.base44.yml exec -T web bunx vitest run`
 - production build: `... exec -T web bunx vite build` (does **not** type-check)
 
+## Branches consolidées (18/10/2026)
+Le dépôt portait trois lignes de travail divergentes : `main`, `cloner` (module
+médical) et `base44/setup-ae54c861` (module Santé, contrôles de cohérence,
+engagements hors bilan). Elles sont regroupées dans une seule branche. L'intégration
+est **additive** — les protections comptables de la Phase 1 n'ont pas été touchées :
+- apporté tel quel : `src/lib/medical.ts`, `src/components/medical/*`,
+  `src/pages/medical/*`, `src/lib/sante.ts`, `src/lib/coherence-controls.ts`,
+  `src/pages/{Sante,Engagements,Anomalies}Page.tsx` et les tests `sante` /
+  `coherence-controls` ;
+- **volontairement non apporté** : le `app-store` / `BalancePage` / `JournalPage` de
+  `cloner` (ils réintroduisent l'écriture directe de la table `balance` et la
+  suppression physique d'écritures, interdites depuis la Phase 1) et les migrations
+  `gel_balance` / `periodes` de `base44/setup-ae54c861` (la Phase 1 les implémente
+  déjà via `drizzle/migrations` — les rejouer dupliquerait les objets) ;
+- câblage : `src/stores/app-store.tsx` (`PageId`) et `src/components/AppShell.tsx`
+  (section « Médical » + entrées Engagements / Anomalies & Contrôles / Module Santé).
+  L'entrée « Assureurs » n'apparaît que pour le rôle admin (`useUserRole`).
+
+**Deux migrations restent à appliquer** au projet Supabase hébergé :
+`supabase/migrations/20261002120000_medical_mvp.sql` (module médical) et
+`supabase/migrations/20260915210000_engagements_hors_bilan.sql` (engagements hors
+bilan). Sans elles, les pages affichent leur état « module non installé » et
+PostgREST répond 404 sur les tables absentes — c'est le comportement attendu, pas
+une régression.
+
 ## Non-obvious findings
 - **`bun.lock` is the authoritative lockfile.** `package-lock.json` is stale (it
   is missing ~11 dependencies, e.g. `vitest`, `drizzle-orm`, `@supabase/supabase-js`),
