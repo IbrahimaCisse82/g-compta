@@ -30,7 +30,7 @@ Source : document utilisateur du 2 octobre 2026, sections 3.1–3.11.
 | Parcours connecté | Partiel | espace réel ouvert, rapport rendu, téléchargement désactivé ; un seul dossier accessible « Mon Entreprise », exercice sans lignes |
 | Téléchargement connecté sur exercice renseigné | Non vérifiable | aucun exercice renseigné accessible dans ce compte ; aucune écriture fictive créée |
 
-Essais : 21 tests FEC/écritures exécutés et réussis après modification. L’ensemble des 101 tests existants avait passé avant modification ; résultat global après modification à consigner après exécution.
+Essais : 21 tests FEC/écritures exécutés et réussis après modification ; suite complète finale : 110 tests réussis dans 12 fichiers.
 Navigateur : aucun crash ; rapport capturé et inspecté. Compilation automatique : OK après les changements d’export.
 
 ## Restant de la Phase 3
