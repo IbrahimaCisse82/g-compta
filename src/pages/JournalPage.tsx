@@ -98,7 +98,7 @@ export default function JournalPage() {
           </div>
           <div className="text-xs">Trous de numérotation : {fec.report.trousNumerotation.length === 0 ? 'aucun' : fec.report.trousNumerotation.map(t => `${t.journal} : ${t.debut}–${t.fin}`).join(', ')}</div>
           <p className={`text-xs font-semibold ${fec.report.conforme ? 'text-success' : 'text-destructive'}`}>
-            {fec.report.conforme ? 'Contrôles réussis.' : 'Export bloqué : corriger les anomalies avant téléchargement.'}
+            {fec.report.lignes === 0 ? 'Aucune écriture à exporter sur cet exercice.' : fec.report.conforme ? 'Contrôles réussis.' : 'Export bloqué : corriger les anomalies avant téléchargement.'}
           </p>
           <Button size="sm" disabled={!fec.report.conforme} onClick={() => downloadFec(fec.content, fec.ninea, fec.annee, fec.dateFin)}>
             <Download /> Télécharger le FEC

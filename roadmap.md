@@ -1,9 +1,10 @@
 # Phase 3 — Conformité fiscale et déclarative
 
 ## Lot actif : export FEC (CA-3.1)
-- [ ] Vérifier et corriger la stabilité du fichier et la détection des trous de numérotation.
-- [ ] Afficher un rapport avant téléchargement et ne pas présenter le FEC comme officiel.
-- [ ] Tester les règles et vérifier le parcours connecté.
+- [x] Vérifier et corriger la stabilité du fichier et la détection des trous de numérotation (tests CA-3.1).
+- [x] Afficher un rapport avant téléchargement et ne pas présenter le FEC comme officiel.
+- [x] Tester les règles ; vérifier le parcours connecté sur l’exercice disponible (vide).
+- [ ] Vérifier le téléchargement connecté avec un exercice renseigné : seul dossier accessible vide ; ne pas créer de fausses écritures dans les données utilisateur.
 
 ## Lots suivants (non commencés)
 - Comptabilité auxiliaire et journaux paramétrables ; export asynchrone au-delà de 100 000 lignes.
