@@ -1,0 +1,43 @@
+# Base44 sandbox environment for G-Compta (Vite + React SPA).
+#
+# The whole app is a client-side SPA served by the Vite dev server. Data lives in
+# the user's hosted Supabase project (VITE_SUPABASE_* in the repo's own .env), so
+# the only local service is the web dev server itself.
+#
+# Run: docker compose -f docker-compose.base44.yml up -d --build
+services:
+  web:
+    # Plain runtime base image: the app is always run FROM THE CLONED SOURCE
+    # (bind mount below), never from a prebuilt bundle.
+    image: oven/bun:1
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    volumes:
+      # Repo (including bun.lock, the authoritative lockfile here) is mounted live.
+      - .:/app
+    env_file:
+      # Platform-managed secrets (absent today, so the last entry is the whole list).
+      - /run/base44/app.env
+    environment:
+      # Pass-through only, never hardcoded, so sandbox-only overrides can be gated
+      # on it and shared configuration keeps its normal behaviour without it.
+      - BASE44_PREVIEW_MODE
+      # Used by vite.config.ts (only when BASE44_PREVIEW_MODE=1) to allow the
+      # `<port>-<sandbox id>.<domain>` Host header of the preview proxy.
+      - BASE44_SANDBOX_HOST_DOMAIN
+      # Platform-provided; honoured by Vite >= 6.1 (ignored by Vite 5).
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    command: ["sh", "-ec", "bun install --frozen-lockfile && exec bunx vite --host 0.0.0.0 --port 3000 --strictPort"]
+    # Probes the real page (index.html with its #root mount node), not just the port.
+    healthcheck:
+      test:
+        - CMD
+        - bun
+        - -e
+        - "fetch('http://127.0.0.1:3000/').then(async r => { const t = await r.text(); process.exit(r.ok && t.includes('id=\"root\"') ? 0 : 1); }).catch(() => process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    restart: on-failure
