@@ -8,7 +8,7 @@
 
 ## Lots suivants (non commencés)
 - Comptabilité auxiliaire et journaux paramétrables ; export asynchrone au-delà de 100 000 lignes.
-- Système normal / refus SMT (CA-3.3).
+- [x] Système normal / refus SMT (CA-3.3) : choix dans Paramètres, états refusés avec message.
 - Barèmes datés et reproduction de paie historique (CA-3.2).
 - Résultat fiscal, IS/IMF sur cinq dossiers (CA-3.4).
 - TVA complète (CA-3.5).

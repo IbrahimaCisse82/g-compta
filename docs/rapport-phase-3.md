@@ -36,7 +36,7 @@ Navigateur : aucun crash ; rapport capturé et inspecté. Compilation automatiqu
 ## Restant de la Phase 3
 - Comptabilité auxiliaire complète et journaux paramétrables ; streaming asynchrone des gros exports.
 - CA-3.2 barèmes datés et reproduction de paie historique.
-- CA-3.3 refus explicite SMT.
+- CA-3.3 : Passé (moteur) — colonne entreprises.systeme_comptable (normal|smt, défaut normal) ; Bilan, CR, TFT, liasse et notes refusés avec message « hors périmètre » ; 3 tests systeme-comptable.test.ts ; 113 tests au vert. Parcours navigateur non rejoué.
 - CA-3.4 résultat fiscal et IS/IMF sur cinq dossiers.
 - CA-3.5 TVA complète.
 - Paie, immobilisations/provisions, Mobile Money et imports de reprise.
