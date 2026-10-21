@@ -1,5 +1,5 @@
 /** Écrans d'états financiers réservés au système normal SYSCOHADA (CA-3.3). */
-export const PAGES_ETATS_SYSTEME_NORMAL = ['bilan', 'resultat', 'tft', 'liasse', 'note34'] as const;
+export const PAGES_ETATS_SYSTEME_NORMAL = ['bilan', 'resultat', 'tft', 'liasse', 'note34', 'fiscal'] as const;
 
 export function estDossierSmt(systeme?: string | null): boolean {
   return systeme === 'smt';
