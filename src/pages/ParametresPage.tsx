@@ -9,7 +9,7 @@ export default function ParametresPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     nom: '', sigle: '', ninea: '', rccm: '', tel: '',
-    adresse: '', forme_juridique: '', secteur: '', monnaie: '',
+    adresse: '', forme_juridique: '', secteur: '', monnaie: '', systeme_comptable: 'normal',
   });
 
   useEffect(() => {
@@ -24,6 +24,7 @@ export default function ParametresPage() {
         forme_juridique: entreprise.forme_juridique || '',
         secteur: entreprise.secteur || '',
         monnaie: entreprise.monnaie || 'FCFA',
+        systeme_comptable: entreprise.systeme_comptable || 'normal',
       });
     }
   }, [entreprise]);
@@ -78,6 +79,14 @@ export default function ParametresPage() {
             {field('Forme juridique', 'forme_juridique')}
             {field('Secteur', 'secteur')}
             {field('Monnaie', 'monnaie')}
+          </div>
+          <div className="mt-3">
+            <label className="block text-[10px] text-fg3 uppercase font-mono mb-1">Système comptable</label>
+            <select value={form.systeme_comptable} onChange={e => setForm(f => ({ ...f, systeme_comptable: e.target.value }))}
+              className="w-full sm:w-80 bg-bg3 border border-border rounded-md px-2 py-1.5 text-xs">
+              <option value="normal">Système normal SYSCOHADA</option>
+              <option value="smt">Système Minimal de Trésorerie (SMT) — états non disponibles</option>
+            </select>
           </div>
         </div>
 
