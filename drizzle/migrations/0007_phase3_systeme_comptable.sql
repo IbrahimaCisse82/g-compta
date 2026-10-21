@@ -1,0 +1,2 @@
+ALTER TABLE public.entreprises ADD COLUMN IF NOT EXISTS systeme_comptable text NOT NULL DEFAULT 'normal';
+ALTER TABLE public.entreprises ADD CONSTRAINT entreprises_systeme_comptable_chk CHECK (systeme_comptable IN ('normal','smt'));

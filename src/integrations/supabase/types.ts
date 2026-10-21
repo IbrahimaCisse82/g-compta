@@ -1434,6 +1434,7 @@ export type Database = {
           rccm: string | null
           secteur: string | null
           sigle: string | null
+          systeme_comptable: string
           tel: string | null
           user_id: string | null
         }
@@ -1449,6 +1450,7 @@ export type Database = {
           rccm?: string | null
           secteur?: string | null
           sigle?: string | null
+          systeme_comptable?: string
           tel?: string | null
           user_id?: string | null
         }
@@ -1464,6 +1466,7 @@ export type Database = {
           rccm?: string | null
           secteur?: string | null
           sigle?: string | null
+          systeme_comptable?: string
           tel?: string | null
           user_id?: string | null
         }
