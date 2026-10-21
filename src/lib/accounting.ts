@@ -81,6 +81,7 @@ export interface Entreprise {
   secteur: string;
   monnaie: string;
   cabinet_id?: string;
+  systeme_comptable?: 'normal' | 'smt' | string;
 }
 
 export interface Exercice {

@@ -44,6 +44,7 @@ import KpiCollabPage from '@/pages/KpiCollabPage';
 import MobileMoneyPage from '@/pages/MobileMoneyPage';
 import FacturesDgidPage from '@/pages/FacturesDgidPage';
 import ComptesSystemePage from '@/pages/ComptesSystemePage';
+import { etatRefuse, MESSAGE_SMT_HORS_PERIMETRE } from '@/lib/systeme-comptable';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
   { section: 'Synthèse', items: [
@@ -291,7 +292,12 @@ export default function AppShell() {
         </aside>
 
         <main className="flex-1 overflow-y-auto">
-          <PageComponent />
+          {etatRefuse(currentPage, entreprise?.systeme_comptable) ? (
+            <div className="p-6"><div className="max-w-xl mx-auto bg-bg2 border border-destructive/40 rounded-lg p-5 text-sm">
+              <div className="font-bold text-destructive mb-2">État non disponible</div>
+              <p className="text-fg2">{MESSAGE_SMT_HORS_PERIMETRE}</p>
+            </div></div>
+          ) : <PageComponent />}
         </main>
       </div>
     </div>
