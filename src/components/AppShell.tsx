@@ -44,6 +44,7 @@ import KpiCollabPage from '@/pages/KpiCollabPage';
 import MobileMoneyPage from '@/pages/MobileMoneyPage';
 import FacturesDgidPage from '@/pages/FacturesDgidPage';
 import ComptesSystemePage from '@/pages/ComptesSystemePage';
+import FiscalPage from '@/pages/FiscalPage';
 import { etatRefuse, MESSAGE_SMT_HORS_PERIMETRE } from '@/lib/systeme-comptable';
 
 const NAV: { section: string; items: { id: PageId; icon: string; label: string; shortcut?: string; cabinet?: boolean }[] }[] = [
@@ -82,6 +83,7 @@ const NAV: { section: string; items: { id: PageId; icon: string; label: string; 
     { id: 'tft', icon: '💸', label: 'Flux de Trésorerie' },
     { id: 'note34', icon: '📝', label: 'Notes Annexes' },
     { id: 'liasse', icon: '📦', label: 'Liasse Fiscale DSF' },
+    { id: 'fiscal', icon: '🧾', label: 'Résultat fiscal IS/IMF' },
   ]},
   { section: 'Analyse & Gestion', items: [
     { id: 'analytique', icon: '📊', label: 'Comptabilité Analytique' },
@@ -109,6 +111,7 @@ const PAGES: Record<string, React.ComponentType> = {
   saisie: SaisiePage, grandlivre: GrandLivrePage,
   balance_agee: BalanceAgeePage, rapprochement: RapprochementPage,
   note34: NotesAnnexesPage, audit: AuditTrailPage, liasse: LiasseFiscalePage,
+  fiscal: FiscalPage,
   import: ImportPage, cabinet_mgmt: CabinetPage,
   lettrage: LettragePage, analytique: AnalytiquePage, budget: BudgetPage,
   tva: TvaPage, abonnement: AbonnementPage, mon_abonnement: MonAbonnementPage,

@@ -439,6 +439,42 @@ export type Database = {
           },
         ]
       }
+      baremes: {
+        Row: {
+          a_valider: boolean
+          code: string
+          created_at: string
+          date_effet: string
+          date_fin: string | null
+          id: string
+          libelle: string
+          source: string | null
+          valeur: number
+        }
+        Insert: {
+          a_valider?: boolean
+          code: string
+          created_at?: string
+          date_effet: string
+          date_fin?: string | null
+          id?: string
+          libelle: string
+          source?: string | null
+          valeur: number
+        }
+        Update: {
+          a_valider?: boolean
+          code?: string
+          created_at?: string
+          date_effet?: string
+          date_fin?: string | null
+          id?: string
+          libelle?: string
+          source?: string | null
+          valeur?: number
+        }
+        Relationships: []
+      }
       budgets: {
         Row: {
           compte: string
@@ -2416,6 +2452,77 @@ export type Database = {
             columns: ["entreprise_id"]
             isOneToOne: true
             referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      passage_fiscal: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          ecriture_id: string | null
+          entreprise_id: string
+          exercice_id: string
+          id: string
+          immobilisation_id: string | null
+          libelle: string
+          montant: number
+          nature: string
+          sens: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          ecriture_id?: string | null
+          entreprise_id: string
+          exercice_id: string
+          id?: string
+          immobilisation_id?: string | null
+          libelle: string
+          montant: number
+          nature: string
+          sens: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          ecriture_id?: string | null
+          entreprise_id?: string
+          exercice_id?: string
+          id?: string
+          immobilisation_id?: string | null
+          libelle?: string
+          montant?: number
+          nature?: string
+          sens?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "passage_fiscal_ecriture_id_fkey"
+            columns: ["ecriture_id"]
+            isOneToOne: false
+            referencedRelation: "ecritures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passage_fiscal_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passage_fiscal_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passage_fiscal_immobilisation_id_fkey"
+            columns: ["immobilisation_id"]
+            isOneToOne: false
+            referencedRelation: "immobilisations"
             referencedColumns: ["id"]
           },
         ]

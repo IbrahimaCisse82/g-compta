@@ -57,6 +57,13 @@
       "when": 1792605682778,
       "tag": "0007_phase3_systeme_comptable",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792605868345,
+      "tag": "0008_phase3_baremes_fiscal",
+      "breakpoints": true
     }
   ]
 }
