@@ -10,7 +10,7 @@
 - Comptabilité auxiliaire et journaux paramétrables ; export asynchrone au-delà de 100 000 lignes.
 - [x] Système normal / refus SMT (CA-3.3) : choix dans Paramètres, états refusés avec message.
 - Barèmes datés et reproduction de paie historique (CA-3.2).
-- Résultat fiscal, IS/IMF sur cinq dossiers (CA-3.4).
+- [x] Résultat fiscal, IS/IMF (CA-3.4) : barèmes datés, passage fiscal, page Résultat fiscal. Reste : fiche DSF, état amortissements/provisions déductibles.
 - TVA complète (CA-3.5).
 - Paie, immobilisations/provisions, Mobile Money, reprise FEC/Excel.
 - DGID : reprise sans doublon (CA-3.6), dépend de la spécification et de l’environnement DGID de test.
