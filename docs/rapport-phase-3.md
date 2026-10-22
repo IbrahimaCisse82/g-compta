@@ -37,7 +37,7 @@ Navigateur : aucun crash ; rapport capturé et inspecté. Compilation automatiqu
 - Comptabilité auxiliaire complète et journaux paramétrables ; streaming asynchrone des gros exports.
 - CA-3.2 barèmes datés et reproduction de paie historique.
 - CA-3.3 : Passé (moteur) — colonne entreprises.systeme_comptable (normal|smt, défaut normal) ; Bilan, CR, TFT, liasse et notes refusés avec message « hors périmètre » ; 3 tests systeme-comptable.test.ts ; 113 tests au vert. Parcours navigateur non rejoué.
-- CA-3.4 : Passé (moteur) — table baremes datée (valeurs À VALIDER), passage_fiscal (RLS, audit), fiscal.test.ts 7 tests sur cinq dossiers ; 120 tests au vert. Reste fiche DSF et état des amortissements/provisions déductibles.
+- CA-3.4 : Passé (moteur) — table baremes datée (valeurs À VALIDER), passage_fiscal (RLS, audit), fiscal.test.ts 7 tests sur cinq dossiers ; 120 tests au vert. Fiche d’identification DSF (régime, activité, effectif, date de dépôt) et état des amortissements/provisions ajoutés sur la page Résultat fiscal ; parcours navigateur non rejoué.
 - CA-3.5 TVA complète.
 - Paie, immobilisations/provisions, Mobile Money et imports de reprise.
 - CA-3.6 DGID : essai réel de rejet/reprise sans doublon nécessite une spécification et un environnement DGID de test ; simulation ne vaut pas preuve.

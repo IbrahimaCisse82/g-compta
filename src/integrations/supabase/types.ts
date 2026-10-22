@@ -1459,15 +1459,18 @@ export type Database = {
       }
       entreprises: {
         Row: {
+          activite_principale: string | null
           adresse: string | null
           cabinet_id: string | null
           created_at: string
+          effectif: number | null
           forme_juridique: string | null
           id: string
           monnaie: string | null
           ninea: string | null
           nom: string
           rccm: string | null
+          regime_fiscal: string | null
           secteur: string | null
           sigle: string | null
           systeme_comptable: string
@@ -1475,15 +1478,18 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          activite_principale?: string | null
           adresse?: string | null
           cabinet_id?: string | null
           created_at?: string
+          effectif?: number | null
           forme_juridique?: string | null
           id?: string
           monnaie?: string | null
           ninea?: string | null
           nom: string
           rccm?: string | null
+          regime_fiscal?: string | null
           secteur?: string | null
           sigle?: string | null
           systeme_comptable?: string
@@ -1491,15 +1497,18 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          activite_principale?: string | null
           adresse?: string | null
           cabinet_id?: string | null
           created_at?: string
+          effectif?: number | null
           forme_juridique?: string | null
           id?: string
           monnaie?: string | null
           ninea?: string | null
           nom?: string
           rccm?: string | null
+          regime_fiscal?: string | null
           secteur?: string | null
           sigle?: string | null
           systeme_comptable?: string
@@ -1563,6 +1572,7 @@ export type Database = {
           annee: number
           created_at: string
           date_debut: string
+          date_depot_dsf: string | null
           date_fin: string
           entreprise_id: string
           id: string
@@ -1572,6 +1582,7 @@ export type Database = {
           annee: number
           created_at?: string
           date_debut: string
+          date_depot_dsf?: string | null
           date_fin: string
           entreprise_id: string
           id?: string
@@ -1581,6 +1592,7 @@ export type Database = {
           annee?: number
           created_at?: string
           date_debut?: string
+          date_depot_dsf?: string | null
           date_fin?: string
           entreprise_id?: string
           id?: string

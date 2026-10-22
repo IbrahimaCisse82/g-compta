@@ -82,6 +82,9 @@ export interface Entreprise {
   monnaie: string;
   cabinet_id?: string;
   systeme_comptable?: 'normal' | 'smt' | string;
+  regime_fiscal?: string | null;
+  activite_principale?: string | null;
+  effectif?: number | null;
 }
 
 export interface Exercice {

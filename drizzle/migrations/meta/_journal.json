@@ -64,6 +64,13 @@
       "when": 1792605868345,
       "tag": "0008_phase3_baremes_fiscal",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792706825285,
+      "tag": "0009_phase3_fiche_dsf",
+      "breakpoints": true
     }
   ]
 }

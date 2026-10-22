@@ -10,6 +10,7 @@ export default function ParametresPage() {
   const [form, setForm] = useState({
     nom: '', sigle: '', ninea: '', rccm: '', tel: '',
     adresse: '', forme_juridique: '', secteur: '', monnaie: '', systeme_comptable: 'normal',
+    regime_fiscal: '', activite_principale: '', effectif: '',
   });
 
   useEffect(() => {
@@ -25,6 +26,9 @@ export default function ParametresPage() {
         secteur: entreprise.secteur || '',
         monnaie: entreprise.monnaie || 'FCFA',
         systeme_comptable: entreprise.systeme_comptable || 'normal',
+        regime_fiscal: entreprise.regime_fiscal || '',
+        activite_principale: entreprise.activite_principale || '',
+        effectif: entreprise.effectif != null ? String(entreprise.effectif) : '',
       });
     }
   }, [entreprise]);
@@ -34,7 +38,8 @@ export default function ParametresPage() {
   const save = async () => {
     if (demo) { toast.info('Mode démo — modifications non sauvegardées.'); return; }
     setSaving(true);
-    await updateEntreprise(form);
+    const eff = form.effectif.trim() === '' ? null : Math.max(0, parseInt(form.effectif, 10) || 0);
+    await updateEntreprise({ ...form, effectif: eff });
     setSaving(false);
     toast.success('Paramètres sauvegardés');
   };
@@ -79,6 +84,11 @@ export default function ParametresPage() {
             {field('Forme juridique', 'forme_juridique')}
             {field('Secteur', 'secteur')}
             {field('Monnaie', 'monnaie')}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+            {field('Régime fiscal (DSF)', 'regime_fiscal')}
+            {field('Activité principale (DSF)', 'activite_principale')}
+            {field('Effectif (DSF)', 'effectif')}
           </div>
           <div className="mt-3">
             <label className="block text-[10px] text-fg3 uppercase font-mono mb-1">Système comptable</label>

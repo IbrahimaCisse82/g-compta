@@ -13,6 +13,8 @@ export default function FiscalPage() {
   const { canWrite } = useUserRole();
   const [baremes, setBaremes] = useState<Bareme[]>([]);
   const [lignes, setLignes] = useState<Ligne[]>([]);
+  const [immos, setImmos] = useState<any[]>([]);
+  const [provs, setProvs] = useState<any[]>([]);
   const [form, setForm] = useState({ sens: 'reintegration', nature: '', libelle: '', montant: '' });
 
   const load = async () => {
@@ -22,6 +24,12 @@ export default function FiscalPage() {
       const { data } = await supabase.from('passage_fiscal').select('id,sens,nature,libelle,montant')
         .eq('exercice_id', exercice.id).order('created_at');
       setLignes((data ?? []) as Ligne[]);
+      const { data: am } = await supabase.from('amortissements').select('dotation, immobilisations(code,libelle)')
+        .eq('entreprise_id', entreprise!.id).eq('annee', exercice.annee);
+      setImmos(am ?? []);
+      const { data: pv } = await supabase.from('provisions').select('code,libelle,nature,montant_actuel,statut')
+        .eq('entreprise_id', entreprise!.id).neq('statut', 'reprise');
+      setProvs(pv ?? []);
     }
   };
   useEffect(() => { load(); }, [exercice?.id]);
@@ -90,6 +98,30 @@ export default function FiscalPage() {
               <div className="font-bold text-primary mt-4 mb-2">Acomptes provisionnels {exercice.annee + 1}</div>
               {acomptes(r.impotDu, fraction, exercice.annee + 1).map(a => row(a.echeance, a.montant))}
               <div className="text-[10px] text-fg3 mt-2">Échéances à valider.</div></>}
+          </div>
+        </div>
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="bg-bg2 border border-border rounded-lg p-4">
+            <div className="font-bold text-primary mb-2">Fiche d'identification DSF</div>
+            {[['NINEA', entreprise.ninea], ['RCCM', entreprise.rccm], ['Régime fiscal', entreprise.regime_fiscal],
+              ['Activité', entreprise.activite_principale], ['Effectif', entreprise.effectif],
+              ['Date de dépôt', (exercice as any).date_depot_dsf]].map(([k, v]) => (
+              <div key={k as string} className="flex justify-between py-1 border-b border-border/50"><span>{k}</span>
+                <span className={v ? '' : 'text-destructive'}>{v !== null && v !== undefined && v !== '' ? String(v) : 'à renseigner'}</span></div>))}
+            <div className="text-[10px] text-fg3 mt-2">À compléter dans Paramètres.</div>
+          </div>
+          <div className="bg-bg2 border border-border rounded-lg p-4">
+            <div className="font-bold text-primary mb-2">Amortissements de l'exercice</div>
+            {immos.length === 0 ? <div className="text-fg3">Aucune dotation.</div> : immos.map((a, i) =>
+              row(`${a.immobilisations?.code ?? ''} ${a.immobilisations?.libelle ?? ''}`, Number(a.dotation)))}
+            {row('Total', immos.reduce((s, a) => s + Number(a.dotation), 0), true)}
+          </div>
+          <div className="bg-bg2 border border-border rounded-lg p-4">
+            <div className="font-bold text-primary mb-2">Provisions en cours</div>
+            {provs.length === 0 ? <div className="text-fg3">Aucune provision.</div> : provs.map(p =>
+              row(`${p.code} ${p.libelle} (${p.nature})`, Number(p.montant_actuel)))}
+            {row('Total', provs.reduce((s, p) => s + Number(p.montant_actuel), 0), true)}
+            <div className="text-[10px] text-fg3 mt-2">Le caractère déductible de chaque provision est à apprécier ; les parts non déductibles se saisissent en réintégration.</div>
           </div>
         </div>
       </div>
