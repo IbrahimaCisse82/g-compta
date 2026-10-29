@@ -1,5 +1,5 @@
 import { useApp } from '@/stores/app-store';
-import { calc, ACTIF, PASSIF, fmt, fmtSigned, type MapLine, type BalanceLine } from '@/lib/accounting';
+import { calc, calculerActifColonnes, ACTIF, PASSIF, fmt, fmtSigned, type MapLine } from '@/lib/accounting';
 import { exportCsv } from '@/lib/csv-export';
 import { exportBilanPdf } from '@/lib/pdf-export';
 import { rapprocherEtats } from '@/lib/etats-financiers';
@@ -72,24 +72,12 @@ function BilanTable({ def, vals, valsN1, valsBrut, valsAmort, title, acColor }: 
   );
 }
 
-function computeBrut(balance: BalanceLine[], def: MapLine[]): Record<string, number> {
-  const brutBalance = balance.filter(b => !/^(28|29|39)/.test(b.compte));
-  return calc(brutBalance, def);
-}
-
-function computeAmort(balance: BalanceLine[], def: MapLine[]): Record<string, number> {
-  const amortBalance = balance.filter(b => /^(28|29|39)/.test(b.compte));
-  return calc(amortBalance, def);
-}
-
 export default function BilanPage() {
   const { balance, balanceN1, entreprise, exercice } = useApp();
-  const vA = calc(balance, ACTIF);
+  const { net: vA, brut: vABrut, amort: vAAmort } = calculerActifColonnes(balance);
   const vP = calc(balance, PASSIF);
   const vAN1 = calc(balanceN1, ACTIF);
   const vPN1 = calc(balanceN1, PASSIF);
-  const vABrut = computeBrut(balance, ACTIF);
-  const vAAmort = computeAmort(balance, ACTIF);
   const tA = vA['BZ'] || 0;
   const tP = vP['DZ'] || 0;
   const rapp = rapprocherEtats(balance);

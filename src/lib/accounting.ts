@@ -23,10 +23,16 @@ export const pf = (s: string | number): number =>
 export const isBilan = (c: string): boolean => /^[1-5]/.test(String(c || '').trim());
 
 export const inRange = (compte: string, ranges: string[][]): boolean => {
-  const c = String(compte).replace(/\D/g, '').padEnd(10, '0');
-  return ranges.some(([f, t]) =>
-    c >= f.replace(/\D/g, '').padEnd(10, '0') && c <= t.replace(/\D/g, '').padEnd(10, '0')
-  );
+  const c = String(compte).replace(/\D/g, '');
+  if (!c) return false;
+  return ranges.some(([f, t]) => {
+    const from = f.replace(/\D/g, '');
+    const to = t.replace(/\D/g, '');
+    if (!from || !to) return false;
+    const width = Math.max(c.length, from.length, to.length);
+    return c.padEnd(width, '0') >= from.padEnd(width, '0')
+      && c.padEnd(width, '0') <= to.padEnd(width, '9');
+  });
 };
 
 // ─── TYPES ─────────────────────────────────────────────
@@ -102,6 +108,9 @@ export interface MapLine {
   label: string;
   type?: 'sect' | 'total' | 'gtotal';
   c?: string[][];
+  /** Comptes opposants déduits dans la colonne nette de l'actif. */
+  amort?: string[][];
+  exclusions?: string[][];
   s?: string;
   m?: string;
   refs?: string[];
@@ -119,7 +128,7 @@ export function aggBalance(balance: BalanceLine[], ranges: string[][], sens: str
     let val = 0;
     switch (mode) {
       case 'n':
-        val = sens === 'D' ? l.md || 0 : sens === 'C' ? l.mc || 0 : (l.md || 0) - (l.mc || 0);
+        val = sens === 'D' ? l.md || 0 : sens === 'C' ? l.mc || 0 : sens === 'SP' ? (l.mc || 0) - (l.md || 0) : (l.md || 0) - (l.mc || 0);
         break;
       case 'n1':
         val = sens === 'D' ? l.sd || 0 : sens === 'C' ? l.sc || 0 : sdN1;
@@ -160,8 +169,10 @@ export function calc(balance: BalanceLine[], def: MapLine[], extra: Record<strin
   const v: Record<string, number> = { ...extra };
   for (const l of def) {
     if (l.type || l.srcCR || !l.c) continue;
-    if (l.m === 'var') v[l.id] = aggVar(balance, l.c, l.s || 'D');
-    else v[l.id] = aggBalance(balance, l.c, l.s || 'D', l.m || 'auto');
+    const lignes = l.exclusions ? balance.filter(b => !inRange(b.compte, l.exclusions ?? [])) : balance;
+    if (l.m === 'var') v[l.id] = aggVar(lignes, l.c, l.s || 'D');
+    else v[l.id] = aggBalance(lignes, l.c, l.s || 'D', l.m || 'auto');
+    if (l.amort) v[l.id] -= aggBalance(balance, l.amort, 'C', 'solde');
   }
   for (const l of def) { if (l.srcCR) v[l.id] = extra[l.srcCR] ?? 0; }
   for (let i = 0; i < 10; i++) {
@@ -175,6 +186,14 @@ export function calc(balance: BalanceLine[], def: MapLine[], extra: Record<strin
   return v;
 }
 
+/** Un même mapping pour l'écran, les exports et les contrôles de rapprochement. */
+export function calculerActifColonnes(balance: BalanceLine[]) {
+  const brut = calc(balance, ACTIF.map(l => ({ ...l, amort: undefined })));
+  const net = calc(balance, ACTIF);
+  const amort = Object.fromEntries(Object.keys(brut).map(id => [id, brut[id] - (net[id] ?? 0)]));
+  return { brut, amort, net };
+}
+
 // ══════════════════════════════════════════════════════════
 // SYSCOHADA RÉVISÉ — RÉFÉRENCES OFFICIELLES DSF
 // ══════════════════════════════════════════════════════════
@@ -183,39 +202,39 @@ export const ACTIF: MapLine[] = [
   { id: 'S_II', label: 'ACTIF IMMOBILISÉ', type: 'sect' },
   // Immobilisations incorporelles
   { id: 'AD', label: 'IMMOBILISATIONS INCORPORELLES', type: 'total', refs: ['AE', 'AF', 'AG', 'AH'] },
-  { id: 'AE', label: 'Frais de développement et de prospection', c: [['201', '206']], s: 'D' },
-  { id: 'AF', label: 'Brevets, licences, logiciels, droits similaires', c: [['212', '215']], s: 'D' },
-  { id: 'AG', label: 'Fonds commercial et droit au bail', c: [['216', '217']], s: 'D' },
-  { id: 'AH', label: 'Autres immobilisations incorporelles', c: [['211', '211'], ['218', '219']], s: 'D' },
+  { id: 'AE', label: 'Frais de développement et de prospection', c: [['211', '211'], ['2181', '2181'], ['2191', '2191']], amort: [['2811', '2811'], ['2911', '2911']], s: 'D' },
+  { id: 'AF', label: 'Brevets, licences, logiciels, droits similaires', c: [['212', '214'], ['2193', '2193']], amort: [['2812', '2814'], ['2912', '2914']], s: 'D' },
+  { id: 'AG', label: 'Fonds commercial et droit au bail', c: [['215', '216']], amort: [['2815', '2816'], ['2915', '2916']], s: 'D' },
+  { id: 'AH', label: 'Autres immobilisations incorporelles', c: [['217', '218']], exclusions: [['2181', '2181']], amort: [['2817', '2818'], ['2917', '2918']], s: 'D' },
   // Immobilisations corporelles
   { id: 'AI', label: 'IMMOBILISATIONS CORPORELLES', type: 'total', refs: ['AJ', 'AK', 'AL', 'AM', 'AN'] },
-  { id: 'AJ', label: 'Terrains', c: [['221', '229']], s: 'D' },
-  { id: 'AK', label: 'Bâtiments', c: [['231', '239']], s: 'D' },
-  { id: 'AL', label: 'Aménagements, agencements et installations', c: [['241', '243']], s: 'D' },
-  { id: 'AM', label: 'Matériel, mobilier et actifs biologiques', c: [['244', '244'], ['246', '248']], s: 'D' },
-  { id: 'AN', label: 'Matériel de transport', c: [['245', '245']], s: 'D' },
-  { id: 'AP', label: 'Avances et acomptes sur immobilisations', c: [['25', '259']], s: 'D' },
+  { id: 'AJ', label: 'Terrains', c: [['221', '229']], amort: [['282', '282'], ['292', '292']], s: 'D' },
+  { id: 'AK', label: 'Bâtiments', c: [['231', '233'], ['237', '237'], ['2391', '2391'], ['2393', '2393']], amort: [['2831', '2833'], ['2837', '2837'], ['2931', '2933'], ['2937', '2937']], s: 'D' },
+  { id: 'AL', label: 'Aménagements, agencements et installations', c: [['234', '235'], ['238', '238'], ['2392', '2392'], ['2394', '2395'], ['2398', '2398']], amort: [['2834', '2835'], ['2838', '2838'], ['2934', '2935'], ['2938', '2938']], s: 'D' },
+  { id: 'AM', label: 'Matériel, mobilier et actifs biologiques', c: [['241', '244'], ['246', '248']], amort: [['2841', '2844'], ['2846', '2848'], ['2941', '2944'], ['2946', '2948']], s: 'D' },
+  { id: 'AN', label: 'Matériel de transport', c: [['245', '245'], ['2495', '2495']], amort: [['2845', '2845'], ['2945', '2945']], s: 'D' },
+  { id: 'AP', label: 'Avances et acomptes sur immobilisations', c: [['25', '259']], amort: [['295', '295']], s: 'D' },
   // Immobilisations financières
   { id: 'AQ', label: 'IMMOBILISATIONS FINANCIÈRES', type: 'total', refs: ['AR', 'AS'] },
-  { id: 'AR', label: 'Titres de participation', c: [['261', '263']], s: 'D' },
-  { id: 'AS', label: 'Autres immobilisations financières', c: [['264', '269'], ['271', '279']], s: 'D' },
+  { id: 'AR', label: 'Titres de participation', c: [['261', '269']], amort: [['296', '296']], s: 'D' },
+  { id: 'AS', label: 'Autres immobilisations financières', c: [['271', '279']], amort: [['297', '297']], s: 'D' },
   { id: 'AZ', label: 'TOTAL ACTIF IMMOBILISÉ (I)', type: 'gtotal', refs: ['AD', 'AI', 'AP', 'AQ'] },
 
   { id: 'S_AC', label: 'ACTIF CIRCULANT', type: 'sect' },
   { id: 'BA', label: 'Actif circulant HAO', c: [['475', '475']], s: 'D' },
-  { id: 'BB', label: 'Stocks et en-cours', c: [['31', '39']], s: 'D' },
+  { id: 'BB', label: 'Stocks et en-cours', c: [['31', '38']], amort: [['39', '39']], s: 'D' },
   // Créances et emplois assimilés
   { id: 'BG', label: 'CRÉANCES ET EMPLOIS ASSIMILÉS', type: 'total', refs: ['BH', 'BI', 'BJ'] },
-  { id: 'BH', label: 'Fournisseurs, avances versées', c: [['4091', '4098']], s: 'D' },
-  { id: 'BI', label: 'Clients', c: [['411', '4198']], s: 'D' },
+  { id: 'BH', label: 'Fournisseurs, avances versées', c: [['4091', '4098']], amort: [['490', '490']], s: 'D' },
+  { id: 'BI', label: 'Clients', c: [['411', '4198']], amort: [['491', '491']], s: 'D' },
   // Non-compensation : les fournisseurs au solde débiteur figurent à l'actif
-  { id: 'BJ', label: 'Autres créances', c: [['401', '408'], ['42', '47']], s: 'D' },
+  { id: 'BJ', label: 'Autres créances', c: [['401', '408'], ['42', '477']], amort: [['492', '497']], s: 'D' },
   { id: 'BK', label: 'TOTAL ACTIF CIRCULANT (II)', type: 'gtotal', refs: ['BA', 'BB', 'BG'] },
 
   { id: 'S_TA', label: 'TRÉSORERIE — ACTIF', type: 'sect' },
-  { id: 'BQ', label: 'Titres de placement', c: [['50', '509']], s: 'D' },
-  { id: 'BR', label: 'Valeurs à encaisser', c: [['511', '519']], s: 'D' },
-  { id: 'BS', label: 'Banques, chèques postaux, caisse', c: [['521', '585']], s: 'D' },
+  { id: 'BQ', label: 'Titres de placement', c: [['50', '509']], amort: [['590', '590']], s: 'D' },
+  { id: 'BR', label: 'Valeurs à encaisser', c: [['511', '519']], amort: [['591', '591']], s: 'D' },
+  { id: 'BS', label: 'Banques, chèques postaux, caisse', c: [['521', '585']], amort: [['592', '594']], s: 'D' },
   { id: 'BT', label: 'TOTAL TRÉSORERIE ACTIF (III)', type: 'total', refs: ['BQ', 'BR', 'BS'] },
 
   { id: 'BU', label: 'Écart de conversion actif', c: [['478', '478']], s: 'D' },
@@ -225,7 +244,7 @@ export const ACTIF: MapLine[] = [
 export const PASSIF: MapLine[] = [
   { id: 'S_CP', label: 'CAPITAUX PROPRES', type: 'sect' },
   { id: 'CA', label: 'Capital', c: [['101', '104']], s: 'C' },
-  { id: 'CB', label: 'Apporteurs capital non appelé (−)', c: [['109', '109']], s: 'D' },
+  { id: 'CB', label: 'Apporteurs capital non appelé (−)', c: [['109', '109']], s: 'SP' },
   { id: 'CD', label: 'Écarts de réévaluation', c: [['106', '106']], s: 'C' },
   { id: 'CE', label: 'Primes liées au capital social', c: [['105', '105'], ['107', '108']], s: 'C' },
   { id: 'CF', label: 'Réserves indisponibles', c: [['111', '113']], s: 'C' },
@@ -249,7 +268,7 @@ export const PASSIF: MapLine[] = [
   { id: 'DJ', label: "Fournisseurs d'exploitation", c: [['401', '408']], s: 'C' },
   { id: 'DK', label: 'Dettes fiscales et sociales', c: [['421', '459']], s: 'C' },
   // Non-compensation : les clients au solde créditeur figurent au passif
-  { id: 'DM', label: 'Autres dettes', c: [['411', '418'], ['46', '478']], s: 'C' },
+  { id: 'DM', label: 'Autres dettes', c: [['411', '418'], ['46', '477']], s: 'C' },
   { id: 'DN', label: 'Risques provisionnés', c: [['499', '499']], s: 'C' },
   { id: 'DP', label: 'TOTAL PASSIF CIRCULANT (III)', type: 'gtotal', refs: ['DH', 'DI', 'DJ', 'DK', 'DM', 'DN'] },
 
@@ -274,10 +293,10 @@ export const CR: MapLine[] = [
   { id: 'TD', label: 'Produits accessoires', c: [['707', '708']], s: 'C', m: 'n' },
   { id: 'XB', label: "CHIFFRE D'AFFAIRES (A+B+C+D)", type: 'gtotal', f: v => v.TA + v.TB + v.TC + v.TD },
 
-  { id: 'TE', label: '(±) Production stockée (ou déstockage)', c: [['73', '739']], s: 'SC', m: 'n' },
+  { id: 'TE', label: '(±) Production stockée (ou déstockage)', c: [['73', '739']], s: 'SP', m: 'n' },
   { id: 'TF', label: 'Production immobilisée', c: [['72', '729']], s: 'C', m: 'n' },
-  { id: 'TG', label: "Subventions d'exploitation", c: [['75', '759']], s: 'C', m: 'n' },
-  { id: 'TH', label: 'Autres produits', c: [['71', '719']], s: 'C', m: 'n' },
+  { id: 'TG', label: "Subventions d'exploitation", c: [['71', '719']], s: 'C', m: 'n' },
+  { id: 'TH', label: 'Autres produits', c: [['75', '758']], s: 'C', m: 'n' },
   { id: 'TI', label: "Transferts de charges d'exploitation", c: [['781', '781']], s: 'C', m: 'n' },
 
   { id: 'RC', label: '(−) Achats de matières premières et fournitures liées', c: [['602', '602']], s: 'D', m: 'n' },
@@ -285,9 +304,9 @@ export const CR: MapLine[] = [
   { id: 'RE', label: '(−) Autres achats', c: [['604', '609']], s: 'D', m: 'n' },
   { id: 'RF', label: '(±) Variation de stocks d\'autres approvisionnements', c: [['6033', '6039']], s: 'SC', m: 'n' },
   { id: 'RG', label: '(−) Transports', c: [['61', '619']], s: 'D', m: 'n' },
-  { id: 'RH', label: '(−) Services extérieurs', c: [['62', '629']], s: 'D', m: 'n' },
-  { id: 'RI', label: '(−) Impôts et taxes', c: [['63', '639']], s: 'D', m: 'n' },
-  { id: 'RJ', label: '(−) Autres charges', c: [['64', '649']], s: 'D', m: 'n' },
+  { id: 'RH', label: '(−) Services extérieurs', c: [['62', '639']], s: 'D', m: 'n' },
+  { id: 'RI', label: '(−) Impôts et taxes', c: [['64', '649']], s: 'D', m: 'n' },
+  { id: 'RJ', label: '(−) Autres charges', c: [['65', '658']], s: 'D', m: 'n' },
 
   { id: 'XC', label: 'VALEUR AJOUTÉE (XB+RA+RB) + (Somme TE à RJ)', type: 'gtotal', f: v => v.XA + v.TB + v.TC + v.TD + v.TE + v.TF + v.TG + v.TH + v.TI - v.RC - v.RD - v.RE - v.RF - v.RG - v.RH - v.RI - v.RJ },
 

@@ -1,5 +1,11 @@
 # Phase 3 — Conformité fiscale et déclarative
 
+## Priorité : cohérence avec les fichiers SYSCOHADA fournis
+- [ ] Corriger la couverture des subdivisions, les signes du résultat et du capital non appelé, et le bilan brut/amortissements/net ; ajouter des tests de régression.
+- [ ] Vérifier les états dans l’application et consigner les preuves et limites.
+- [ ] Reconstituer les flux réellement encaissés/décaissés du TFT : les seuls soldes de balance ne permettent pas de distinguer les acquisitions sans trésorerie.
+- [ ] Faire valider les 80 correspondances provisoires du fichier fourni ; ne pas les imposer comme officielles.
+
 ## Lot actif : export FEC (CA-3.1)
 - [x] Vérifier et corriger la stabilité du fichier et la détection des trous de numérotation (tests CA-3.1).
 - [x] Afficher un rapport avant téléchargement et ne pas présenter le FEC comme officiel.
