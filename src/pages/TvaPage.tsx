@@ -1,259 +1,149 @@
 import { useApp } from '@/stores/app-store';
 import { fmt } from '@/lib/accounting';
-import { enregistrerLignesJournal, round2 } from '@/lib/ecritures';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { calculerTvaPeriode, creditTvaAnterieur, type TvaAjustements } from '@/lib/tva';
+import { lireMouvementsTva } from '@/lib/tva-data';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Calculator, Save, Plus, Archive, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
+import { exportCsv } from '@/lib/csv-export';
+import type { Tables } from '@/integrations/supabase/types';
 
-interface TvaParam { id: string; code: string; libelle: string; taux: number; compte_tva_collectee: string; compte_tva_deductible: string; actif: boolean; }
-interface Declaration { id: string; periode: string; date_debut: string; date_fin: string; tva_collectee: number; tva_deductible: number; tva_nette: number; credit_precedent: number; tva_a_payer: number; statut: string; }
+type Declaration = Tables<'declarations_tva'>;
+type Param = Tables<'tva_parametrage'>;
+const initial: TvaAjustements = { prorata: 100, nonRecuperable: 0, autoliquidation: 0, autoliquidationNonRecuperable: 0, retenues: 0 };
+const champs: { key: keyof TvaAjustements; label: string }[] = [
+  { key: 'prorata', label: 'Prorata de déduction (%)' },
+  { key: 'nonRecuperable', label: 'TVA non récupérable (FCFA)' },
+  { key: 'autoliquidation', label: 'Autoliquidation à ajouter, non comptabilisée (FCFA)' },
+  { key: 'autoliquidationNonRecuperable', label: 'Part non récupérable de l’autoliquidation (FCFA)' },
+  { key: 'retenues', label: 'Retenues subies (FCFA)' },
+];
 
 export default function TvaPage() {
-  const { entreprise, exercice, journal, balance } = useApp();
-  const [params, setParams] = useState<TvaParam[]>([]);
+  const { entreprise, exercice, demo } = useApp();
+  const [params, setParams] = useState<Param[]>([]);
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
+  const [systeme, setSysteme] = useState<{ role: string; compte: string; entreprise_id: string | null }[]>([]);
+  const [tab, setTab] = useState('declarations');
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'config' | 'declarations' | 'calcul'>('declarations');
-  const [showParamForm, setShowParamForm] = useState(false);
-  const [newCode, setNewCode] = useState('');
-  const [newLibelle, setNewLibelle] = useState('');
-  const [newTaux, setNewTaux] = useState(18);
-  // Calcul
-  const [calcDebut, setCalcDebut] = useState('');
-  const [calcFin, setCalcFin] = useState('');
-
-  const loadData = useCallback(async () => {
+  const [erreur, setErreur] = useState('');
+  const [debut, setDebut] = useState('');
+  const [fin, setFin] = useState('');
+  const [ajustements, setAjustements] = useState(initial);
+  const [rapport, setRapport] = useState<{ collectee: number; deductible: number; nombre: number; ca: number; comptes: Awaited<ReturnType<typeof lireMouvementsTva>>['comptes'] } | null>(null);
+  const [form, setForm] = useState({ code: '', libelle: '', taux: '', collectee: '', deductible: '' });
+  const generation = useRef(0);
+  const load = useCallback(async () => {
     if (!entreprise || !exercice) return;
-    const [pRes, dRes] = await Promise.all([
-      supabase.from('tva_parametrage').select('*').eq('entreprise_id', entreprise.id),
-      supabase.from('declarations_tva').select('*').eq('entreprise_id', entreprise.id).eq('exercice_id', exercice.id).order('date_debut'),
+    const [p, d, c] = await Promise.all([
+      supabase.from('tva_parametrage').select('*').eq('entreprise_id', entreprise.id).order('code'),
+      supabase.from('declarations_tva').select('*').eq('entreprise_id', entreprise.id).order('date_fin', { ascending: false }),
+      supabase.from('comptes_systeme').select('role,compte,entreprise_id').or(`entreprise_id.eq.${entreprise.id},entreprise_id.is.null`),
     ]);
-    if (pRes.data) setParams(pRes.data as any[]);
-    if (dRes.data) setDeclarations(dRes.data as any[]);
-  }, [entreprise, exercice]);
-
-  useEffect(() => { loadData(); }, [loadData]);
-
-  const addParam = async () => {
-    if (!entreprise) return;
-    const { error } = await supabase.from('tva_parametrage').insert({
-      entreprise_id: entreprise.id, code: newCode, libelle: newLibelle, taux: newTaux,
-    });
-    if (error) toast.error(error.message);
-    else { toast.success('Taux TVA ajouté'); setShowParamForm(false); await loadData(); }
+    if (p.error || d.error || c.error) throw new Error(p.error?.message ?? d.error?.message ?? c.error?.message);
+    setParams(p.data ?? []); setDeclarations(d.data ?? []); setSysteme(c.data ?? []);
+  }, [entreprise?.id, exercice?.id]);
+  useEffect(() => {
+    generation.current++; setRapport(null); setParams([]); setDeclarations([]); setSysteme([]); setErreur('');
+    setDebut(exercice?.date_debut ?? ''); setFin(exercice?.date_fin ?? ''); setAjustements(initial);
+    load().catch(e => setErreur(e.message));
+  }, [load]);
+  const invalider = () => { generation.current++; setRapport(null); setErreur(''); };
+  const compteSysteme = (role: string) => systeme.find(c => c.role === role && c.entreprise_id === entreprise?.id)?.compte
+    ?? systeme.find(c => c.role === role && c.entreprise_id === null)?.compte ?? '';
+  const comptesCol = [...new Set([...params.filter(p => p.actif).map(p => p.compte_tva_collectee), compteSysteme('tva_collectee')].filter(Boolean))];
+  const comptesDed = [...new Set([...params.filter(p => p.actif).map(p => p.compte_tva_deductible), compteSysteme('tva_deductible')].filter(Boolean))];
+  let resultat: ReturnType<typeof calculerTvaPeriode> | null = null;
+  let calculErreur = '';
+  try {
+    if (rapport) resultat = calculerTvaPeriode({ ...ajustements, collectee: rapport.collectee, deductible: rapport.deductible,
+      creditPrec: creditTvaAnterieur(declarations.map(d => ({ ...d, credit_reportable: d.calcul_version === 2 ? Number(d.credit_reportable) : undefined })), debut) });
+  } catch (e) { calculErreur = e instanceof Error ? e.message : 'Calcul impossible'; }
+  const ouverte = exercice?.statut === 'en_cours' && !demo;
+  const calculer = async () => {
+    if (!entreprise || !exercice) return;
+    if (!debut || !fin || debut > fin || debut < exercice.date_debut || fin > exercice.date_fin) { setErreur('Période invalide ou hors exercice.'); return; }
+    if (!comptesCol.length || !comptesDed.length) { setErreur('Configurez les comptes TVA dans les comptes système ou le paramétrage.'); return; }
+    if (comptesCol.some(c => comptesDed.some(d => c.startsWith(d) || d.startsWith(c)))) { setErreur('Un compte ne peut pas être à la fois collecté et déductible.'); return; }
+    const token = ++generation.current;
+    setLoading(true); setErreur(''); setRapport(null);
+    try {
+      const r = await lireMouvementsTva(entreprise.id, exercice.id, debut, fin);
+      if (token !== generation.current) return;
+      const somme = (prefixes: string[], credit: boolean) => r.comptes.filter(c => prefixes.some(p => c.compte.startsWith(p)))
+        .reduce((s, c) => s + Math.round((credit ? c.credit - c.debit : c.debit - c.credit) * 100), 0) / 100;
+      setRapport({ ...r, collectee: somme(comptesCol, true), deductible: somme(comptesDed, false), ca: somme(['70'], true) });
+    } catch (e) { if (token === generation.current) setErreur(e instanceof Error ? e.message : 'Lecture impossible'); }
+    finally { setLoading(false); }
   };
-
-  // Calculate TVA for period
-  const calcTva = useMemo(() => {
-    if (!calcDebut || !calcFin) return null;
-    let collectee = 0, deductible = 0;
-    for (const j of journal) {
-      if (j.date_ecriture < calcDebut || j.date_ecriture > calcFin) continue;
-      // TVA collectée = comptes 443x (credit)
-      if (/^443/.test(j.compte)) collectee += (j.credit || 0) - (j.debit || 0);
-      // TVA déductible = comptes 445x (debit)
-      if (/^445/.test(j.compte)) deductible += (j.debit || 0) - (j.credit || 0);
-    }
-    const lastDecl = declarations.filter(d => d.statut === 'validee').sort((a, b) => b.date_fin.localeCompare(a.date_fin))[0];
-    const creditPrec = lastDecl && lastDecl.tva_a_payer < 0 ? Math.abs(lastDecl.tva_a_payer) : 0;
-    const nette = collectee - deductible;
-    const aPayer = nette - creditPrec;
-    return { collectee, deductible, nette, creditPrec, aPayer };
-  }, [journal, calcDebut, calcFin, declarations]);
-
-  const saveDeclaration = async () => {
-    if (!calcTva || !entreprise || !exercice) return;
+  const sauver = async () => {
+    if (!resultat || !rapport || !entreprise || !exercice || !ouverte) return;
     setLoading(true);
-    const periode = `${calcDebut} au ${calcFin}`;
-    const { error } = await supabase.from('declarations_tva').insert({
-      entreprise_id: entreprise.id, exercice_id: exercice.id,
-      periode, date_debut: calcDebut, date_fin: calcFin,
-      tva_collectee: calcTva.collectee, tva_deductible: calcTva.deductible,
-      tva_nette: calcTva.nette, credit_precedent: calcTva.creditPrec,
-      tva_a_payer: calcTva.aPayer,
-    });
-    if (error) toast.error(error.message);
-    else { toast.success('Déclaration TVA enregistrée'); await loadData(); setTab('declarations'); }
-    setLoading(false);
+    try {
+      const { error } = await supabase.from('declarations_tva').insert({
+        entreprise_id: entreprise.id, exercice_id: exercice.id, periode: `${debut} au ${fin}`, date_debut: debut, date_fin: fin,
+        calcul_version: 2, statut: 'brouillon', tva_collectee: rapport.collectee, tva_deductible: rapport.deductible,
+        tva_nette: resultat.nette, credit_precedent: resultat.creditPrec, tva_a_payer: resultat.aPayer,
+        prorata: ajustements.prorata, tva_non_recuperable: ajustements.nonRecuperable, autoliquidation: ajustements.autoliquidation,
+        autoliquidation_non_recuperable: ajustements.autoliquidationNonRecuperable, retenues_subies: ajustements.retenues,
+        deduction_admise: resultat.deductionAdmise, credit_reportable: resultat.creditReportable,
+        detail_calcul: { source: 'ecritures_validees', nombre_lignes: rapport.nombre, comptes: rapport.comptes, ca_comptable: rapport.ca, comptes_collectee: comptesCol, comptes_deductible: comptesDed },
+      });
+      if (error) throw error;
+      await load(); setTab('declarations'); toast.success('Brouillon TVA enregistré ; aucune écriture de liquidation créée');
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Enregistrement refusé'); }
+    finally { setLoading(false); }
   };
-
-  // Validation d'une déclaration → OD de liquidation de TVA (SYSCOHADA) :
-  // débit 4431 (TVA facturée) / crédit 4452 (TVA récupérable)
-  // solde créditeur → 4441 TVA due ; solde débiteur → 4449 crédit à reporter.
-  const validerDecl = async (id: string) => {
-    const d = declarations.find(x => x.id === id);
-    if (!d || !entreprise || !exercice) return;
-    const collectee = round2(Number(d.tva_collectee));
-    const deductible = round2(Number(d.tva_deductible));
-    const solde = round2(collectee - deductible);
-    if (collectee > 0 || deductible > 0) {
-      const base = {
-        entreprise_id: entreprise.id, exercice_id: exercice.id,
-        date_ecriture: d.date_fin, piece: `TVA-${d.date_fin}`, journal_code: 'OD',
-        libelle: `Liquidation TVA — ${d.periode}`,
-      };
-      const lignes = [
-        { ...base, compte: '4431', intitule: 'TVA facturée sur ventes', debit: collectee, credit: 0 },
-        { ...base, compte: '4452', intitule: 'TVA récupérable sur achats', debit: 0, credit: deductible },
-        solde >= 0
-          ? { ...base, compte: '4441', intitule: 'État, TVA due', debit: 0, credit: solde }
-          : { ...base, compte: '4449', intitule: 'État, crédit de TVA à reporter', debit: -solde, credit: 0 },
-      ].filter(l => (l.debit || 0) + (l.credit || 0) > 0);
-      try {
-        await enregistrerLignesJournal(lignes, { origine: 'tva' });
-      } catch (e: any) {
-        toast.error(`Écriture de liquidation refusée : ${e.message}`);
-        return;
-      }
-    }
-    await supabase.from('declarations_tva').update({ statut: 'validee' } as any).eq('id', id);
-    toast.success('Déclaration validée et liquidation comptabilisée');
-    await loadData();
+  const ajouter = async () => {
+    if (!entreprise || !ouverte) return;
+    if (!form.code.trim() || !form.libelle.trim() || !form.collectee || !form.deductible || form.taux === '' || !Number.isFinite(Number(form.taux)) || Number(form.taux) < 0 || Number(form.taux) > 100) { toast.error('Renseignez le code, le libellé, les comptes et un taux entre 0 et 100 %.'); return; }
+    setLoading(true);
+    const { error } = await supabase.from('tva_parametrage').insert({ entreprise_id: entreprise.id, code: form.code.trim(), libelle: form.libelle.trim(), taux: Number(form.taux), compte_tva_collectee: form.collectee.trim(), compte_tva_deductible: form.deductible.trim() });
+    try { if (error) throw error; await load(); setForm({ code: '', libelle: '', taux: '', collectee: '', deductible: '' }); invalider(); toast.success('Taux ajouté'); }
+    catch (e) { toast.error(e instanceof Error ? e.message : 'Enregistrement refusé'); }
+    finally { setLoading(false); }
   };
-
-  return (
-    <div>
-      <div className="h-12 bg-bg2 border-b border-border flex items-center justify-between px-5">
-        <div><div className="font-serif text-[17px]">🧾 TVA & Déclarations Fiscales</div>
-        <div className="text-[10px] text-fg3 font-mono">Paramétrage, calcul et suivi des déclarations</div></div>
-      </div>
-      <div className="p-5">
-        {/* Tabs */}
-        <div className="flex items-center gap-1 mb-4">
-          {(['declarations', 'calcul', 'config'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`px-3 py-1.5 rounded text-[11px] font-bold ${tab === t ? 'bg-primary text-primary-foreground' : 'bg-bg2 border border-border text-fg2 hover:bg-bg3'}`}>
-              {t === 'declarations' ? '📋 Déclarations' : t === 'calcul' ? '🧮 Calculer TVA' : '⚙️ Paramétrage'}
-            </button>
-          ))}
-        </div>
-
-        {/* CONFIG TAB */}
-        {tab === 'config' && (
-          <>
-            {showParamForm && (
-              <div className="bg-bg2 border border-border rounded-lg p-4 mb-4">
-                <div className="flex items-end gap-3">
-                  <div><label className="text-[9px] text-fg3 uppercase font-mono block mb-1">Code</label>
-                    <input value={newCode} onChange={e => setNewCode(e.target.value)} placeholder="TVA18" className="bg-bg3 border border-border rounded px-2 py-1.5 text-[11px] w-24 font-mono" /></div>
-                  <div><label className="text-[9px] text-fg3 uppercase font-mono block mb-1">Libellé</label>
-                    <input value={newLibelle} onChange={e => setNewLibelle(e.target.value)} placeholder="TVA 18%" className="bg-bg3 border border-border rounded px-2 py-1.5 text-[11px] w-40" /></div>
-                  <div><label className="text-[9px] text-fg3 uppercase font-mono block mb-1">Taux %</label>
-                    <input type="number" value={newTaux} onChange={e => setNewTaux(Number(e.target.value))} className="bg-bg3 border border-border rounded px-2 py-1.5 text-[11px] w-20 font-mono" /></div>
-                  <button onClick={addParam} className="px-4 py-1.5 rounded text-[11px] font-bold bg-primary text-primary-foreground">✓ Ajouter</button>
-                </div>
-              </div>
-            )}
-            <button onClick={() => setShowParamForm(!showParamForm)} className="mb-3 px-3 py-1.5 rounded text-[11px] font-bold border border-border text-fg2 hover:bg-bg3">
-              {showParamForm ? '✕' : '+ Nouveau taux'}
-            </button>
-            <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
-              <table className="w-full border-collapse">
-                <thead><tr>
-                  {['Code', 'Libellé', 'Taux', 'Compte Collectée', 'Compte Déductible', ''].map(h => (
-                    <th key={h} className="bg-bg3 px-3 py-1.5 text-left text-[9px] font-bold text-fg3 uppercase font-mono border-b border-border">{h}</th>
-                  ))}
-                </tr></thead>
-                <tbody>
-                  {params.map(p => (
-                    <tr key={p.id} className="hover:bg-[rgba(56,189,248,.02)]">
-                      <td className="px-3 py-1.5 text-[11px] font-mono font-bold text-primary border-b border-border/50">{p.code}</td>
-                      <td className="px-3 py-1.5 text-[11px] border-b border-border/50">{p.libelle}</td>
-                      <td className="px-3 py-1.5 text-[11px] font-mono border-b border-border/50">{p.taux} %</td>
-                      <td className="px-3 py-1.5 text-[11px] font-mono border-b border-border/50">{p.compte_tva_collectee}</td>
-                      <td className="px-3 py-1.5 text-[11px] font-mono border-b border-border/50">{p.compte_tva_deductible}</td>
-                      <td className="px-3 py-1.5 border-b border-border/50">
-                        <button onClick={async () => { await supabase.from('tva_parametrage').delete().eq('id', p.id); await loadData(); }} className="text-destructive text-xs">🗑</button>
-                      </td>
-                    </tr>
-                  ))}
-                  {params.length === 0 && <tr><td colSpan={6} className="px-3 py-4 text-center text-fg3 text-[11px]">Aucun taux configuré</td></tr>}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-
-        {/* CALCUL TAB */}
-        {tab === 'calcul' && (
-          <div className="bg-bg2 border border-border rounded-lg p-4">
-            <div className="font-bold text-sm mb-3 text-primary">🧮 Calcul de la TVA</div>
-            <div className="flex items-end gap-3 mb-4">
-              <div><label className="text-[9px] text-fg3 uppercase font-mono block mb-1">Du</label>
-                <input type="date" value={calcDebut} onChange={e => setCalcDebut(e.target.value)} className="bg-bg3 border border-border rounded px-2 py-1.5 text-[11px]" /></div>
-              <div><label className="text-[9px] text-fg3 uppercase font-mono block mb-1">Au</label>
-                <input type="date" value={calcFin} onChange={e => setCalcFin(e.target.value)} className="bg-bg3 border border-border rounded px-2 py-1.5 text-[11px]" /></div>
-            </div>
-            {calcTva && (
-              <div className="space-y-2">
-                <div className="flex justify-between py-2 border-b border-border/50">
-                  <span className="text-[11px]">TVA Collectée (comptes 443x)</span>
-                  <span className="text-[11px] font-mono font-bold">{fmt(calcTva.collectee)}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-border/50">
-                  <span className="text-[11px]">TVA Déductible (comptes 445x)</span>
-                  <span className="text-[11px] font-mono font-bold text-accent">{fmt(calcTva.deductible)}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-border/50">
-                  <span className="text-[11px] font-bold">TVA Nette</span>
-                  <span className="text-[11px] font-mono font-bold">{fmt(calcTva.nette)}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-border/50">
-                  <span className="text-[11px]">Crédit de TVA précédent</span>
-                  <span className="text-[11px] font-mono">{fmt(calcTva.creditPrec)}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-border bg-bg3 px-3 rounded">
-                  <span className="text-[12px] font-bold">TVA À PAYER</span>
-                  <span className={`text-[14px] font-mono font-bold ${calcTva.aPayer >= 0 ? 'text-destructive' : 'text-success'}`}>
-                    {calcTva.aPayer >= 0 ? fmt(calcTva.aPayer) : `Crédit: ${fmt(Math.abs(calcTva.aPayer))}`}
-                  </span>
-                </div>
-                <button onClick={saveDeclaration} disabled={loading} className="mt-3 px-4 py-1.5 rounded text-[11px] font-bold bg-primary text-primary-foreground">
-                  ✓ Enregistrer la déclaration
-                </button>
-              </div>
-            )}
+  return <div>
+    <header className="border-b border-border bg-bg2 px-5 py-3"><h1 className="font-serif text-lg">TVA & Déclarations fiscales</h1><p className="text-xs text-fg3">{entreprise?.nom} — {exercice?.annee}</p></header>
+    <div className="p-5 space-y-4">
+      <div role="status" className="border-l-2 border-accent pl-3 text-sm text-fg2">Préparation sur débits — brouillon non déclaratif. Encaissements, régularisation annuelle et liquidation complète restent à finaliser.</div>
+      {erreur && <p role="alert" className="text-sm text-destructive">{erreur}</p>}
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="flex flex-wrap h-auto justify-start"><TabsTrigger value="declarations">Déclarations</TabsTrigger><TabsTrigger value="calcul">Préparer TVA</TabsTrigger><TabsTrigger value="config">Paramétrage</TabsTrigger></TabsList>
+        <TabsContent value="calcul" className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div><Label htmlFor="tva-debut">Du</Label><Input id="tva-debut" type="date" value={debut} onChange={e => { setDebut(e.target.value); invalider(); }} /></div>
+            <div><Label htmlFor="tva-fin">Au</Label><Input id="tva-fin" type="date" value={fin} onChange={e => { setFin(e.target.value); invalider(); }} /></div>
+            <div className="flex items-end"><Button disabled={loading} onClick={calculer}><Calculator />{loading ? 'Lecture…' : 'Calculer'}</Button></div>
+            {champs.map(c => <div key={c.key}><Label htmlFor={`tva-${c.key}`}>{c.label}</Label><Input id={`tva-${c.key}`} type="number" min="0" max={c.key === 'prorata' ? 100 : undefined} step={c.key === 'prorata' ? '0.0001' : '0.01'} value={ajustements[c.key]} onChange={e => setAjustements(a => ({ ...a, [c.key]: Number(e.target.value) }))} /></div>)}
           </div>
-        )}
-
-        {/* DECLARATIONS TAB */}
-        {tab === 'declarations' && (
-          <div className="bg-bg2 border border-border rounded-lg overflow-hidden">
-            <table className="w-full border-collapse">
-              <thead><tr>
-                {['Période', 'TVA Collectée', 'TVA Déductible', 'Nette', 'Crédit préc.', 'À Payer', 'Statut', ''].map(h => (
-                  <th key={h} className="bg-bg3 px-3 py-1.5 text-left text-[9px] font-bold text-fg3 uppercase font-mono border-b border-border">{h}</th>
-                ))}
-              </tr></thead>
-              <tbody>
-                {declarations.map(d => (
-                  <tr key={d.id} className="hover:bg-[rgba(56,189,248,.02)]">
-                    <td className="px-3 py-1.5 text-[11px] font-bold border-b border-border/50">{d.periode}</td>
-                    <td className="px-3 py-1.5 text-[11px] font-mono text-right border-b border-border/50">{fmt(d.tva_collectee)}</td>
-                    <td className="px-3 py-1.5 text-[11px] font-mono text-right border-b border-border/50">{fmt(d.tva_deductible)}</td>
-                    <td className="px-3 py-1.5 text-[11px] font-mono text-right border-b border-border/50">{fmt(d.tva_nette)}</td>
-                    <td className="px-3 py-1.5 text-[11px] font-mono text-right border-b border-border/50">{fmt(d.credit_precedent)}</td>
-                    <td className={`px-3 py-1.5 text-[11px] font-mono text-right font-bold border-b border-border/50 ${d.tva_a_payer >= 0 ? 'text-destructive' : 'text-success'}`}>
-                      {fmt(d.tva_a_payer)}
-                    </td>
-                    <td className="px-3 py-1.5 border-b border-border/50">
-                      <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${d.statut === 'validee' ? 'bg-success/10 text-success' : 'bg-accent/10 text-accent'}`}>
-                        {d.statut === 'validee' ? '✓ Validée' : '📝 Brouillon'}
-                      </span>
-                    </td>
-                    <td className="px-3 py-1.5 border-b border-border/50">
-                      {d.statut !== 'validee' && (
-                        <button onClick={() => validerDecl(d.id)} className="text-[10px] text-success hover:underline">Valider</button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {declarations.length === 0 && <tr><td colSpan={8} className="px-3 py-6 text-center text-fg3 text-[11px]">Aucune déclaration. Utilisez l'onglet "Calculer TVA" pour en créer.</td></tr>}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+          {calculErreur && <p role="alert" className="text-destructive text-sm">{calculErreur}</p>}
+          {rapport && resultat && <section className="border-t border-border pt-4 space-y-2">
+            <h2 className="font-semibold">Préparation du {debut} au {fin}</h2>
+            <p className="text-xs text-fg3">{rapport.nombre} lignes validées — chiffre d’affaires comptable : {fmt(rapport.ca)} FCFA</p>
+            {Object.entries({ 'TVA collectée, autoliquidation incluse': resultat.collectee, 'TVA déductible brute': resultat.deductibleBrute, 'Déduction admise après prorata': resultat.deductionAdmise, 'Crédit antérieur validé': resultat.creditPrec, 'Retenues subies': resultat.retenues, 'TVA à payer': resultat.aPayer, 'Crédit reportable': resultat.creditReportable }).map(([label, montant]) => <div key={label} className="flex justify-between gap-4 border-b border-border py-2 text-sm"><span>{label}</span><span className="font-mono shrink-0">{fmt(montant)} FCFA</span></div>)}
+            <Button onClick={sauver} disabled={loading || !ouverte || rapport.nombre === 0}><Save />Enregistrer le brouillon</Button>
+            <details className="pt-2"><summary className="cursor-pointer text-sm">Détail des comptes</summary><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr><th className="text-left">Compte</th><th className="text-right">Débit</th><th className="text-right">Crédit</th></tr></thead><tbody>{rapport.comptes.map(c => <tr key={c.compte}><td>{c.compte}</td><td className="text-right font-mono">{fmt(c.debit)}</td><td className="text-right font-mono">{fmt(c.credit)}</td></tr>)}</tbody></table></div></details>
+          </section>}
+        </TabsContent>
+        <TabsContent value="declarations">
+          <div className="flex justify-end mb-3"><Button variant="outline" disabled={!declarations.length} onClick={() => exportCsv(['Période', 'Collectée', 'Déductible brute', 'Prorata %', 'Retenues', 'À payer', 'Crédit reportable', 'Statut'], declarations.filter(d => d.exercice_id === exercice?.id).map(d => [d.periode, d.tva_collectee, d.tva_deductible, d.prorata, d.retenues_subies, Math.max(0, Number(d.tva_a_payer)), d.calcul_version === 2 ? d.credit_reportable : Math.max(0, -Number(d.tva_a_payer)), d.statut]), `preparation_tva_${exercice?.annee}`)}><FileSpreadsheet />CSV</Button></div>
+          <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr>{['Période', 'Collectée', 'Déduction admise', 'À payer', 'Crédit reportable', 'Statut'].map(t => <th className="text-left border-b border-border py-2 px-2 whitespace-nowrap" key={t}>{t}</th>)}</tr></thead><tbody>
+            {declarations.filter(d => d.exercice_id === exercice?.id).map(d => <tr key={d.id} className="border-b border-border"><td className="px-2 py-3 whitespace-nowrap">{d.periode}</td><td className="px-2 font-mono">{fmt(Number(d.tva_collectee) + (d.calcul_version === 2 ? Number(d.autoliquidation) : 0))}</td><td className="px-2 font-mono">{fmt(d.calcul_version === 2 ? d.deduction_admise : d.tva_deductible)}</td><td className="px-2 font-mono">{fmt(Math.max(0, Number(d.tva_a_payer)))}</td><td className="px-2 font-mono">{fmt(d.calcul_version === 2 ? d.credit_reportable : Math.max(0, -Number(d.tva_a_payer)))}</td><td className="px-2">{d.statut === 'validee' ? 'Validée' : 'Brouillon'}</td></tr>)}
+            {!declarations.some(d => d.exercice_id === exercice?.id) && <tr><td colSpan={6} className="py-8 text-center text-fg3">Aucune déclaration pour cet exercice</td></tr>}
+          </tbody></table></div>
+        </TabsContent>
+        <TabsContent value="config" className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{([{ key: 'code', label: 'Code' }, { key: 'libelle', label: 'Libellé' }, { key: 'taux', label: 'Taux (%)' }, { key: 'collectee', label: 'Compte TVA collectée' }, { key: 'deductible', label: 'Compte TVA déductible' }] as const).map(c => <div key={c.key}><Label htmlFor={`param-${c.key}`}>{c.label}</Label><Input id={`param-${c.key}`} type={c.key === 'taux' ? 'number' : 'text'} value={form[c.key]} onChange={e => setForm(f => ({ ...f, [c.key]: e.target.value }))} /></div>)}</div>
+          <Button onClick={ajouter} disabled={loading || !ouverte}><Plus />Ajouter le taux</Button>
+          <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr>{['Code', 'Libellé', 'Taux', 'Collectée', 'Déductible', ''].map((t, i) => <th key={i} className="text-left border-b border-border py-2 px-2">{t}</th>)}</tr></thead><tbody>{params.map(p => <tr key={p.id} className="border-b border-border"><td className="px-2">{p.code}</td><td className="px-2 py-3">{p.libelle}</td><td className="px-2 whitespace-nowrap">{p.taux} %</td><td className="px-2 font-mono">{p.compte_tva_collectee}</td><td className="px-2 font-mono">{p.compte_tva_deductible}</td><td><Button size="icon" variant="ghost" title={p.actif ? 'Archiver le taux' : 'Réactiver le taux'} aria-label={p.actif ? `Archiver ${p.code}` : `Réactiver ${p.code}`} disabled={loading || !ouverte} onClick={async () => { const { error } = await supabase.from('tva_parametrage').update({ actif: !p.actif }).eq('id', p.id); if (error) toast.error(error.message); else { invalider(); await load(); } }}><Archive /></Button></td></tr>)}</tbody></table></div>
+        </TabsContent>
+      </Tabs>
     </div>
-  );
+  </div>;
 }
