@@ -1,7 +1,7 @@
 # Phase 3 — Conformité fiscale et déclarative
 
 ## Priorité : cohérence avec les fichiers SYSCOHADA fournis
-- [ ] Corriger la couverture des subdivisions, les signes du résultat et du capital non appelé, et le bilan brut/amortissements/net ; ajouter des tests de régression.
+- [x] Corriger la couverture des subdivisions, les signes du résultat et du capital non appelé, et le bilan brut/amortissements/net ; 131 tests passés lors du lot précédent.
 - [ ] Vérifier les états dans l’application et consigner les preuves et limites.
 - [ ] Reconstituer les flux réellement encaissés/décaissés du TFT : les seuls soldes de balance ne permettent pas de distinguer les acquisitions sans trésorerie.
 - [ ] Faire valider les 80 correspondances provisoires du fichier fourni ; ne pas les imposer comme officielles.
@@ -17,7 +17,8 @@
 - [x] Système normal / refus SMT (CA-3.3) : choix dans Paramètres, états refusés avec message.
 - Barèmes datés et reproduction de paie historique (CA-3.2).
 - [x] Résultat fiscal, IS/IMF (CA-3.4) : barèmes datés, passage fiscal, page Résultat fiscal. Fiche DSF et état amortissements/provisions ajoutés.
-- TVA complète (CA-3.5).
+- [ ] TVA (CA-3.5), lot actif : calcul sur écritures validées exhaustives, prorata, retenues subies, non-récupérable et autoliquidation ; sauvegarde d’un brouillon contrôlé sans liquidation prématurée.
+- [ ] TVA (CA-3.5), lot suivant : reconnaissance sur encaissements liée aux règlements/lettrage, régularisation annuelle, ventilation par nature/exonération/exportation et liquidation atomique.
 - Paie, immobilisations/provisions, Mobile Money, reprise FEC/Excel.
 - DGID : reprise sans doublon (CA-3.6), dépend de la spécification et de l’environnement DGID de test.
 

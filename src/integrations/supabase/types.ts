@@ -797,49 +797,76 @@ export type Database = {
       }
       declarations_tva: {
         Row: {
+          autoliquidation: number
+          autoliquidation_non_recuperable: number
+          calcul_version: number
           created_at: string
           credit_precedent: number
+          credit_reportable: number
           date_debut: string
           date_fin: string
+          deduction_admise: number
+          detail_calcul: Json
           entreprise_id: string
           exercice_id: string
           id: string
           periode: string
+          prorata: number
+          retenues_subies: number
           statut: string
           tva_a_payer: number
           tva_collectee: number
           tva_deductible: number
           tva_nette: number
+          tva_non_recuperable: number
         }
         Insert: {
+          autoliquidation?: number
+          autoliquidation_non_recuperable?: number
+          calcul_version?: number
           created_at?: string
           credit_precedent?: number
+          credit_reportable?: number
           date_debut: string
           date_fin: string
+          deduction_admise?: number
+          detail_calcul?: Json
           entreprise_id: string
           exercice_id: string
           id?: string
           periode: string
+          prorata?: number
+          retenues_subies?: number
           statut?: string
           tva_a_payer?: number
           tva_collectee?: number
           tva_deductible?: number
           tva_nette?: number
+          tva_non_recuperable?: number
         }
         Update: {
+          autoliquidation?: number
+          autoliquidation_non_recuperable?: number
+          calcul_version?: number
           created_at?: string
           credit_precedent?: number
+          credit_reportable?: number
           date_debut?: string
           date_fin?: string
+          deduction_admise?: number
+          detail_calcul?: Json
           entreprise_id?: string
           exercice_id?: string
           id?: string
           periode?: string
+          prorata?: number
+          retenues_subies?: number
           statut?: string
           tva_a_payer?: number
           tva_collectee?: number
           tva_deductible?: number
           tva_nette?: number
+          tva_non_recuperable?: number
         }
         Relationships: []
       }
